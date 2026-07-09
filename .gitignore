@@ -1,0 +1,112 @@
+# Byte-compiled / optimized / DLL files
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# C extensions
+
+*.so
+
+# Distribución / empaquetado
+
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Entornos virtuales
+
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Archivos de configuración de entorno
+
+.env.*
+*.env
+
+# Archivos de logs
+
+*.log
+
+# Archivos de pruebas / cobertura
+
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+
+.ipynb_checkpoints
+
+# PyInstaller
+
+*.manifest
+*.spec
+
+# Archivos de sistema
+
+.DS_Store
+Thumbs.db
+
+# IDEs y editores
+
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos temporales
+
+*.tmp
+*.swp
+*~
+
+# Base de datos SQLite
+
+*.sqlite3
+
+# Archivos de mypy / type checking
+
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Archivos de Ruff / linters
+
+.ruff_cache/
+
+# Archivos de build de documentación
+
+docs/_build/
+
+# Archivos de pip
+
+pip-log.txt
+pip-delete-this-directory.txt
