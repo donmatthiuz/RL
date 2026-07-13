@@ -1,0 +1,32 @@
+# Forzar LF en todos los archivos de texto (evita problemas en WSL/Linux
+# cuando el editor de Windows escribe CRLF).
+* text=auto eol=lf
+
+# Shell scripts siempre LF (bash falla con CRLF)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Python, YAML, Markdown, JSON, TOML
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+
+# Dotfiles (env, git, docker)
+.env text eol=lf
+.env.* text eol=lf
+.gitignore text eol=lf
+.dockerignore text eol=lf
+
+# Dockerfile
+Dockerfile text eol=lf
+
+# Imagenes y binarios -- no normalizar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

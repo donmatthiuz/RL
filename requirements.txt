@@ -1,0 +1,19 @@
+# Base reproducible en cualquier maquina (CPU, sin dependencias de GPU).
+# Jupyter + toolchain de reportes (nbconvert webpdf) + stack cientifico core.
+# Instalar con:  make setup   (o  pip install -r requirements.txt)
+
+# --- Jupyter ---
+jupyterlab
+notebook
+ipywidgets
+ipykernel
+
+# --- Toolchain de reportes ---
+# nbconvert[webpdf] arrastra playwright; el navegador Chromium se instala aparte
+# (make setup lo hace; en Docker ya viene en la imagen). Ver docs/reportes.md.
+nbconvert[webpdf]
+
+# --- Stack cientifico core ---
+numpy
+pandas
+matplotlib
