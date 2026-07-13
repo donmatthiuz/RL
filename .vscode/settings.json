@@ -1,0 +1,11 @@
+{
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[shellscript]": {
+    "files.eol": "\n"
+  },
+  "[python]": {
+    "editor.rulers": [100]
+  }
+}
