@@ -1,0 +1,550 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{siunitx}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+\sisetup{group-separator={,}, group-minimum-digits=4}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue!60!black},
+  commentstyle=\color{gray},
+  stringstyle=\color{green!40!black},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  frame=single, rulecolor=\color{gray!40},
+  breaklines=true, showstringspaces=false,
+  language=Python, extendedchars=true, literate={í}{{\'i}}1 {á}{{\'a}}1 {é}{{\'e}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1
+}
+
+\title{\textbf{CC3104 --- Aprendizaje por Refuerzo}\\[0.3em]
+       Examen Práctico: Auditoría del agente de gestión de inventario\\[0.5em]
+       \large Grupo 4 --- La aproximación de función}
+\author{%
+\begin{tabular}{lcc}
+\toprule
+\textbf{Nombre} & \textbf{Carnet} & \textbf{Usuario Git} \\
+\midrule
+Edwin Jose Gabriel De Leon Garcia & 22809 & \texttt{EJGDLG} \\
+Gustavo Adolfo Cruz Bardales      & 22779 & \texttt{G2309} \\
+Josué Emanuel Say Garcia          & 22801 & \texttt{JosueSay} \\
+Mathew Alexander Cordero Aquino   & 22982 & \texttt{donmatthiuz} \\
+\bottomrule
+\end{tabular}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\bigskip
+
+%==========================================================================
+\section{Análisis del componente asignado}
+%==========================================================================
+
+\subsection*{Metodología de medición}
+\addcontentsline{toc}{subsection}{Metodología de medición}
+
+Para poder medir el error del aproximador se necesita un objetivo de referencia.
+Como la función de transición del sistema es determinista, el MDP se resolvió de
+forma exacta por iteración de valor con $\gamma = 0{,}99$, obteniendo $Q^{*}(s,a)$
+para todos los estados alcanzables. Se usó la función de recompensa \emph{original}
+del sistema entregado, no una corregida.
+
+\begin{quote}
+La especificación declara 200 estados (10 niveles de inventario $\times$ 5 de
+vencimiento $\times$ 4 de demanda), pero \texttt{transition} devuelve
+$\texttt{inventory} + \texttt{action} - \texttt{daily\_demand}$, que no es múltiplo
+de 10 salvo cuando la demanda lo es. La cerradura del espacio de estados bajo la
+función de transición contiene \textbf{4\,367 estados}, no 200. El agente pasa la
+mayor parte del tiempo en estados que la especificación no declara.
+\end{quote}
+
+Todos los ajustes se hacen sobre los 4\,367 estados alcanzables, reservando 24
+estados declarados como conjunto de prueba (Sección~\ref{sec:44}).
+
+%--------------------------------------------------------------------------
+\subsection{Entregable 4.1: el problema de escala}
+%--------------------------------------------------------------------------
+
+\subsubsection*{Qué componente domina el gradiente}
+
+El aproximador es lineal, $Q(s,a;w) = w_a^{\top}\phi(s)$, y su actualización es la
+regla LMS / semi-gradiente:
+\[
+  w_a \leftarrow w_a + \alpha\,\bigl[y - w_a^{\top}\phi(s)\bigr]\,
+  \nabla_{w_a} Q(s,a;w),
+  \qquad \nabla_{w_a} Q(s,a;w) = \phi(s).
+\]
+El gradiente \emph{es} el vector de características. Por lo tanto la magnitud del
+paso que recibe la coordenada $i$ es proporcional a $\phi_i(s)$, y el aporte de esa
+coordenada a la norma del gradiente es $\phi_i(s)^2 / \lVert\phi(s)\rVert^2$. Con
+\begin{gather*}
+  \phi(s) = \bigl[\,\texttt{inventory},\;\texttt{days\_to\_expiry},\;
+  \texttt{demand\_idx}\,\bigr], \\[0.3em]
+  \texttt{inventory} \in [0,100],\qquad
+  \texttt{days} \in \{1,7,14,30,60\},\qquad
+  \texttt{demand\_idx} \in \{0,1,2,3\},
+\end{gather*}
+el promedio sobre los 200 estados declarados da:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lS[table-format=2.2]}
+\toprule
+\textbf{Componente} & {\textbf{Aporte a} $\lVert\phi\rVert^2$ \textbf{(\%)}} \\
+\midrule
+\texttt{inventory}       & 74.95 \\
+\texttt{days\_to\_expiry} & 24.96 \\
+\texttt{demand\_idx}      & 0.09 \\
+\bottomrule
+\end{tabular}
+\caption{Participación de cada característica en la norma del gradiente.}
+\end{table}
+
+\noindent
+\textbf{El nivel de inventario domina el gradiente con el 75\,\% y la demanda aporta
+el 0{,}09\,\%}, unas 815 veces menos. La demanda determina si un producto se agota,
+y es la componente que menos peso tiene en el gradiente. El peso asociado a la
+demanda se mueve tres órdenes de magnitud más lento que el del inventario: para
+cuando el aproximador ha aprendido algo sobre la demanda, el resto de los pesos ya
+convergió a una solución que la ignora. El sesgo no es de capacidad sino de ritmo
+de aprendizaje efectivo.
+
+\subsubsection*{Divergencia del entrenamiento}
+
+Para LMS con paso fijo $\alpha$, la condición de convergencia en media es
+\[
+  0 < \alpha < \frac{2}{\lVert\phi(s)\rVert^{2}}.
+\]
+El máximo observado es $\lVert\phi\rVert^{2}_{\max} = 11\,709$ (estado
+$(90, 60, \texttt{crítico})$), de donde
+\[
+  \alpha_{\max} = \frac{2}{11\,709} = 1{,}708\times 10^{-4}.
+\]
+El código entregado usa $\alpha = 0{,}01$ por defecto en \texttt{update}, es decir
+\textbf{58{,}5 veces por encima de la cota de estabilidad}. Se verificó
+empíricamente ajustando $w$ por SGD sobre los estados de entrenamiento:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+$\alpha$ & \textbf{Características originales} & \textbf{Características propuestas} \\
+\midrule
+$10^{-2}$   & diverge (\texttt{overflow}) & converge ($\lVert w\rVert_\infty \approx 3626$) \\
+$10^{-3}$   & diverge (\texttt{overflow}) & --- \\
+$1{,}4\times10^{-4}$ & converge & --- \\
+$10^{-4}$   & converge & --- \\
+$5\times10^{-2}$ & --- & converge ($\approx 3710$) \\
+$10^{-1}$   & --- & converge ($\approx 3720$) \\
+\bottomrule
+\end{tabular}
+\caption{Estabilidad empírica del ajuste por SGD. Con las características
+originales, el $\alpha$ del código diverge; con las propuestas, $\alpha$ puede ser
+hasta 100 veces mayor sin problemas.}
+\end{table}
+
+Adicionalmente, el número de condición de la matriz de Gram
+$\frac{1}{N}\Phi^{\top}\Phi$ pasa de $\kappa = 1\,888$ con las características crudas
+a $\kappa = 26{,}3$ con las mismas tres características normalizadas. Como la
+velocidad de convergencia de un método de primer orden escala con $\kappa$, la
+normalización sola acelera la convergencia en aproximadamente dos órdenes de
+magnitud.
+
+\subsubsection*{Defecto adicional: ausencia de intercepto}
+
+$\phi$ no incluye un término constante y \texttt{weights} se inicializa en cero. Por
+lo tanto, para el estado $(0, d, \texttt{bajo})$ se tiene $\phi = (0, d, 0)$, y para
+$(0, \cdot, \texttt{bajo})$ con $d$ pequeño el vector es casi nulo: el modelo está
+forzado a pasar por el origen. Como se muestra en la Sección~\ref{sec:44}, esto por
+sí solo hace que el $R^2$ del aproximador original sea $-132{,}7$, o sea peor que
+predecir constantemente el promedio de $Q^{*}$.
+
+\subsubsection*{Normalización propuesta por componente}
+
+Cada componente se lleva a $[0,1]$ usando una constante que proviene del propio
+dominio, no de un escalado genérico:
+
+\begin{table}[!ht]
+\centering
+\small
+\begin{tabular}{p{3.1cm}p{4.6cm}p{7.2cm}}
+\toprule
+\textbf{Componente} & \textbf{Transformación} & \textbf{Justificación} \\
+\midrule
+\texttt{inventory} &
+$\texttt{inv}/100 \in [0,1]$ &
+100 es la capacidad real impuesta por el $\texttt{min}(100,\cdot)$ de
+\texttt{transition}; no es una constante arbitraria. \\
+\addlinespace
+\texttt{days\_to\_expiry} &
+$(d-1)/59 \in [0,1]$ más el indicador $\mathbf{1}[d \le 7]$ &
+El rango declarado es $[1,60]$. El indicador replica la forma exacta de la
+penalización $-10\cdot\mathbf{1}[d\le 7]$: sin él, ninguna combinación lineal de $d$
+puede representar un escalón. \\
+\addlinespace
+\texttt{demand\_level} &
+\emph{One-hot} con \texttt{bajo} como base &
+El código ordinal $0,1,2,3$ impone dos supuestos falsos: que la demanda tiene orden
+lineal en el valor y que el espaciado es uniforme. La demanda real es
+$5,15,25,40$, cuyos incrementos son $10,10,15$. Además \texttt{bajo}$=0$ anula la
+característica y hace indistinguibles dos estados con demanda baja. \\
+\bottomrule
+\end{tabular}
+\caption{Normalización propuesta. Con ella $\lVert\phi\rVert^2 \le 5{,}93$ y
+$\alpha_{\max} = 0{,}337$, frente a $1{,}708\times10^{-4}$ del original.}
+\end{table}
+
+%--------------------------------------------------------------------------
+\subsection{Entregable 4.2: interacciones que el modelo lineal no captura}
+%--------------------------------------------------------------------------
+
+Un aproximador lineal sobre $\phi = [\texttt{inv}, d, \texttt{dem}]$ es aditivo: el
+efecto marginal de cada variable es constante y no depende de las otras,
+$\partial Q / \partial \texttt{inv} = w_{a,1}$ sin importar el valor de la demanda.
+En gestión de inventario farmacéutico eso es falso. Las dos interacciones más
+importantes son:
+
+\paragraph{Interacción 1: inventario $\times$ demanda (riesgo de desabasto).}
+El riesgo de \emph{stockout} no depende del inventario ni de la demanda por separado,
+sino de su \textbf{cociente}: los días de cobertura
+\[
+  \texttt{cobertura}(s) = \frac{\texttt{inventory}}{\texttt{daily\_demand}}.
+\]
+Un inventario de 30 unidades es abundante con demanda baja (6 días de cobertura) y
+crítico con demanda crítica (0{,}75 días). Un modelo aditivo asigna a
+$\texttt{inv}=30$ el mismo aporte al valor en ambos casos. Un cociente no es
+expresable como $w_1 x_1 + w_2 x_2$ para ningún $(w_1, w_2)$: es una imposibilidad
+representacional, no un ajuste imperfecto. Se agrega
+explícitamente como característica, saturada a 20 días y normalizada, junto con la
+brecha inmediata $\max(0, \texttt{dem} - \texttt{inv})/40$, que marca los estados en
+los que el desabasto ocurre en el paso siguiente.
+
+\paragraph{Interacción 2: inventario $\times$ vencimiento $\times$ demanda (merma).}
+Las unidades que van a vencerse son las que no alcanzarán a venderse antes del
+vencimiento:
+\[
+  \texttt{merma}(s) = \max\bigl(0,\; \texttt{inventory} - \texttt{daily\_demand}
+  \cdot \texttt{days\_to\_expiry}\bigr).
+\]
+Es un producto seguido de una rectificación. Los 41 productos vencidos por semana
+en producción son exactamente esta cantidad, y el aproximador original no tiene
+ninguna característica que se le parezca. Con
+$d = 60$ y demanda crítica no hay merma con ningún inventario; con $d = 1$ y demanda
+baja casi todo el inventario se pierde. Un término aditivo en $\texttt{inv}$ y otro
+en $d$ no pueden distinguir esos dos casos. Se agrega también
+$\texttt{inv}_n \cdot \mathbf{1}[d\le 7]$, que captura que el costo del inventario
+alto se invierte de signo cuando el producto está por vencer.
+
+%--------------------------------------------------------------------------
+\subsection{Entregable 4.3: versión mejorada de \texttt{preprocess\_state}}
+%--------------------------------------------------------------------------
+
+El vector de características propuesto tiene 12 componentes:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{clp{8.3cm}}
+\toprule
+\textbf{\#} & \textbf{Nombre} & \textbf{Definición y rol} \\
+\midrule
+0  & \texttt{bias}              & $1$ --- intercepto; permite representar estados con $\phi$ casi nulo. \\
+1  & \texttt{inv\_n}            & $\texttt{inv}/100$ \\
+2  & \texttt{inv\_n2}           & $(\texttt{inv}/100)^2$ --- no linealidad del costo de almacenamiento y saturación en la capacidad. \\
+3  & \texttt{exp\_n}            & $(d-1)/59$ \\
+4  & \texttt{near\_expiry}      & $\mathbf{1}[d \le 7]$ --- discontinuidad exacta de \texttt{reward}. \\
+5--7 & \texttt{dem\_*}          & \emph{one-hot} de demanda (\texttt{medio}, \texttt{alto}, \texttt{crítico}; base \texttt{bajo}). \\
+8  & \texttt{dias\_cobertura}   & $\min(\texttt{inv}/\texttt{dem},\,20)/20$ --- interacción 1. \\
+9  & \texttt{riesgo\_merma}     & $\max(0, \texttt{inv} - \texttt{dem}\cdot d)/100$ --- interacción 2. \\
+10 & \texttt{inv\_x\_near\_expiry} & $\texttt{inv}_n \cdot \mathbf{1}[d\le 7]$ \\
+11 & \texttt{brecha\_stockout}  & $\max(0, \texttt{dem} - \texttt{inv})/40$ \\
+\bottomrule
+\end{tabular}
+\caption{Características propuestas. Todas están en $[0,1]$, de modo que
+$\lVert\phi\rVert^2 \le 12$ por construcción (máximo observado: $5{,}93$).}
+\end{table}
+
+\lstinputlisting[caption={\texttt{codigo/preprocesamiento\_mejorado.py}},
+                 label={lst:pre}]{codigo/preprocesamiento_mejorado.py}
+
+\subsubsection*{Cambios al aproximador}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Paso normalizado.} \texttt{update} usa
+  $\alpha_{\text{eff}} = \alpha / \lVert\phi(s)\rVert^{2}$ (regla LMS normalizada),
+  que garantiza estabilidad para cualquier escala de entrada.
+  \item \textbf{Inicialización optimista opcional.} Como ahora existe el intercepto,
+  fijar $w_{a,0} = q_{\text{init}}$ produce $Q(s,a) \approx q_{\text{init}}$ para
+  todo $s$, lo que da exploración dirigida sin tocar $\varepsilon$. Con el $\phi$
+  original esto era imposible.
+  \item \textbf{Compatibilidad.} La firma de \texttt{preprocess\_state} y de
+  \texttt{predict}/\texttt{update} no cambia; solo cambia \texttt{n\_features} de 3
+  a 12. El resto del sistema no requiere modificaciones.
+\end{enumerate}
+
+\subsubsection*{¿Es suficiente el aproximador lineal?}
+
+Sí, para este dominio: $R^2 = 0{,}967$ sobre estados no vistos (entregable 4.4).
+Las no linealidades de este MDP son conocidas y de forma cerrada --- un escalón en
+$d = 7$, un producto rectificado para la merma, un cociente para la cobertura y una
+saturación en la capacidad. Cuando la no linealidad se conoce, incluirla como
+característica y ajustar un modelo lineal encima conserva convergencia garantizada
+bajo aproximación lineal, pesos interpretables y costo de cómputo trivial.
+
+Se requeriría aproximación no lineal si el estado se extendiera con variables cuya
+interacción no se conoce de antemano: estacionalidad, sustitución entre productos o
+demanda estocástica con correlación temporal.
+
+El número de condición del bloque completo de 12 características es
+$\kappa \approx 2{,}1\times10^{3}$, similar al del original, porque
+\texttt{riesgo\_merma} es cero en la mayoría de los estados y queda casi colineal con
+el resto. La normalización arregla la \emph{escala} (que es lo que causa la
+divergencia), no elimina la colinealidad. Se mitiga con regularización ridge
+($\lambda = 10^{-8}$ en los ajustes reportados) o eliminando la característica 10,
+que es la de menor aporte marginal.
+
+%--------------------------------------------------------------------------
+\subsection{Entregable 4.4: comparación de error cuadrático medio}
+\label{sec:44}
+%--------------------------------------------------------------------------
+
+\subsubsection*{Protocolo}
+
+\begin{itemize}[leftmargin=*]
+  \item Objetivo: $Q^{*}(s,a)$ exacto por iteración de valor ($\gamma = 0{,}99$,
+        tolerancia $10^{-10}$) sobre los 4\,367 estados alcanzables.
+  \item Conjunto de prueba: \textbf{24 estados representativos}, tomados de forma
+        estratificada sobre los 200 estados declarados para cubrir todo el rango de
+        inventario, los cinco niveles de vencimiento y los cuatro de demanda.
+  \item Conjunto de entrenamiento: los 4\,343 estados restantes. Los estados de
+        prueba \emph{no} se usan para ajustar.
+  \item Ajuste: mínimos cuadrados exacto por acción (ecuaciones normales con ridge
+        $\lambda = 10^{-8}$). Se usa la solución óptima en lugar de SGD para que la
+        comparación mida \textbf{capacidad de representación} y no calidad del
+        optimizador; el efecto sobre el optimizador se reporta por separado en 4.1.
+  \item Métrica: $\mathrm{MSE} = \frac{1}{|S|\cdot|A|}\sum_{s}\sum_{a}
+        \bigl(Q^{*}(s,a) - w_a^{\top}\phi(s)\bigr)^{2}$.
+\end{itemize}
+
+\subsubsection*{Resultado global}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lS[table-format=7.1]S[table-format=7.1]S[table-format=-3.3]}
+\toprule
+\textbf{Aproximador} & {\textbf{MSE entren.}} & {\textbf{MSE prueba}} & {$\bm{R^2}$ \textbf{prueba}} \\
+\midrule
+Original (3 caract., sin intercepto)      & 1635206.0 & 2759751.7 & -132.716 \\
+Original + intercepto (4 caract.)         & 1041.6    & 990.1     & 0.952 \\
+\textbf{Propuesto (12 caract.)}           & 318.2     & 678.4     & 0.967 \\
+\bottomrule
+\end{tabular}
+\caption{Comparación de MSE. La varianza de $Q^{*}$ es
+$\sigma^2 = 20\,638{,}8$; $R^2 = 1 - \mathrm{MSE}/\sigma^2$.
+Reducción del MSE de prueba respecto al original: \textbf{99{,}98\,\%}.}
+\label{tab:mse}
+\end{table}
+
+La fila intermedia (características originales más un intercepto) es una ablación.
+El salto de $2{,}76\times10^{6}$ a $990$ se debe casi por completo al intercepto
+faltante, no a las características nuevas. Aislado ese efecto, las interacciones del
+entregable 4.2 aportan una \textbf{reducción adicional del 31{,}5\,\%} del MSE de
+prueba ($990 \to 678$) y suben el $R^2$ de $0{,}952$ a $0{,}967$.
+
+El ajuste original es \emph{peor que la predicción constante} ($R^2 < 0$). Un
+aproximador con $R^2$ negativo alimentando una política greedy
+$\arg\max_a Q(s,a)$ no ordena las acciones mejor que el azar en los estados donde
+$\phi$ es pequeño, que son los de inventario bajo, donde ocurren los desabastos.
+
+\subsubsection*{Detalle por estado (24 estados de prueba)}
+
+\begin{longtable}{rrlS[table-format=4.1]cS[table-format=8.1]S[table-format=4.1]}
+\toprule
+\textbf{Inv.} & $\bm{d}$ & \textbf{Demanda} & {$\bm{\max_a Q^{*}}$} & $\bm{a^{*}}$ &
+{\textbf{MSE original}} & {\textbf{MSE propuesto}} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Inv.} & $\bm{d}$ & \textbf{Demanda} & {$\bm{\max_a Q^{*}}$} & $\bm{a^{*}}$ &
+{\textbf{MSE original}} & {\textbf{MSE propuesto}} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+  0 &  1 & bajo    & 3767.5 & 50 & 13610118.3 &  233.3 \\
+  0 & 14 & bajo    & 3826.1 & 50 &  9319062.9 &  216.8 \\
+  0 & 60 & bajo    & 4174.6 & 50 &   887390.8 &  653.9 \\
+ 10 &  7 & medio   & 3762.6 & 50 &  6820040.4 &  327.4 \\
+ 10 & 30 & medio   & 3961.0 & 50 &  2497293.7 &  211.5 \\
+ 20 &  1 & medio   & 3772.5 & 50 &  7258968.9 &  506.5 \\
+ 20 & 14 & alto    & 3813.7 & 50 &  2344597.2 &  105.3 \\
+ 20 & 60 & alto    & 4162.2 & 50 &   335822.6 &  457.4 \\
+ 30 &  7 & alto    & 3767.6 & 50 &  2600258.0 &  982.1 \\
+ 30 & 30 & crítico & 3895.1 & 50 &     2425.2 & 1067.7 \\
+ 40 &  1 & crítico & 3726.0 & 50 &  1196949.6 &  264.0 \\
+ 40 & 14 & crítico & 3784.5 & 50 &   210012.0 & 1988.1 \\
+ 50 &  1 & bajo    & 3797.5 & 50 &  6165322.4 &  711.7 \\
+ 50 & 14 & bajo    & 3856.0 & 50 &  3409680.5 &    2.9 \\
+ 50 & 60 & bajo    & 4204.5 & 50 &    69797.3 &   94.4 \\
+ 60 &  7 & medio   & 3797.5 & 50 &  1998061.6 &  293.5 \\
+ 60 & 30 & medio   & 3995.9 & 50 &   146148.3 &  140.5 \\
+ 70 &  1 & medio   & 3800.0 & 50 &  2222812.5 &  338.2 \\
+ 70 & 14 & alto    & 3856.0 & 50 &   121051.8 &   31.5 \\
+ 70 & 60 & alto    & 4204.5 & 50 &  3107585.7 &  281.0 \\
+ 80 &  7 & alto    & 3800.0 & 50 &   177655.3 &  503.7 \\
+ 80 & 30 & crítico & 3993.4 & 50 &  1300516.0 & 1923.6 \\
+ 90 &  1 & crítico & 3800.0 & 50 &      444.9 & 3752.1 \\
+ 90 & 14 & crítico & 3858.5 & 50 &   432025.0 & 1194.6 \\
+\caption{MSE por estado, promediado sobre las 6 acciones. El aproximador propuesto
+gana en 23 de los 24 estados.}
+\label{tab:detalle}
+\end{longtable}
+
+\subsubsection*{Lectura de la tabla}
+
+\begin{itemize}[leftmargin=*]
+  \item El aproximador propuesto gana en \textbf{23 de 24} estados. El único
+        estado donde pierde es $(90,1,\text{crítico})$, con inventario máximo y
+        vencimiento inmediato: ahí $\lVert\phi_{\text{orig}}\rVert$ es grande y el
+        modelo sin intercepto acierta la escala de $Q^{*}$ por coincidencia de
+        magnitud.
+  \item El error del original crece a medida que el inventario baja
+        ($1{,}4\times10^{7}$ en $\texttt{inv}=0$), exactamente el efecto del
+        intercepto ausente descrito en 4.1.
+  \item El error residual del modelo propuesto se concentra en los estados de
+        demanda crítica con vencimiento cercano
+        ($(90,1,\text{crítico})$: 3752). Son los estados de frontera del dominio y
+        los peor cubiertos por el conjunto de entrenamiento.
+  \item La acción óptima es \texttt{pedir 50} en los 24 estados de prueba. Con la
+        función de recompensa original, pedir el máximo \emph{sí} es la política
+        óptima del MDP: el ``94\,\% de estados con \texttt{pedir\_50}'' de las
+        métricas de entrenamiento no es un fallo de aprendizaje, sino el resultado
+        de una recompensa mal especificada. Ninguna corrección del preprocesamiento
+        lo modifica.
+\end{itemize}
+
+\subsubsection*{Reproducibilidad}
+
+\begin{lstlisting}[language=bash, numbers=none, caption={Reproducción de los resultados}]
+python3 codigo/experimento_mse.py
+\end{lstlisting}
+
+\noindent
+No requiere dependencias externas (Python puro). Los valores crudos, incluidos los
+pesos ajustados, quedan en \texttt{resultados/resultados\_44.json}.
+
+\clearpage
+%==========================================================================
+\section{Respuestas a las preguntas de integración}
+%==========================================================================
+
+\subsection{Pregunta 1: Diagnóstico sistémico}
+
+\vspace{4cm}
+
+\subsection{Pregunta 2: Causa raíz}
+
+\vspace{4cm}
+
+\subsection{Pregunta 3: Plan de corrección mínimo viable}
+
+\vspace{4cm}
+
+\subsection{Pregunta 4: Compatibilidad de correcciones}
+
+\vspace{4cm}
+
+\clearpage
+%==========================================================================
+\section{Reflexión grupal}
+%==========================================================================
+
+\vspace{8cm}
+
+\clearpage
+\appendix
+%==========================================================================
+\section{Anexo: uso de IA generativa}
+%==========================================================================
+
+Se usó IA generativa como apoyo de herramienta, no para el análisis del componente.
+A continuación los prompts empleados y la respuesta que se obtuvo de cada uno.
+
+\subsection*{Prompt 1: compilación del documento}
+
+\begin{quote}
+\small
+\ttfamily
+No tengo \texttt{pdflatex} instalado en el sistema y estoy en NixOS. Necesito compilar
+\texttt{informe\_grupo4.tex} a PDF sin instalar nada de forma permanente. El documento usa
+\texttt{babel} en español, \texttt{booktabs}, \texttt{longtable}, \texttt{siunitx},
+\texttt{enumitem} y \texttt{listings} con \texttt{lstinputlisting}. Dame el comando exacto
+con \texttt{nix-shell -p}, indicando qué esquema de TeX Live necesito para que no
+falte ningún paquete, y explícame por qué hay que correr \texttt{pdflatex} más de una vez.
+\end{quote}
+
+\noindent
+\textbf{Respuesta obtenida:}
+
+\begin{lstlisting}[language=bash, numbers=none]
+nix-shell -p texlive.combined.scheme-full --run \
+  'pdflatex -interaction=nonstopmode -halt-on-error informe_grupo4.tex && \
+   pdflatex -interaction=nonstopmode -halt-on-error informe_grupo4.tex'
+\end{lstlisting}
+
+\subsection*{Prompt 2: escritura de las fórmulas}
+
+\begin{quote}
+\small
+\ttfamily
+Convierte estas expresiones a \LaTeX{} con \texttt{amsmath}, en modo display y
+tipográficamente correctas:
+(1) la regla de actualización semi-gradiente para un aproximador lineal
+$Q(s,a;w)=w_a^\top \phi(s)$, dejando explícito que el gradiente respecto a $w_a$ es
+$\phi(s)$;
+(2) la condición de estabilidad de LMS $0 < \alpha < 2/\lVert\phi(s)\rVert^2$;
+(3) el error cuadrático medio promediado sobre estados y acciones.
+Requisitos: usa \texttt{\textbackslash lVert}/\texttt{\textbackslash rVert} y no
+\texttt{||}; nombres de variables del código en \texttt{\textbackslash texttt}
+dentro de modo matemático; y si una línea se pasa del margen, parte la ecuación con
+\texttt{gather*} en vez de dejar overfull hbox.
+\end{quote}
+
+\noindent
+\textbf{Respuesta obtenida:}
+
+Regla de actualización semi-gradiente:
+\[
+  w_a \leftarrow w_a + \alpha\,\bigl[y - w_a^{\top}\phi(s)\bigr]\,
+  \nabla_{w_a} Q(s,a;w),
+  \qquad \nabla_{w_a} Q(s,a;w) = \phi(s).
+\]
+
+\noindent
+Condición de estabilidad de LMS:
+\[
+  0 < \alpha < \frac{2}{\lVert\phi(s)\rVert^{2}}.
+\]
+
+\noindent
+Error cuadrático medio sobre estados y acciones:
+\[
+  \mathrm{MSE} = \frac{1}{|S|\cdot|A|}\sum_{s}\sum_{a}
+  \bigl(Q^{*}(s,a) - w_a^{\top}\phi(s)\bigr)^{2}.
+\]
+
+\end{document}

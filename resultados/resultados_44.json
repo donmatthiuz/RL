@@ -1,0 +1,369 @@
+{
+  "n_estados_declarados": 200,
+  "n_estados_alcanzables": 4367,
+  "n_train": 4343,
+  "n_test": 24,
+  "mse": {
+    "original": {
+      "train": 1635205.9917468517,
+      "test": 2759751.714493959
+    },
+    "original_mas_bias": {
+      "train": 1041.588394405855,
+      "test": 990.0678459858987
+    },
+    "mejorado": {
+      "train": 318.17445557268326,
+      "test": 678.3982785101475
+    }
+  },
+  "reduccion_mse_test_pct": 99.97541814088031,
+  "reduccion_vs_bias_pct": 31.479617153448103,
+  "r2_test": {
+    "original": -132.7164885170452,
+    "original_mas_bias": 0.952028874531148,
+    "mejorado": 0.9671300011729429
+  },
+  "numero_condicion": {
+    "original": {
+      "lambda_min": 1.740675352617044,
+      "lambda_max": 3286.7232170855136,
+      "kappa": 1888.1885195559535
+    },
+    "original_normalizado": {
+      "lambda_min": 0.06202739787492967,
+      "lambda_max": 1.6294217163697347,
+      "kappa": 26.269386951476758
+    },
+    "mejorado": {
+      "lambda_min": 0.0008929262914194306,
+      "lambda_max": 1.9023783480628431,
+      "kappa": 2130.498750393773
+    }
+  },
+  "aporte_norma_pct": {
+    "original": {
+      "inventory": 74.94674836300523,
+      "days_to_expiry": 24.961211770584057,
+      "demand_idx": 0.09203986641070819
+    },
+    "mejorado": {
+      "bias": 31.813938132399805,
+      "inv_n": 9.066972367733946,
+      "inv_n2": 4.87803113384086,
+      "exp_n": 8.274731279826147,
+      "near_expiry": 12.725575252959922,
+      "dem_medio": 7.953484533099951,
+      "dem_alto": 7.953484533099951,
+      "dem_critico": 7.953484533099951,
+      "dias_cobertura": 2.6446910199704523,
+      "riesgo_merma": 1.0458832161026435,
+      "inv_x_near_expiry": 3.626788947093577,
+      "brecha_stockout": 2.0629350507727997
+    }
+  },
+  "varianza_Q": 20638.828801895783,
+  "norma_cuadrada_phi": {
+    "original": {
+      "min": 1.0,
+      "max": 11709.0,
+      "alpha_max": 0.00017080877957126997
+    },
+    "mejorado": {
+      "min": 1.0641742674518817,
+      "max": 5.9286,
+      "alpha_max": 0.3373477718179671
+    }
+  },
+  "sgd_original": {
+    "0.01": null,
+    "0.001": null,
+    "0.0001": 37.83435342377355,
+    "0.00014": 39.219418825846844
+  },
+  "sgd_mejorado": {
+    "0.01": 3625.6697385254292,
+    "0.05": 3710.26192518811,
+    "0.1": 3720.2091511685317
+  },
+  "tabla_test": [
+    {
+      "estado": [
+        0,
+        1,
+        "bajo"
+      ],
+      "q_max": 3767.5499999981494,
+      "accion_optima": 50,
+      "mse_original": 13610118.310683021,
+      "mse_mejorado": 233.2788155964419
+    },
+    {
+      "estado": [
+        0,
+        14,
+        "bajo"
+      ],
+      "q_max": 3826.069850597325,
+      "accion_optima": 50,
+      "mse_original": 9319062.942842223,
+      "mse_mejorado": 216.79735785011226
+    },
+    {
+      "estado": [
+        0,
+        60,
+        "bajo"
+      ],
+      "q_max": 4174.583553597446,
+      "accion_optima": 50,
+      "mse_original": 887390.7803242205,
+      "mse_mejorado": 653.8508389633263
+    },
+    {
+      "estado": [
+        10,
+        7,
+        "medio"
+      ],
+      "q_max": 3762.599999995687,
+      "accion_optima": 50,
+      "mse_original": 6820040.384930258,
+      "mse_mejorado": 327.38668300610396
+    },
+    {
+      "estado": [
+        10,
+        30,
+        "medio"
+      ],
+      "q_max": 3960.969410457531,
+      "accion_optima": 50,
+      "mse_original": 2497293.709491443,
+      "mse_mejorado": 211.4820764136384
+    },
+    {
+      "estado": [
+        20,
+        1,
+        "medio"
+      ],
+      "q_max": 3772.5499999955546,
+      "accion_optima": 50,
+      "mse_original": 7258968.877484594,
+      "mse_mejorado": 506.51183959176456
+    },
+    {
+      "estado": [
+        20,
+        14,
+        "alto"
+      ],
+      "q_max": 3813.7196005948545,
+      "accion_optima": 50,
+      "mse_original": 2344597.242995268,
+      "mse_mejorado": 105.27844800761432
+    },
+    {
+      "estado": [
+        20,
+        60,
+        "alto"
+      ],
+      "q_max": 4162.233303595886,
+      "accion_optima": 50,
+      "mse_original": 335822.57289192604,
+      "mse_mejorado": 457.37928633356097
+    },
+    {
+      "estado": [
+        30,
+        7,
+        "alto"
+      ],
+      "q_max": 3767.599999995597,
+      "accion_optima": 50,
+      "mse_original": 2600258.019185802,
+      "mse_mejorado": 982.1412889201641
+    },
+    {
+      "estado": [
+        30,
+        30,
+        "critico"
+      ],
+      "q_max": 3895.1020151037087,
+      "accion_optima": 50,
+      "mse_original": 2425.2156528368264,
+      "mse_mejorado": 1067.667235983909
+    },
+    {
+      "estado": [
+        40,
+        1,
+        "critico"
+      ],
+      "q_max": 3725.9925299403385,
+      "accion_optima": 50,
+      "mse_original": 1196949.6042827093,
+      "mse_mejorado": 264.00357744773095
+    },
+    {
+      "estado": [
+        40,
+        14,
+        "critico"
+      ],
+      "q_max": 3784.512380539995,
+      "accion_optima": 50,
+      "mse_original": 210012.02313626534,
+      "mse_mejorado": 1988.0504462525143
+    },
+    {
+      "estado": [
+        50,
+        1,
+        "bajo"
+      ],
+      "q_max": 3797.499999998149,
+      "accion_optima": 50,
+      "mse_original": 6165322.404210754,
+      "mse_mejorado": 711.674826391249
+    },
+    {
+      "estado": [
+        50,
+        14,
+        "bajo"
+      ],
+      "q_max": 3856.0198505973426,
+      "accion_optima": 50,
+      "mse_original": 3409680.541906696,
+      "mse_mejorado": 2.914401892959717
+    },
+    {
+      "estado": [
+        50,
+        60,
+        "bajo"
+      ],
+      "q_max": 4204.533553597455,
+      "accion_optima": 50,
+      "mse_original": 69797.34757815035,
+      "mse_mejorado": 94.44960518375557
+    },
+    {
+      "estado": [
+        60,
+        7,
+        "medio"
+      ],
+      "q_max": 3797.4999999957304,
+      "accion_optima": 50,
+      "mse_original": 1998061.5920939764,
+      "mse_mejorado": 293.4527167694105
+    },
+    {
+      "estado": [
+        60,
+        30,
+        "medio"
+      ],
+      "q_max": 3995.8694104575657,
+      "accion_optima": 50,
+      "mse_original": 146148.27002313986,
+      "mse_mejorado": 140.52670036160913
+    },
+    {
+      "estado": [
+        70,
+        1,
+        "medio"
+      ],
+      "q_max": 3799.999999995555,
+      "accion_optima": 50,
+      "mse_original": 2222812.5405211467,
+      "mse_mejorado": 338.17104069225513
+    },
+    {
+      "estado": [
+        70,
+        14,
+        "alto"
+      ],
+      "q_max": 3856.0198505949375,
+      "accion_optima": 50,
+      "mse_original": 121051.84880253185,
+      "mse_mejorado": 31.526347922424463
+    },
+    {
+      "estado": [
+        70,
+        60,
+        "alto"
+      ],
+      "q_max": 4204.533553595942,
+      "accion_optima": 50,
+      "mse_original": 3107585.724856919,
+      "mse_mejorado": 281.0415252433814
+    },
+    {
+      "estado": [
+        80,
+        7,
+        "alto"
+      ],
+      "q_max": 3799.999999995685,
+      "accion_optima": 50,
+      "mse_original": 177655.3440761495,
+      "mse_mejorado": 503.6811922569423
+    },
+    {
+      "estado": [
+        80,
+        30,
+        "critico"
+      ],
+      "q_max": 3993.3694104535875,
+      "accion_optima": 50,
+      "mse_original": 1300515.9622982836,
+      "mse_mejorado": 1923.645016805458
+    },
+    {
+      "estado": [
+        90,
+        1,
+        "critico"
+      ],
+      "q_max": 3799.999999990339,
+      "accion_optima": 50,
+      "mse_original": 444.9320739326599,
+      "mse_mejorado": 3752.0800989584536
+    },
+    {
+      "estado": [
+        90,
+        14,
+        "critico"
+      ],
+      "q_max": 3858.5198505904364,
+      "accion_optima": 50,
+      "mse_original": 432024.95551273297,
+      "mse_mejorado": 1194.5673173987582
+    }
+  ],
+  "pesos_mejorado_a0": {
+    "bias": 3696.6454312601127,
+    "inv_n": 147.32209017751762,
+    "inv_n2": 29.38635368733535,
+    "exp_n": 461.20189050319436,
+    "near_expiry": 14.467794035460114,
+    "dem_medio": -49.32475005125605,
+    "dem_alto": -80.21054739841266,
+    "dem_critico": -200.06902517884097,
+    "dias_cobertura": -105.43385311832914,
+    "riesgo_merma": 14.207993151102412,
+    "inv_x_near_expiry": -6.514957843055889,
+    "brecha_stockout": 3.2366013729825425
+  }
+}
