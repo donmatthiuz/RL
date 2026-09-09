@@ -206,7 +206,7 @@ característica y hace indistinguibles dos estados con demanda baja. \\
 \bottomrule
 \end{tabular}
 \caption{Normalización propuesta. Con ella $\lVert\phi\rVert^2 \le 5{,}93$ y
-$\alpha_{\max} = 0{,}337$, frente a $1{,}708\times10^{-4}$ del original.}
+$\alpha_{\mathrm{max}} = 0{,}337$, frente a $1{,}708\times10^{-4}$ del original.}
 \end{table}
 
 %--------------------------------------------------------------------------
@@ -490,6 +490,127 @@ Corregir el MDP y la recompensa repara exclusivamente el modelado del entorno y 
 \vspace{4cm}
 
 \subsection{Pregunta 3: Plan de corrección mínimo viable}
+
+\noindent\emph{Grupos consultados: 1 (MDP corregido), 2 (recompensa corregida),
+3 (algoritmo corregido y esquema de decaimiento), 5 (métricas de cobertura),
+6 (diagnóstico y proyección de curvas) y 7 (análisis del gap y protocolo de
+evaluación).}
+
+\subsubsection*{Criterio de ``mínimo viable''}
+
+El gap de producción tiene tres síntomas cuantificados: sobre-stock (costo de
+almacenamiento \num{8400}/semana contra un objetivo de \num{3200}, es decir
+$2{,}6\times$), merma (41 productos vencidos/semana) y desabasto (23 stockouts/semana,
+satisfacción del cliente $0{,}61$), frente a una recompensa en simulación de $51{,}2$.
+Las Preguntas 1 y 2 establecieron que la causa no es un solo componente: la
+recompensa fija el objetivo equivocado (\emph{reward hacking}, Grupo 2) y el
+optimizador es numéricamente incapaz de alcanzar cualquier objetivo
+($\alpha = 0{,}9$ contra $\alpha_{\max} = 1{,}708\times10^{-4}$, Grupos 3 y 4).
+
+El plan mínimo viable es el subconjunto más pequeño de correcciones que (a)
+reorienta el objetivo y (b) hace converger al optimizador hacia él, dejando fuera
+toda mejora que no sea necesaria para cerrar el gap en dos semanas. Se ordena por
+\emph{leverage por hora de trabajo}: primero los cambios de bajo costo que
+desbloquean a los demás.
+
+\subsubsection*{Las cuatro correcciones del plan}
+
+\begin{table}[h]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}c p{2.9cm} p{3.3cm} p{7.3cm}@{}}
+\toprule
+\textbf{P} & \textbf{Cambio} & \textbf{Componente que modifica} & \textbf{Métrica y mejora esperada} \\
+\midrule
+1 & Recompensa corregida de tres componentes (Grupo 2)
+  & \texttt{reward()}; misma firma, $\sim$10 líneas
+  & Costo almacenamiento $\num{8400}\to\sim\num{3200}$/sem ($-62\%$); vencidos
+    $41 \to \sim 2$/sem ($-95\%$). La política ``pedir 50'' pasa de óptima a
+    acumular $-842{,}3$ ($\sigma = 476{,}2$); la política balanceada alcanza
+    $+144{,}4$. \\
+\addlinespace
+1 & Corrección de \texttt{train} + decaimiento de $\alpha$ y $\varepsilon$
+    (Grupo 3), o el paso LMS normalizado del Entregable 4.3
+  & \texttt{train()}, hiperparámetros
+  & Error TD terminal $35{,}8 \to <5$; varianza entre episodios
+    $\num{39849} \to <100$ (proyección Grupo 6). Sin este cambio, el Grupo 6
+    midió que aun con la recompensa de G2 la recompensa de cola queda en
+    $-627{,}7$ y la política colapsa a ``pedir 10'' en el $25{,}5\%$ de los estados. \\
+\addlinespace
+2 & \texttt{preprocess\_state} mejorado: normalización + intercepto +
+    interacciones (Entregable 4.3)
+  & \texttt{preprocess\_state()}, \texttt{n\_features} $3\to12$
+  & MSE de prueba de $2{,}76\times10^{6}$ a $678$ ($-99{,}98\%$); $R^2$ de prueba
+    de $-132{,}7$ a $0{,}967$; paso admisible de $1{,}7\times10^{-4}$ a $0{,}337$.
+    La política greedy deja de ordenar las acciones al azar en los estados de
+    inventario bajo, donde ocurren los stockouts. \\
+\addlinespace
+3 & Inicialización optimista $w_{a,0} = q_{\text{init}} \approx 4200$ (Grupo 5;
+    habilitada por el intercepto de P2)
+  & Inicialización de \texttt{weights} / tabla \texttt{Q}
+  & Cobertura de pares $(s,a)$ y reducción de los stockouts atribuibles a
+    estados no visitados (Grupos 5 y 7). Costo de implementación casi nulo y
+    sin riesgo en producción: no explora físicamente, solo cambia el orden de
+    visita en simulación. \\
+\bottomrule
+\end{tabular}
+\caption{Plan mínimo viable. Columna \textbf{P}: prioridad. Las dos correcciones
+de prioridad 1 son co-requisitos: cada una por separado no cierra el gap
+(Preguntas 1 y 2).}
+\label{tab:plan}
+\end{table}
+
+\subsubsection*{Cronograma de dos semanas}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Semana 1.}
+    Días 1--2: implementar y probar la recompensa de G2 (P1a); es un cambio
+    local y sin dependencias.
+    Días 1--5 (en paralelo): corregir \texttt{train}, introducir el decaimiento
+    $\alpha_t = \alpha_0/(1 + t/\tau)$ y $\varepsilon_t$ decreciente de G3 (P1b).
+    Días 4--5: primer re-entrenamiento con features originales para aislar el
+    efecto de P1 y comparar contra la ablación de G6.
+  \item \textbf{Semana 2.}
+    Días 6--9: integrar \texttt{preprocess\_state} de 12 características y el
+    paso normalizado (P2); actualizar \texttt{n\_features} y verificar que
+    \texttt{predict}/\texttt{update} no cambian de firma.
+    Días 9--10: activar la inicialización optimista (P3).
+    Días 11--13: re-entrenamiento completo con las cuatro correcciones.
+    Día 14: validación con el protocolo de evaluación de G7 (pruebas de estrés
+    sobre estados de demanda crítica y vencimiento cercano) y curvas de G6.
+\end{enumerate}
+
+\subsubsection*{Qué queda fuera del plan mínimo y por qué}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{El MDP de cinco variables completo de G1.} La expansión completa
+    lleva el espacio de $200$ a $\num{3600}$ estados ($\times 18$) y de $\num{1200}$
+    a $\num{21600}$ pares $(s,a)$; G1 estima que se requerirían $\sim\num{18000}$
+    episodios para conservar la densidad de visitas, incompatible con dos semanas.
+    Se incorpora \emph{solo} la variable \texttt{unidades\_en\_transito}
+    ($\times 6$, $\to \num{1200}$ estados), que es la mínima necesaria para
+    restaurar la propiedad de Markov (entregable 1.1 de G1) y eliminar la
+    ambigüedad de transición que alimenta los stockouts. La \texttt{tendencia\_demanda}
+    (demanda estocástica, entregable 1.2) se difiere a una fase~2: mejora el
+    realismo pero el gap actual se explica sin ella.
+  \item \textbf{Aproximación no lineal.} El Entregable 4.3 mostró $R^2 = 0{,}967$
+    sobre estados no vistos con características lineales diseñadas; una red no
+    aporta lo suficiente para justificar su costo.
+  \item \textbf{UCB o exploración por novedad.} La inicialización optimista
+    entrega la mayor parte del beneficio de cobertura a una fracción del costo de
+    implementación y sin riesgo operativo.
+\end{itemize}
+
+\subsubsection*{Resultado agregado esperado}
+
+Con las cuatro correcciones aplicadas se proyecta (a confirmar contra las curvas
+finales de G6 y el protocolo de G7): stockouts $23 \to <5$/semana; costo de
+almacenamiento $\num{8400} \to \sim\num{3400}$/semana (dentro de $\sim 1{,}05\times$
+el objetivo); vencidos $41 \to <5$/semana; satisfacción $0{,}61 \to >0{,}90$. El
+gap simulación--producción se cierra porque el protocolo de G7 lo detecta con
+pruebas de estrés sobre estados raros antes del despliegue, no porque desaparezca
+por sí solo.
 
 \vspace{4cm}
 
