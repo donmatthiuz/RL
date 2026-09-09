@@ -40,6 +40,7 @@ Edwin Jose Gabriel De Leon Garcia & 22809 & \texttt{EJGDLG} \\
 Gustavo Adolfo Cruz Bardales      & 22779 & \texttt{G2309} \\
 Josué Emanuel Say Garcia          & 22801 & \texttt{JosueSay} \\
 Mathew Alexander Cordero Aquino   & 22982 & \texttt{donmatthiuz} \\
+Carlos Alberto Valladares Guerra  & 221164 & \texttt{vgcarlol} \\
 \bottomrule
 \end{tabular}}
 \date{\today}
@@ -453,6 +454,34 @@ pesos ajustados, quedan en \texttt{resultados/resultados\_44.json}.
 %==========================================================================
 
 \subsection{Pregunta 1: Diagnóstico sistémico}
+
+Con base en el MDP estocástico formulado por el Grupo~1, la función de recompensa multicomponente diseñada por el Grupo~2, la ablación empírica y curvas proyectadas por el Grupo~6, y el análisis de aproximación y estabilidad de nuestro Grupo~4, \textbf{predecimos categóricamente que el agente NO aprenderá una política mejor si únicamente se aplican las correcciones del MDP y de la función de recompensa sin modificar el algoritmo de aprendizaje ni la estrategia de exploración}.
+
+Aunque la corrección conjunta del MDP y de la señal de recompensa repara la especificación matemática del entorno y reorienta teóricamente los incentivos hacia políticas de inventario sostenibles, el proceso de optimización del agente colapsa inevitablemente debido a tres fallas estructurales y cuantitativas:
+
+\begin{enumerate}
+    \item \textbf{Eficacia teórica aislada de la recompensa de G2:}
+    Bajo la función corregida del Grupo~2 ($R_{\text{corregida}}$), en una simulación de $1\,000$ episodios y $30$ pasos por episodio (semilla $3104$), la política viciada de ``pedir siempre $50$'' es severamente penalizada, acumulando una recompensa media de $-842.29$ ($\sigma = 476.22$), con un inventario promedio saturado de $97.98$ unidades y $18.11$ pasos por episodio en ventana de vencimiento. Por el contrario, una política balanceada alcanza una recompensa acumulada media positiva de $+144.40$ ($\sigma = 67.81$), reduciendo el inventario promedio a $5.76$ unidades, los pasos en riesgo de vencimiento a $7.48$ y manteniendo $0.00$ pasos con desabasto (\textit{stockouts}). Esto evidencia que la señal de recompensa corregida contiene el gradiente de incentivos adecuado para guiar al agente.
+
+    \item \textbf{Explosión del espacio de búsqueda de G1 frente a la inestabilidad de G3 y G4:}
+    Para restaurar la propiedad de Markov y dotar de dinamismo temporal a la demanda, el Grupo~1 amplió la tupla de estado a 5 variables: $s_t = (I_t, E_t, L_t, T_t, D_t)$, incorporando las unidades en tránsito ($T_t \in \{0, 10, 20, 30, 40, 50\}$) y la tendencia de demanda ($D_t \in \{\text{bajando, estable, subiendo}\}$). Dicha corrección expande el espacio de estados de $200$ nominales a $3\,600$ estados discretos, y el espacio de pares estado-acción de $1\,200$ a $21\,600$ (un factor de multiplicación exacto de $18\times$).
+
+    Si se mantiene el algoritmo de aprendizaje original:
+    \begin{itemize}
+        \item El valor fijo $\alpha = 0.9$ es catastrófico para la convergencia. Como demostró analíticamente nuestro Grupo~4 mediante la condición LMS ($0 < \alpha < \frac{2}{\|\phi(s)\|^2}$), el máximo paso admisible antes de divergir numéricamente es $\alpha_{\max} \approx 1.708 \times 10^{-4}$. Un valor $\alpha = 0.9$ se encuentra tres órdenes de magnitud por encima de la cota de estabilidad.
+        \item Al contar con un espacio de búsqueda $18$ veces mayor, cada par $(s, a)$ se visita con una frecuencia mucho menor durante $1\,000$ episodios, haciendo que las actualizaciones con un $\alpha$ constante y excesivo generen oscilaciones caóticas y divergencia en las aproximaciones de valor en lugar de un aprendizaje asintótico.
+    \end{itemize}
+
+    \item \textbf{Evidencia empírica de ablación (G6) y deficiencia de cobertura ($\epsilon = 0.05$):}
+    El experimento de ablación controlado del Grupo~6 valida de forma empírica la incapacidad del optimizador original para alcanzar la política esperada:
+    \begin{itemize}
+        \item Al ejecutar el entrenamiento aplicando \textbf{únicamente la recompensa corregida de G2} pero manteniendo el algoritmo original ($\alpha = 0.9$, $\epsilon = 0.05$), el agente no logró acercarse a la cota óptima ($+144.40$): la recompensa acumulada colapsó a un promedio en cola de $-627.73$, con un error TD absoluto terminal inestable de $35.80$ y una varianza masiva de $39\,849.11$.
+        \item La política colapsó de manera prematura a una regla subóptima y pasiva: la acción dominante pasó a ser pedir $10$ unidades en apenas el $25.5\%$ de los estados visitados, dejando al resto del espacio sin converger adecuadamente.
+        \item Bajo $\epsilon = 0.05$, el agente actúa de manera puramente \textit{greedy} el $95\%$ del tiempo. Con un horizonte de $30$ pasos por episodio, el Grupo~1 demostró que se requerirían aproximadamente $18\,000$ episodios (en lugar de los $1\,000$ asignados) para conservar una densidad de visitas equiparable por estado. Con una tasa estática tan baja, los estados críticos y de demanda alta rara vez se visitan, perpetuando desabastos en la inferencia en producción.
+    \end{itemize}
+\end{enumerate}
+
+Corregir el MDP y la recompensa repara exclusivamente el modelado del entorno y la métrica de desempeño (el ``qué'' optimizar), pero deja inalterada la dinámica del algoritmo y la exploración (el ``cómo'' aprender). Sin un algoritmo numéricamente estable (mediante el decaimiento de $\alpha$ propuesto por el Grupo~3 o el paso normalizado LMS de nuestro Grupo~4) y sin un mecanismo de exploración eficiente en espacios de alta dimensionalidad (Grupo~5), el agente es incapaz de converger y termina atrapado en políticas degeneradas.
 
 \vspace{4cm}
 
