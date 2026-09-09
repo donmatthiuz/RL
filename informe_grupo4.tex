@@ -502,7 +502,11 @@ Corregir el MDP y la recompensa repara exclusivamente el modelado del entorno y 
 \section{Reflexión grupal}
 %==========================================================================
 
-\vspace{8cm}
+Durante la fase previa de análisis individual, nuestro equipo llegó a la sesión con una hipótesis clara: el mal desempeño del agente se debía principalmente a la deficiente ingeniería de características y a la escala sin normalizar en el preprocesamiento. Al constatar que el inventario concentraba el 75\,\% de la norma del gradiente frente a apenas el 0.09\,\% de la demanda, y al comprobar analíticamente que la tasa $\alpha = 0.9$ violaba la condición de estabilidad LMS ($\alpha_{\max} \approx 1.708 \times 10^{-4}$), asumíamos que corrigiendo la representación lineal e incorporando las interacciones no lineales resolveríamos el problema. Tras verificar que nuestro modelo propuesto reducía el MSE de prueba en un 99.98\,\%, considerábamos que el cuello de botella estaba resuelto.
+
+El contraste de resultados en la sesión presencial cambió por completo este diagnóstico. Al revisar la función de recompensa con el Grupo~2, descubrimos que el entorno sufría de un severo \textit{reward hacking} que premiaba pedir siempre 50 unidades; por tanto, aunque nuestro aproximador fuera perfecto con un MSE nulo sobre los 4\,367 estados alcanzables, el agente seguiría aprendiendo una política destructiva. Asimismo, el Grupo~1 nos demostró que el estado original carecía de la propiedad de Markov y que, al corregirlo con el inventario en tránsito y la tendencia de demanda, el espacio de estados se multiplicaba por 18 ($3\,600$ estados), obligando a que cualquier esquema de aproximación deba gestionar una dimensionalidad mucho mayor. Finalmente, los experimentos de ablación del Grupo~6 confirmaron que aun aplicando la recompensa corregida, el agente colapsaba a recompensas negativas ($-627.73$) si no se estabilizaban el algoritmo y la aproximación de forma conjunta.
+
+La lección fundamental de esta auditoría es que en Aprendizaje por Refuerzo no es posible resolver un problema optimizando componentes de forma aislada. La aproximación de funciones no opera en el vacío, sino como el puente que traduce el estado del entorno (MDP) y transmite el gradiente de la señal de desempeño (recompensa). De nada sirve perfeccionar la representación de características si la recompensa premia una conducta errónea o si el entorno oculta variables críticas para la toma de decisiones.
 
 \clearpage
 \appendix
