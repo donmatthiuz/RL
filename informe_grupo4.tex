@@ -487,7 +487,106 @@ Corregir el MDP y la recompensa repara exclusivamente el modelado del entorno y 
 
 \subsection{Pregunta 2: Causa raíz}
 
-\vspace{4cm}
+Tomando como problema principal los 23 desabastos semanales, la causa raíz que
+más contribuye al gap entre simulación y producción es la \textbf{cobertura
+insuficiente del espacio estado--acción}. Esto se debe a que el agente fue
+evaluado dentro del mismo entorno simplificado donde se entrenó, pero en
+producción recibió estados y combinaciones de acciones que no había aprendido.
+Por ende, la recompensa 51.2 de simulación no garantiza que el agente sepa actuar
+en los estados importantes de producción.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{3.1cm}p{3.7cm}p{3.7cm}p{5.1cm}}
+\toprule
+\textbf{Indicador} & \textbf{Simulación} & \textbf{Producción} &
+\textbf{Diferencia observada} \\
+\midrule
+Recompensa & Media 51.2 y desviación 0.9 & No existe una medida equivalente &
+El valor parece estable, pero no representa directamente ningún indicador del
+negocio. \\
+\addlinespace
+Desabastos & El evaluador original no los cuenta; en la simulación del reward
+corregido se obtuvo 0 & 23 por semana & La simulación no detectó el principal
+fallo observado en producción. \\
+\addlinespace
+Productos vencidos & No se cuentan unidades; solo se aplica una penalización
+fija & 41 por semana & No existe una métrica simulada equivalente para comparar. \\
+\addlinespace
+Costo de almacenamiento & No se calcula en dinero & \$8,400 frente a una meta
+de \$3,200 & El costo real fue \$5,200 mayor y llegó a 2.625 veces el objetivo. \\
+\addlinespace
+Satisfacción & No se mide & 0.61 & La simulación no permite comprobar este
+resultado antes del despliegue. \\
+\bottomrule
+\end{tabular}
+\caption{Diferencia entre las métricas reportadas en simulación y producción.}
+\label{tab:gap-simulacion-produccion}
+\end{table}
+
+El Grupo 3 encontró que el sistema realmente puede alcanzar 4,371 estados y
+26,226 pares estado--acción, no solamente los 200 estados declarados. Sobre ese
+espacio, el algoritmo original cubrió 1,370.8 pares en promedio, equivalente a
+solo 5.23\%. Con todas las correcciones del algoritmo la cobertura subió a
+2,154.2 pares, pero todavía representa únicamente 8.21\%. Esto demuestra que,
+aunque el algoritmo mejoró, la mayor parte del espacio continuó sin aprenderse.
+
+El resultado del Grupo 3 también permite descartar que el cambio entre
+Q-learning y SARSA sea por sí solo la causa principal. El sistema original
+capturó 30.63\% del valor óptimo y cambiar únicamente a SARSA produjo 33.81\%.
+En cambio, el desempate aleatorio produjo 68.46\% y aumentar la exploración
+inicial produjo 73.11\%. Esto se debe a que esas dos correcciones permiten probar
+más alternativas y evitan que una acción quede seleccionada solamente por el
+orden de los índices.
+
+El Grupo 5 llegó al mismo resultado usando su entorno discretizado de 200
+estados y 1,200 pares. Con $\epsilon=0.05$ se visitaron 770 pares, equivalente a
+64.2\%, y quedaron 430 sin visitar. El problema fue mayor en demanda crítica:
+quedaron sin visitar 150 de sus 300 pares posibles, es decir, la mitad. Además,
+se encontraron 6 estados donde la política causaba un desabasto directo y 5 de
+ellos habían probado tres o menos de las seis acciones.
+
+Cuando el Grupo 5 utilizó inicialización optimista más UCB, la cobertura subió a
+1,195 de 1,200 pares, equivalente a 99.6\%, y únicamente quedaron 5 pares sin
+visitar. Por ende, existe evidencia directa de que cambiar la estrategia de
+exploración casi elimina el problema de cobertura dentro de ese entorno.
+
+Los porcentajes de los Grupos 3 y 5 no se deben comparar directamente. El Grupo
+3 conserva la transición sin discretizar y trabaja con 4,371 estados, mientras
+que el Grupo 5 redondea los estados y trabaja con 200. Sin embargo, los dos
+experimentos muestran la misma situación: existen muchas acciones que el agente
+no prueba y la falta de cobertura se concentra en los casos de mayor riesgo.
+
+Esta falta de cobertura se convierte en desabasto debido a la forma en que se
+inicializa la tabla. Para un estado que nunca fue visitado se tiene:
+
+\begin{lstlisting}[language=Python]
+Q[state] = [0, 0, 0, 0, 0, 0]
+action = np.argmax(Q[state])  # devuelve el indice 0: pedir 0
+\end{lstlisting}
+
+Como todas las acciones tienen el mismo valor, \texttt{np.argmax} selecciona el
+primer índice. En el sistema, ese índice significa pedir 0 unidades. Por lo
+tanto, cuando aparece un estado desconocido con poco inventario y demanda alta o
+crítica, el agente no realiza un pedido y se puede generar el stockout.
+
+El reward original sí tiene problemas y explica el incentivo de almacenar mucho,
+pero no se selecciona como causa raíz de los desabastos. La evidencia usada para
+descartarlo como motivo principal es que, en la simulación de la recompensa
+corregida, tanto la política de pedir siempre 50 como la política corregida
+obtuvieron cero stockouts. Cambiar el reward redujo el inventario promedio de
+97.98 a 5.76 unidades y cambió la recompensa de pedir siempre 50 a $-842.29$,
+pero no reprodujo los 23 desabastos de producción.
+
+En conclusión, si se debe escoger un solo motivo, se escoge la
+\textbf{cobertura insuficiente}. El algoritmo original, la exploración baja y el
+tamaño real del espacio provocan que muchos pares estado--acción no sean
+aprendidos. Cuando el agente llega a esos estados, la tabla conserva ceros y la
+política elige pedir 0. Esta es la explicación que conecta de forma más directa
+los resultados del Grupo 3, los resultados del Grupo 5 y el gap identificado por
+el Grupo 7. El código permite demostrar el mecanismo, aunque no permite afirmar
+que los 23 casos semanales provengan exactamente de 23 estados específicos.
 
 \subsection{Pregunta 3: Plan de corrección mínimo viable}
 
