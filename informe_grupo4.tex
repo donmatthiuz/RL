@@ -466,7 +466,257 @@ pesos ajustados, quedan en \texttt{resultados/resultados\_44.json}.
 
 \subsection{Pregunta 4: Compatibilidad de correcciones}
 
-\vspace{4cm}
+Las correcciones propuestas por los grupos 1, 3 y 4 \textbf{no son compatibles de
+forma directa}. Aunque todas buscan corregir el mismo sistema, cada grupo supone
+una interfaz y una representación distintas. Por ello, no basta con copiar los
+cambios en un solo archivo: se necesita una capa de adaptación que unifique el
+estado, las acciones y la forma de estimar $Q(s,a)$.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{2.9cm}p{3.0cm}p{8.8cm}}
+\toprule
+\textbf{Combinación} & \textbf{Compatibilidad} & \textbf{Adaptación necesaria} \\
+\midrule
+Grupo 1 + Grupo 3 tabular & Parcial & Crear un entorno común que devuelva
+el estado de cinco elementos, convierta el índice de acción a unidades y adapte
+el retorno adicional de la transición del Grupo 1. La tabla Q acepta la tupla
+ampliada como llave, pero requerirá mayor cobertura. \\
+\addlinespace
+Grupo 1 + Grupo 4 & No directa & Ampliar \texttt{preprocess\_state} para
+aceptar los cinco componentes e incorporar el pedido en tránsito y la tendencia
+como características. No se deben eliminar esas variables mediante una
+proyección al estado antiguo. \\
+\addlinespace
+Grupo 3 tabular + Grupo 4 & No directa & Sustituir
+\texttt{Q[state][action]} por \texttt{predict} y la actualización tabular por
+\texttt{approximator.update}; debe existir una sola representación de $Q$. \\
+\addlinespace
+Grupo 3 lineal + Grupo 4 & Sí, con adaptación & Reemplazar el preprocesamiento
+simplificado usado en los experimentos del Grupo 3 por las características del
+Grupo 4, conservando SARSA, el desempate aleatorio y los calendarios de
+$\alpha$ y $\epsilon$. \\
+\addlinespace
+Grupos 1 + 3 + 4 & Sí, conceptualmente & Corregir primero la dinámica de los
+días, construir el entorno común, ampliar las características y entrenar SARSA
+sobre el aproximador lineal. Después se deben repetir todas las métricas. \\
+\bottomrule
+\end{tabular}
+\caption{Compatibilidad y adaptación de las correcciones de los Grupos 1, 3 y 4.}
+\label{tab:compatibilidad-integracion}
+\end{table}
+
+\subsubsection*{Incompatibilidad en la representación del estado}
+
+El Grupo 4 representa cada estado mediante \textbf{tres} componentes:
+\[
+  s_4=(\texttt{inventario},\ \texttt{dias\_a\_expirar},\
+       \texttt{nivel\_de\_demanda}).
+\]
+En cambio, la transición corregida por el Grupo 1 utiliza cinco:
+\[
+  s_1=(\texttt{inventario},\ \texttt{dias\_a\_expirar},\
+       \texttt{nivel\_de\_demanda},\ \texttt{pedidos\_en\_transito},\
+       \texttt{tendencia}).
+\]
+La diferencia no es solamente de longitud. Los pedidos en tránsito y la tendencia
+contienen información que modifica la dinámica futura; eliminarlos puede hacer que
+dos situaciones diferentes parezcan el mismo estado para el agente. Además, el
+entorno del Grupo 3 espera estados de tres elementos, por lo que recibir la tupla
+de cinco elementos producida por el Grupo 1 causaría errores al desempaquetar el
+estado o descartaría información relevante.
+
+La solución es definir un entorno adaptador con un contrato único. Su método
+\texttt{reset()} debe devolver siempre el estado de cinco elementos y
+\texttt{step(action\_idx)} debe traducir el índice discreto a la acción usada por
+el Grupo 1. El siguiente fragmento muestra la estructura requerida; los nombres de
+las funciones de transición y recompensa deben sustituirse por los del módulo
+integrado.
+
+\begin{lstlisting}[caption={Adaptador entre el entrenamiento y la dinámica del Grupo 1}]
+class EntornoFarmaciaCorregido:
+    def __init__(self, max_steps):
+        self.max_steps = max_steps
+        self.state = None
+        self.steps = 0
+
+    def reset(self):
+        self.steps = 0
+        self.state = estado_inicial_grupo1()  # Tupla de 5 elementos
+        return self.state
+
+    def step(self, action_idx):
+        action = ACCIONES[action_idx]
+        state = self.state
+        next_state, faltante = transition(state, action)
+        reward = reward_adaptada(state, action, next_state,
+                                 faltante)
+
+        self.steps += 1
+        done = self.steps >= self.max_steps
+        self.state = next_state
+        info = {
+            "accion_aplicada": action,
+            "stockout": faltante,
+            "truncated": done,
+        }
+        return next_state, reward, done, info
+\end{lstlisting}
+
+Este adaptador también evita mezclar un índice de acción, usado por el algoritmo,
+con la cantidad real solicitada, usada por la función de transición. Por ejemplo,
+el índice 3 no necesariamente significa pedir tres unidades, sino seleccionar
+\texttt{ACCIONES[3]}.
+
+\subsubsection*{Incompatibilidad en la representación de $Q$}
+
+El entrenamiento tabular del Grupo 3 consulta una entrada independiente para cada
+par estado--acción, por ejemplo \texttt{Q[state][action]}. El Grupo 4, por el
+contrario, representa el valor mediante un aproximador lineal:
+\[
+  \widehat Q(s,a;w)=w_a^{\top}\phi(s),
+\]
+y obtiene o modifica el valor mediante \texttt{predict} y \texttt{update}. En este
+caso los pesos se comparten entre muchos estados, de modo que no existe una celda
+\texttt{Q[state][action]} que pueda consultarse o actualizarse directamente. Las
+dos representaciones no deben mantenerse simultáneamente, porque producirían dos
+estimaciones distintas de la misma función de valor.
+
+Para integrar el estado del Grupo 1, \texttt{preprocess\_state} debe aceptar sus
+cinco componentes. Las unidades en tránsito se normalizan con el máximo pedido
+y la tendencia, que es categórica, se codifica mediante indicadores
+\emph{one-hot}. También conviene representar el inventario efectivo que estará
+disponible cuando llegue el pedido:
+
+\begin{lstlisting}[caption={Preprocesamiento del estado unificado de cinco elementos}]
+def preprocess_state_integrado(state):
+    inventory, days, demand, in_transit, trend = state
+
+    # Conserva las caracteristicas corregidas del Grupo 4.
+    features = preprocess_state((inventory, days, demand))
+    daily_demand = DEMAND_MAP[demand]
+
+    # Nuevas caracteristicas para el MDP del Grupo 1.
+    transit_n = min(max(in_transit / 50.0, 0.0), 1.0)
+    effective_inv_n = min(100.0, inventory + in_transit) / 100.0
+    trend_down = 1.0 if trend == "bajando" else 0.0
+    trend_up = 1.0 if trend == "subiendo" else 0.0
+    expected_stockout = max(
+        0.0, daily_demand - inventory - in_transit
+    ) / 40.0
+
+    return list(features) + [
+        transit_n,
+        effective_inv_n,
+        trend_down,
+        trend_up,
+        expected_stockout,
+    ]
+\end{lstlisting}
+
+Con esta ampliación, el vector pasa de 12 a 17 componentes. Por ello deben
+actualizarse \texttt{FEATURE\_NAMES}, \texttt{N\_FEATURES} y el tamaño de la
+matriz de pesos. La función \texttt{estado\_a\_original} del Grupo 1 puede servir
+como compatibilidad temporal, pero no como integración final: al proyectar de
+cinco a tres elementos elimina precisamente las dos variables que recuperan
+información relevante para la propiedad de Markov.
+
+\begin{lstlisting}[caption={Inicialización coherente del aproximador}]
+initial_state = env.reset()
+n_features = len(preprocess_state_integrado(initial_state))
+approximator = LinearApproximator(
+    n_features=n_features,
+    n_actions=len(ACCIONES),
+)
+\end{lstlisting}
+
+\subsubsection*{Conservación de SARSA durante la integración}
+
+La lógica de SARSA del Grupo 3 sí puede conservarse: selección
+$\varepsilon$-greedy, descuento, calendario de exploración y actualización en cada
+transición. Lo que debe cambiar es el acceso tabular. Cada lectura de
+\texttt{Q[state][action]} se reemplaza por \texttt{predict}, y la asignación a la
+tabla se reemplaza por \texttt{approximator.update}. Para SARSA, el objetivo es
+\[
+  y =
+  \begin{cases}
+    r, & \text{si se alcanzó un estado terminal real},\\
+    r + \gamma\,\widehat Q(s',a';w), & \text{en otro caso}.
+  \end{cases}
+\]
+En este problema, terminar un episodio por límite de tiempo es un truncamiento:
+la farmacia no deja de operar. Por eso el código integrado utiliza la segunda
+rama incluso en el último paso del horizonte, tal como propone el Grupo 3.
+
+\begin{lstlisting}[caption={Núcleo de SARSA con aproximación lineal}]
+state = env.reset()
+features = preprocess_state_integrado(state)
+action_idx = epsilon_greedy(approximator, features, epsilon)
+
+while True:
+    next_state, reward, done, info = env.step(action_idx)
+    next_features = preprocess_state_integrado(next_state)
+    next_action_idx = epsilon_greedy(
+        approximator, next_features, epsilon
+    )
+
+    # El horizonte es un truncamiento, no el fin de la farmacia;
+    # por eso se conserva el bootstrap usado por el Grupo 3.
+    target = reward + gamma * approximator.predict(
+        next_features, next_action_idx
+    )
+
+    alpha_t = alpha_por_visitas(state, action_idx)
+    approximator.update(features, action_idx, target, alpha_t)
+
+    if done:
+        break
+    state, features = next_state, next_features
+    action_idx = next_action_idx
+\end{lstlisting}
+
+El \texttt{update} del Grupo 4 normaliza internamente el paso por
+$\lVert\phi(s)\rVert^2$. Por lo tanto, \texttt{alpha\_t} puede ser el valor
+decreciente por número de visitas propuesto por el Grupo 3 y el paso efectivo es
+\[
+  \alpha_{\mathrm{efectivo}}
+  = \frac{\alpha_t}{\lVert\phi(s)\rVert^2}.
+\]
+Esto combina el decaimiento temporal del Grupo 3 con la protección frente a
+escalas desiguales del Grupo 4.
+
+Antes de integrar también debe corregirse el avance del vencimiento en el MDP
+del Grupo 1. Su implementación resta un día y después redondea al elemento más
+cercano de $\{1,7,14,30,60\}$. Como resultado, los cinco valores regresan al
+mismo nivel y los días nunca avanzan. Se debe mantener el contador real en la
+transición,
+
+\begin{lstlisting}[language=Python]
+new_days = max(1, days_to_expiry - 1)
+\end{lstlisting}
+
+y, si se necesita, discretizarlo solamente al crear las características.
+
+En consecuencia, la integración mínima consiste en: (1) corregir la dinámica de
+los días y unificar el espacio de estados del Grupo 1; (2) usar su transición
+mediante \texttt{EntornoFarmaciaCorregido}; (3) ampliar
+\texttt{preprocess\_state} para conservar los cinco componentes; (4) reemplazar
+\texttt{features\_normalizadas} y todos los accesos a la tabla Q por el
+aproximador del Grupo 4; y (5) conservar del Grupo 3 SARSA, el desempate
+aleatorio, la exploración y los calendarios de aprendizaje.
+
+Después de estas adaptaciones se deben repetir los experimentos. El
+$R^2=0{,}967$ del Grupo 4 se calculó sobre el MDP determinista original, mientras
+que el $98{,}4\,\%$ reportado por el Grupo 3 utilizó un preprocesamiento lineal
+simplificado y no el estado corregido de cinco elementos. Esos resultados son
+evidencia de que la combinación es prometedora, pero todavía no validan el
+sistema integrado.
+
+Finalmente, la compatibilidad técnica no corrige la recompensa. Si se conserva
+la función original, el agente integrado puede aprender de manera más estable y
+precisa la política de pedir el máximo. Por ello, la recompensa debe corregirse
+antes del reentrenamiento definitivo.
 
 \clearpage
 %==========================================================================
