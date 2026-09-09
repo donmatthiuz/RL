@@ -40,6 +40,7 @@ Edwin Jose Gabriel De Leon Garcia & 22809 & \texttt{EJGDLG} \\
 Gustavo Adolfo Cruz Bardales      & 22779 & \texttt{G2309} \\
 Josué Emanuel Say Garcia          & 22801 & \texttt{JosueSay} \\
 Mathew Alexander Cordero Aquino   & 22982 & \texttt{donmatthiuz} \\
+Carlos Alberto Valladares Guerra  & 221164 & \texttt{vgcarlol} \\
 \bottomrule
 \end{tabular}}
 \date{\today}
@@ -205,7 +206,7 @@ característica y hace indistinguibles dos estados con demanda baja. \\
 \bottomrule
 \end{tabular}
 \caption{Normalización propuesta. Con ella $\lVert\phi\rVert^2 \le 5{,}93$ y
-$\alpha_{\max} = 0{,}337$, frente a $1{,}708\times10^{-4}$ del original.}
+$\alpha_{\mathrm{max}} = 0{,}337$, frente a $1{,}708\times10^{-4}$ del original.}
 \end{table}
 
 %--------------------------------------------------------------------------
@@ -454,6 +455,34 @@ pesos ajustados, quedan en \texttt{resultados/resultados\_44.json}.
 
 \subsection{Pregunta 1: Diagnóstico sistémico}
 
+Con base en el MDP estocástico formulado por el Grupo~1, la función de recompensa multicomponente diseñada por el Grupo~2, la ablación empírica y curvas proyectadas por el Grupo~6, y el análisis de aproximación y estabilidad de nuestro Grupo~4, \textbf{predecimos categóricamente que el agente NO aprenderá una política mejor si únicamente se aplican las correcciones del MDP y de la función de recompensa sin modificar el algoritmo de aprendizaje ni la estrategia de exploración}.
+
+Aunque la corrección conjunta del MDP y de la señal de recompensa repara la especificación matemática del entorno y reorienta teóricamente los incentivos hacia políticas de inventario sostenibles, el proceso de optimización del agente colapsa inevitablemente debido a tres fallas estructurales y cuantitativas:
+
+\begin{enumerate}
+    \item \textbf{Eficacia teórica aislada de la recompensa de G2:}
+    Bajo la función corregida del Grupo~2 ($R_{\text{corregida}}$), en una simulación de $1\,000$ episodios y $30$ pasos por episodio (semilla $3104$), la política viciada de ``pedir siempre $50$'' es severamente penalizada, acumulando una recompensa media de $-842.29$ ($\sigma = 476.22$), con un inventario promedio saturado de $97.98$ unidades y $18.11$ pasos por episodio en ventana de vencimiento. Por el contrario, una política balanceada alcanza una recompensa acumulada media positiva de $+144.40$ ($\sigma = 67.81$), reduciendo el inventario promedio a $5.76$ unidades, los pasos en riesgo de vencimiento a $7.48$ y manteniendo $0.00$ pasos con desabasto (\textit{stockouts}). Esto evidencia que la señal de recompensa corregida contiene el gradiente de incentivos adecuado para guiar al agente.
+
+    \item \textbf{Explosión del espacio de búsqueda de G1 frente a la inestabilidad de G3 y G4:}
+    Para restaurar la propiedad de Markov y dotar de dinamismo temporal a la demanda, el Grupo~1 amplió la tupla de estado a 5 variables: $s_t = (I_t, E_t, L_t, T_t, D_t)$, incorporando las unidades en tránsito ($T_t \in \{0, 10, 20, 30, 40, 50\}$) y la tendencia de demanda ($D_t \in \{\text{bajando, estable, subiendo}\}$). Dicha corrección expande el espacio de estados de $200$ nominales a $3\,600$ estados discretos, y el espacio de pares estado-acción de $1\,200$ a $21\,600$ (un factor de multiplicación exacto de $18\times$).
+
+    Si se mantiene el algoritmo de aprendizaje original:
+    \begin{itemize}
+        \item El valor fijo $\alpha = 0.9$ es catastrófico para la convergencia. Como demostró analíticamente nuestro Grupo~4 mediante la condición LMS ($0 < \alpha < \frac{2}{\|\phi(s)\|^2}$), el máximo paso admisible antes de divergir numéricamente es $\alpha_{\max} \approx 1.708 \times 10^{-4}$. Un valor $\alpha = 0.9$ se encuentra tres órdenes de magnitud por encima de la cota de estabilidad.
+        \item Al contar con un espacio de búsqueda $18$ veces mayor, cada par $(s, a)$ se visita con una frecuencia mucho menor durante $1\,000$ episodios, haciendo que las actualizaciones con un $\alpha$ constante y excesivo generen oscilaciones caóticas y divergencia en las aproximaciones de valor en lugar de un aprendizaje asintótico.
+    \end{itemize}
+
+    \item \textbf{Evidencia empírica de ablación (G6) y deficiencia de cobertura ($\epsilon = 0.05$):}
+    El experimento de ablación controlado del Grupo~6 valida de forma empírica la incapacidad del optimizador original para alcanzar la política esperada:
+    \begin{itemize}
+        \item Al ejecutar el entrenamiento aplicando \textbf{únicamente la recompensa corregida de G2} pero manteniendo el algoritmo original ($\alpha = 0.9$, $\epsilon = 0.05$), el agente no logró acercarse a la cota óptima ($+144.40$): la recompensa acumulada colapsó a un promedio en cola de $-627.73$, con un error TD absoluto terminal inestable de $35.80$ y una varianza masiva de $39\,849.11$.
+        \item La política colapsó de manera prematura a una regla subóptima y pasiva: la acción dominante pasó a ser pedir $10$ unidades en apenas el $25.5\%$ de los estados visitados, dejando al resto del espacio sin converger adecuadamente.
+        \item Bajo $\epsilon = 0.05$, el agente actúa de manera puramente \textit{greedy} el $95\%$ del tiempo. Con un horizonte de $30$ pasos por episodio, el Grupo~1 demostró que se requerirían aproximadamente $18\,000$ episodios (en lugar de los $1\,000$ asignados) para conservar una densidad de visitas equiparable por estado. Con una tasa estática tan baja, los estados críticos y de demanda alta rara vez se visitan, perpetuando desabastos en la inferencia en producción.
+    \end{itemize}
+\end{enumerate}
+
+Corregir el MDP y la recompensa repara exclusivamente el modelado del entorno y la métrica de desempeño (el ``qué'' optimizar), pero deja inalterada la dinámica del algoritmo y la exploración (el ``cómo'' aprender). Sin un algoritmo numéricamente estable (mediante el decaimiento de $\alpha$ propuesto por el Grupo~3 o el paso normalizado LMS de nuestro Grupo~4) y sin un mecanismo de exploración eficiente en espacios de alta dimensionalidad (Grupo~5), el agente es incapaz de converger y termina atrapado en políticas degeneradas.
+
 \vspace{4cm}
 
 \subsection{Pregunta 2: Causa raíz}
@@ -461,6 +490,127 @@ pesos ajustados, quedan en \texttt{resultados/resultados\_44.json}.
 \vspace{4cm}
 
 \subsection{Pregunta 3: Plan de corrección mínimo viable}
+
+\noindent\emph{Grupos consultados: 1 (MDP corregido), 2 (recompensa corregida),
+3 (algoritmo corregido y esquema de decaimiento), 5 (métricas de cobertura),
+6 (diagnóstico y proyección de curvas) y 7 (análisis del gap y protocolo de
+evaluación).}
+
+\subsubsection*{Criterio de ``mínimo viable''}
+
+El gap de producción tiene tres síntomas cuantificados: sobre-stock (costo de
+almacenamiento \num{8400}/semana contra un objetivo de \num{3200}, es decir
+$2{,}6\times$), merma (41 productos vencidos/semana) y desabasto (23 stockouts/semana,
+satisfacción del cliente $0{,}61$), frente a una recompensa en simulación de $51{,}2$.
+Las Preguntas 1 y 2 establecieron que la causa no es un solo componente: la
+recompensa fija el objetivo equivocado (\emph{reward hacking}, Grupo 2) y el
+optimizador es numéricamente incapaz de alcanzar cualquier objetivo
+($\alpha = 0{,}9$ contra $\alpha_{\max} = 1{,}708\times10^{-4}$, Grupos 3 y 4).
+
+El plan mínimo viable es el subconjunto más pequeño de correcciones que (a)
+reorienta el objetivo y (b) hace converger al optimizador hacia él, dejando fuera
+toda mejora que no sea necesaria para cerrar el gap en dos semanas. Se ordena por
+\emph{leverage por hora de trabajo}: primero los cambios de bajo costo que
+desbloquean a los demás.
+
+\subsubsection*{Las cuatro correcciones del plan}
+
+\begin{table}[h]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}c p{2.9cm} p{3.3cm} p{7.3cm}@{}}
+\toprule
+\textbf{P} & \textbf{Cambio} & \textbf{Componente que modifica} & \textbf{Métrica y mejora esperada} \\
+\midrule
+1 & Recompensa corregida de tres componentes (Grupo 2)
+  & \texttt{reward()}; misma firma, $\sim$10 líneas
+  & Costo almacenamiento $\num{8400}\to\sim\num{3200}$/sem ($-62\%$); vencidos
+    $41 \to \sim 2$/sem ($-95\%$). La política ``pedir 50'' pasa de óptima a
+    acumular $-842{,}3$ ($\sigma = 476{,}2$); la política balanceada alcanza
+    $+144{,}4$. \\
+\addlinespace
+1 & Corrección de \texttt{train} + decaimiento de $\alpha$ y $\varepsilon$
+    (Grupo 3), o el paso LMS normalizado del Entregable 4.3
+  & \texttt{train()}, hiperparámetros
+  & Error TD terminal $35{,}8 \to <5$; varianza entre episodios
+    $\num{39849} \to <100$ (proyección Grupo 6). Sin este cambio, el Grupo 6
+    midió que aun con la recompensa de G2 la recompensa de cola queda en
+    $-627{,}7$ y la política colapsa a ``pedir 10'' en el $25{,}5\%$ de los estados. \\
+\addlinespace
+2 & \texttt{preprocess\_state} mejorado: normalización + intercepto +
+    interacciones (Entregable 4.3)
+  & \texttt{preprocess\_state()}, \texttt{n\_features} $3\to12$
+  & MSE de prueba de $2{,}76\times10^{6}$ a $678$ ($-99{,}98\%$); $R^2$ de prueba
+    de $-132{,}7$ a $0{,}967$; paso admisible de $1{,}7\times10^{-4}$ a $0{,}337$.
+    La política greedy deja de ordenar las acciones al azar en los estados de
+    inventario bajo, donde ocurren los stockouts. \\
+\addlinespace
+3 & Inicialización optimista $w_{a,0} = q_{\text{init}} \approx 4200$ (Grupo 5;
+    habilitada por el intercepto de P2)
+  & Inicialización de \texttt{weights} / tabla \texttt{Q}
+  & Cobertura de pares $(s,a)$ y reducción de los stockouts atribuibles a
+    estados no visitados (Grupos 5 y 7). Costo de implementación casi nulo y
+    sin riesgo en producción: no explora físicamente, solo cambia el orden de
+    visita en simulación. \\
+\bottomrule
+\end{tabular}
+\caption{Plan mínimo viable. Columna \textbf{P}: prioridad. Las dos correcciones
+de prioridad 1 son co-requisitos: cada una por separado no cierra el gap
+(Preguntas 1 y 2).}
+\label{tab:plan}
+\end{table}
+
+\subsubsection*{Cronograma de dos semanas}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Semana 1.}
+    Días 1--2: implementar y probar la recompensa de G2 (P1a); es un cambio
+    local y sin dependencias.
+    Días 1--5 (en paralelo): corregir \texttt{train}, introducir el decaimiento
+    $\alpha_t = \alpha_0/(1 + t/\tau)$ y $\varepsilon_t$ decreciente de G3 (P1b).
+    Días 4--5: primer re-entrenamiento con features originales para aislar el
+    efecto de P1 y comparar contra la ablación de G6.
+  \item \textbf{Semana 2.}
+    Días 6--9: integrar \texttt{preprocess\_state} de 12 características y el
+    paso normalizado (P2); actualizar \texttt{n\_features} y verificar que
+    \texttt{predict}/\texttt{update} no cambian de firma.
+    Días 9--10: activar la inicialización optimista (P3).
+    Días 11--13: re-entrenamiento completo con las cuatro correcciones.
+    Día 14: validación con el protocolo de evaluación de G7 (pruebas de estrés
+    sobre estados de demanda crítica y vencimiento cercano) y curvas de G6.
+\end{enumerate}
+
+\subsubsection*{Qué queda fuera del plan mínimo y por qué}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{El MDP de cinco variables completo de G1.} La expansión completa
+    lleva el espacio de $200$ a $\num{3600}$ estados ($\times 18$) y de $\num{1200}$
+    a $\num{21600}$ pares $(s,a)$; G1 estima que se requerirían $\sim\num{18000}$
+    episodios para conservar la densidad de visitas, incompatible con dos semanas.
+    Se incorpora \emph{solo} la variable \texttt{unidades\_en\_transito}
+    ($\times 6$, $\to \num{1200}$ estados), que es la mínima necesaria para
+    restaurar la propiedad de Markov (entregable 1.1 de G1) y eliminar la
+    ambigüedad de transición que alimenta los stockouts. La \texttt{tendencia\_demanda}
+    (demanda estocástica, entregable 1.2) se difiere a una fase~2: mejora el
+    realismo pero el gap actual se explica sin ella.
+  \item \textbf{Aproximación no lineal.} El Entregable 4.3 mostró $R^2 = 0{,}967$
+    sobre estados no vistos con características lineales diseñadas; una red no
+    aporta lo suficiente para justificar su costo.
+  \item \textbf{UCB o exploración por novedad.} La inicialización optimista
+    entrega la mayor parte del beneficio de cobertura a una fracción del costo de
+    implementación y sin riesgo operativo.
+\end{itemize}
+
+\subsubsection*{Resultado agregado esperado}
+
+Con las cuatro correcciones aplicadas se proyecta (a confirmar contra las curvas
+finales de G6 y el protocolo de G7): stockouts $23 \to <5$/semana; costo de
+almacenamiento $\num{8400} \to \sim\num{3400}$/semana (dentro de $\sim 1{,}05\times$
+el objetivo); vencidos $41 \to <5$/semana; satisfacción $0{,}61 \to >0{,}90$. El
+gap simulación--producción se cierra porque el protocolo de G7 lo detecta con
+pruebas de estrés sobre estados raros antes del despliegue, no porque desaparezca
+por sí solo.
 
 \vspace{4cm}
 
@@ -723,7 +873,11 @@ antes del reentrenamiento definitivo.
 \section{Reflexión grupal}
 %==========================================================================
 
-\vspace{8cm}
+Durante la fase previa de análisis individual, nuestro equipo llegó a la sesión con una hipótesis clara: el mal desempeño del agente se debía principalmente a la deficiente ingeniería de características y a la escala sin normalizar en el preprocesamiento. Al constatar que el inventario concentraba el 75\,\% de la norma del gradiente frente a apenas el 0.09\,\% de la demanda, y al comprobar analíticamente que la tasa $\alpha = 0.9$ violaba la condición de estabilidad LMS ($\alpha_{\max} \approx 1.708 \times 10^{-4}$), asumíamos que corrigiendo la representación lineal e incorporando las interacciones no lineales resolveríamos el problema. Tras verificar que nuestro modelo propuesto reducía el MSE de prueba en un 99.98\,\%, considerábamos que el cuello de botella estaba resuelto.
+
+El contraste de resultados en la sesión presencial cambió por completo este diagnóstico. Al revisar la función de recompensa con el Grupo~2, descubrimos que el entorno sufría de un severo \textit{reward hacking} que premiaba pedir siempre 50 unidades; por tanto, aunque nuestro aproximador fuera perfecto con un MSE nulo sobre los 4\,367 estados alcanzables, el agente seguiría aprendiendo una política destructiva. Asimismo, el Grupo~1 nos demostró que el estado original carecía de la propiedad de Markov y que, al corregirlo con el inventario en tránsito y la tendencia de demanda, el espacio de estados se multiplicaba por 18 ($3\,600$ estados), obligando a que cualquier esquema de aproximación deba gestionar una dimensionalidad mucho mayor. Finalmente, los experimentos de ablación del Grupo~6 confirmaron que aun aplicando la recompensa corregida, el agente colapsaba a recompensas negativas ($-627.73$) si no se estabilizaban el algoritmo y la aproximación de forma conjunta.
+
+La lección fundamental de esta auditoría es que en Aprendizaje por Refuerzo no es posible resolver un problema optimizando componentes de forma aislada. La aproximación de funciones no opera en el vacío, sino como el puente que traduce el estado del entorno (MDP) y transmite el gradiente de la señal de desempeño (recompensa). De nada sirve perfeccionar la representación de características si la recompensa premia una conducta errónea o si el entorno oculta variables críticas para la toma de decisiones.
 
 \clearpage
 \appendix
