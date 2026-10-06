@@ -1,0 +1,208 @@
+{
+  "source": "outputs del notebook (Task 2.2)",
+  "suboptimal": {
+    "mean": -163.31,
+    "std": 115.0
+  },
+  "dataset_mean": -159.80633766616717,
+  "cql": {
+    "0.5": {
+      "mean": -163.32,
+      "std": 114.83,
+      "logs": [
+        {
+          "update": 10000,
+          "critic_loss": 2.417,
+          "td_loss": 0.912,
+          "cql_penalty": 3.01
+        },
+        {
+          "update": 20000,
+          "critic_loss": 1.871,
+          "td_loss": 0.569,
+          "cql_penalty": 2.603
+        },
+        {
+          "update": 30000,
+          "critic_loss": 2.62,
+          "td_loss": 1.329,
+          "cql_penalty": 2.582
+        },
+        {
+          "update": 40000,
+          "critic_loss": 1.959,
+          "td_loss": 0.82,
+          "cql_penalty": 2.279
+        },
+        {
+          "update": 50000,
+          "critic_loss": 3.681,
+          "td_loss": 2.515,
+          "cql_penalty": 2.333
+        },
+        {
+          "update": 60000,
+          "critic_loss": 2.257,
+          "td_loss": 1.069,
+          "cql_penalty": 2.376
+        },
+        {
+          "update": 70000,
+          "critic_loss": 2.101,
+          "td_loss": 1.05,
+          "cql_penalty": 2.103
+        },
+        {
+          "update": 80000,
+          "critic_loss": 2.224,
+          "td_loss": 1.298,
+          "cql_penalty": 1.852
+        },
+        {
+          "update": 90000,
+          "critic_loss": 2.09,
+          "td_loss": 1.046,
+          "cql_penalty": 2.089
+        },
+        {
+          "update": 100000,
+          "critic_loss": 1.997,
+          "td_loss": 1.136,
+          "cql_penalty": 1.721
+        }
+      ]
+    },
+    "1.0": {
+      "mean": -164.44,
+      "std": 116.27,
+      "logs": [
+        {
+          "update": 10000,
+          "critic_loss": 3.519,
+          "td_loss": 1.145,
+          "cql_penalty": 2.373
+        },
+        {
+          "update": 20000,
+          "critic_loss": 3.218,
+          "td_loss": 1.155,
+          "cql_penalty": 2.063
+        },
+        {
+          "update": 30000,
+          "critic_loss": 3.08,
+          "td_loss": 0.905,
+          "cql_penalty": 2.175
+        },
+        {
+          "update": 40000,
+          "critic_loss": 3.379,
+          "td_loss": 1.432,
+          "cql_penalty": 1.947
+        },
+        {
+          "update": 50000,
+          "critic_loss": 3.446,
+          "td_loss": 1.67,
+          "cql_penalty": 1.776
+        },
+        {
+          "update": 60000,
+          "critic_loss": 3.2,
+          "td_loss": 1.178,
+          "cql_penalty": 2.021
+        },
+        {
+          "update": 70000,
+          "critic_loss": 3.613,
+          "td_loss": 1.868,
+          "cql_penalty": 1.745
+        },
+        {
+          "update": 80000,
+          "critic_loss": 2.768,
+          "td_loss": 1.351,
+          "cql_penalty": 1.417
+        },
+        {
+          "update": 90000,
+          "critic_loss": 3.26,
+          "td_loss": 1.658,
+          "cql_penalty": 1.603
+        },
+        {
+          "update": 100000,
+          "critic_loss": 2.864,
+          "td_loss": 1.6,
+          "cql_penalty": 1.264
+        }
+      ]
+    },
+    "5.0": {
+      "mean": -164.31,
+      "std": 116.17,
+      "logs": [
+        {
+          "update": 10000,
+          "critic_loss": 13.145,
+          "td_loss": 5.873,
+          "cql_penalty": 1.454
+        },
+        {
+          "update": 20000,
+          "critic_loss": 12.155,
+          "td_loss": 7.176,
+          "cql_penalty": 0.996
+        },
+        {
+          "update": 30000,
+          "critic_loss": 9.02,
+          "td_loss": 3.88,
+          "cql_penalty": 1.028
+        },
+        {
+          "update": 40000,
+          "critic_loss": 9.497,
+          "td_loss": 5.754,
+          "cql_penalty": 0.749
+        },
+        {
+          "update": 50000,
+          "critic_loss": 12.523,
+          "td_loss": 9.399,
+          "cql_penalty": 0.625
+        },
+        {
+          "update": 60000,
+          "critic_loss": 13.888,
+          "td_loss": 8.141,
+          "cql_penalty": 1.149
+        },
+        {
+          "update": 70000,
+          "critic_loss": 5.992,
+          "td_loss": 3.652,
+          "cql_penalty": 0.468
+        },
+        {
+          "update": 80000,
+          "critic_loss": 2.156,
+          "td_loss": 7.008,
+          "cql_penalty": -0.97
+        },
+        {
+          "update": 90000,
+          "critic_loss": 7.275,
+          "td_loss": 6.856,
+          "cql_penalty": 0.084
+        },
+        {
+          "update": 100000,
+          "critic_loss": -0.86,
+          "td_loss": 4.994,
+          "cql_penalty": -1.171
+        }
+      ]
+    }
+  }
+}
