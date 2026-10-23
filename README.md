@@ -17,9 +17,9 @@ que se leyó el anterior.
 | 01 | [Idea general](docs/01_idea_general.md) | Problema, objetivo, alcance, hipótesis y criterios de éxito |
 | 02 | [Arquitectura](docs/02_arquitectura.md) | Módulos, flujo de datos, entorno, agentes, recompensa, estructura del repo y stack |
 | 03 | [Roles](docs/03_roles.md) | Las 5 personas del equipo, responsabilidades y matriz RACI |
-| 04 | [Tareas](docs/04_tareas.md) | Backlog por rol, fases, dependencias, hitos y cronograma |
+| 04 | [Tareas](docs/04_tareas.md) | Backlog por rol, fases, dependencias e hitos |
 | 05 | [Testing y CI/CD](docs/05_testing.md) | Normas de testing, cobertura, GitHub Actions y despliegue |
-| 06 | [Flujo de trabajo](docs/06_flujo_trabajo.md) | Git, ramas, commits, Pull Requests, revisiones y Definition of Done |
+| 06 | [Flujo de trabajo](docs/06_flujo_trabajo.md) | Trabajo en la rama `proyecto`, commits, tests por entrega y Definition of Done |
 | 07 | [Riesgos y decisiones](docs/07_riesgos_y_decisiones.md) | Riesgos técnicos, mitigaciones y registro de decisiones (ADR) |
 
 ## Inicio rápido
@@ -48,7 +48,7 @@ uv run pytest
 
 ## Mantenimiento de la documentación
 
-- Los documentos son **vivos**: si cambia una decisión, el documento se actualiza en el mismo PR
+- Los documentos son **vivos**: si cambia una decisión, el documento se actualiza en el mismo commit
   que introduce el cambio de código.
 - Las decisiones importantes se registran como ADR en
   [`docs/07_riesgos_y_decisiones.md`](docs/07_riesgos_y_decisiones.md).
