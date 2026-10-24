@@ -10,7 +10,7 @@ escriben una parte del informe.
 | Rol | Integrante | Módulos de los que es dueño | Backup (lo cubre si se ausenta) |
 |-----|------------|-----------------------------|---------------------------------|
 | **R1** Líder técnico e integrador (MLOps) | _por asignar_ | `utils/`, `cli.py`, CI/CD, `pyproject.toml`, `docs/` | R4 |
-| **R2** Ingeniero de datos | _por asignar_ | `data/`, `features/`, `notebooks/eda` | R5 |
+| **R2** Ingeniero de datos | Mathew | `data/`, `features/`, `notebooks/eda` | R5 |
 | **R3** Ingeniero del entorno y la recompensa | Gustavo | `env/` (incluye `reward.py`) | R4 |
 | **R4** Ingeniero de agentes RL | _por asignar_ | `agents/` (PPO, DQN, Offline RL) | R3 |
 | **R5** Evaluación, backtesting y demo | _por asignar_ | `evaluation/`, `app/`, `reports/` | R2 |
