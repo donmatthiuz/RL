@@ -102,7 +102,7 @@ orden:
 
 | Se versiona | No se versiona (`.gitignore`) |
 | ------------- | ------------------------------- |
-| Código, configs, tests y fixtures pequeñas | `data/raw/`, `data/processed/`, `data/offline/` |
+| Código, configs, tests y fixtures pequeñas | `data/raw/`, `data/processed/`, `data/offline/` (solo su `.gitkeep`; ver [11_descarga_de_datos.md](11_descarga_de_datos.md)) |
 | `docs/`, `reports/` (tablas y figuras finales) | `models/` (salvo los `metrics.json` finales) |
 | Notebooks **con las salidas limpias** o EDA final ejecutado | Logs de TensorBoard (`runs/`) |
 | `uv.lock` | `.env`, credenciales |

@@ -219,8 +219,11 @@ context/
 # graphify
 graphify-out
 
-# Datos crudos, procesados y modelos: se generan localmente
-/data/
+# Datos crudos, procesados y modelos: se generan localmente (docs/11_descarga_de_datos.md).
+# De data/ solo se versiona la estructura de carpetas, con sus .gitkeep.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
 /models/
 
 # Claves locales (cada integrante crea las suyas; nunca se versionan)
