@@ -1,10 +1,9 @@
 """Configuración local; los secretos se excluyen de la representación."""
 
-from __future__ import annotations
-
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Self
 
 from dotenv import dotenv_values
 from polymarket import ApiKeyCreds
@@ -23,7 +22,7 @@ class PolymarketSettings:
     api_passphrase: str | None = field(default=None, repr=False)
 
     @classmethod
-    def from_env(cls, env_file: str | Path = ".env") -> PolymarketSettings:
+    def from_env(cls, env_file: str | Path = ".env") -> Self:
         """Lee .env sin modificar os.environ; el entorno tiene prioridad."""
         values = {**dotenv_values(env_file, interpolate=False), **os.environ}
 

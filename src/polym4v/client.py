@@ -1,7 +1,5 @@
 """Adaptador síncrono sobre el SDK oficial polymarket-client."""
 
-from __future__ import annotations
-
 from decimal import Decimal
 from types import TracebackType
 from typing import Literal, Self
