@@ -1,8 +1,8 @@
 # Costos del simulador (ENV-03), iguales en train, val y test (S5 y ADR-009).
-# Pendiente de confirmar con docs/ia/investigaciones/comisiones_polymarket.md: redondeo, mínimo y tick.
+# Verificado con la documentación oficial y el crudo: docs/ia/investigaciones/comisiones_polymarket.md.
 half_spread: 0.01      # S5: sensibilidad con 0.02
 fee_rate: 0.07         # esquema crypto_fees_v2; 0.0 para la ablación sin comisión
 fee_exponent: 1
 fee_decimals: 5
-min_fee: 0.00001       # USDC
-tick: 0.001            # minimum_tick_size de los mercados horarios
+min_fee: 0.00001       # USDC; por debajo no se cobra
+tick: 0.001            # minimum_tick_size de 12 447 de los 12 471 mercados horarios

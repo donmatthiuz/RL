@@ -26,8 +26,9 @@ def test_repo_costs_config_is_valid():
         # 0.07 × 0.123456 × 0.876544 = 0.0075750... y 0.07 × 0.31 × 0.69 = 0.014973: a 5 decimales.
         (1, 0.123456, COSTS, 0.00758),
         (1, 0.31, COSTS, 0.01497),
-        # 0.00000175 redondea a 0, pero la comisión mínima es 0.00001.
-        (0.0001, 0.5, COSTS, 0.00001),
+        # 0.0000175 redondea a 0.00002; 0.00000175 queda bajo el mínimo y no se cobra.
+        (0.001, 0.5, COSTS, 0.00002),
+        (0.0001, 0.5, COSTS, 0.0),
         (100, 0.5, NO_FEES, 0.0),
     ],
     ids=[
@@ -36,12 +37,45 @@ def test_repo_costs_config_is_valid():
         "esquema-anterior",
         "redondeo-arriba",
         "redondeo-abajo",
-        "minimo",
+        "sobre-el-minimo",
+        "bajo-el-minimo",
         "sin-comision",
     ],
 )
 def test_taker_fee(shares, price, costs, expected):
     assert taker_fee(shares, price, costs) == expected
+
+
+# Tabla oficial de Polymarket para cripto con 100 acciones, mostrada en centavos
+# (docs.polymarket.com/trading/fees, copiada en docs/ia/investigaciones/comisiones_polymarket.md).
+OFFICIAL_100_SHARES = {
+    0.01: 0.07,
+    0.05: 0.33,
+    0.10: 0.63,
+    0.15: 0.89,
+    0.20: 1.12,
+    0.25: 1.31,
+    0.30: 1.47,
+    0.35: 1.59,
+    0.40: 1.68,
+    0.45: 1.73,
+    0.50: 1.75,
+    0.55: 1.73,
+    0.60: 1.68,
+    0.65: 1.59,
+    0.70: 1.47,
+    0.75: 1.31,
+    0.80: 1.12,
+    0.85: 0.89,
+    0.90: 0.63,
+    0.95: 0.33,
+    0.99: 0.07,
+}
+
+
+@pytest.mark.parametrize(("price", "expected"), OFFICIAL_100_SHARES.items())
+def test_taker_fee_matches_the_official_table(price, expected):
+    assert taker_fee(100, price, COSTS) == pytest.approx(expected, abs=0.005)
 
 
 def test_prices_cross_the_spread_without_leaving_the_tick_range():

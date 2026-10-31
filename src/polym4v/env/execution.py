@@ -38,15 +38,14 @@ def _fee_per_share(price: float, costs: CostConfig) -> float:
 def taker_fee(shares: float, price: float, costs: CostConfig) -> float:
     """Comisión en USDC: `acciones × rate × (precio × (1 - precio))^exponent`, redondeada.
 
-    El redondeo es al más cercano, con las mitades hacia arriba, y nunca baja de `min_fee` si
-    hay comisión. Ambos detalles esperan la confirmación de la documentación oficial.
+    Según la documentación oficial, se redondea a 5 decimales y lo que queda por debajo de
+    `min_fee` no se cobra. El modo de redondeo no está documentado: se usa el más cercano con las
+    mitades hacia arriba (docs/ia/investigaciones/comisiones_polymarket.md).
     """
     raw = shares * _fee_per_share(price, costs)
-    if raw <= 0:
-        return 0.0
     step = Decimal(1).scaleb(-costs.fee_decimals)
     fee = float(Decimal(repr(raw)).quantize(step, rounding=ROUND_HALF_UP))
-    return max(fee, costs.min_fee)
+    return fee if fee >= costs.min_fee else 0.0
 
 
 def buy(stake: float, p: float, costs: CostConfig) -> Fill:
