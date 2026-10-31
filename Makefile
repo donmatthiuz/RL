@@ -5,6 +5,9 @@
 
 UV ?= uv
 
+# Configuración a validar: make config CONFIG=configs/data.yaml
+CONFIG ?= configs/data.yaml
+
 # Captura del crudo: make capture SERIES=10114 (BTC horario) o SERIES=10117 (ETH horario)
 SERIES ?= 10114
 RAW_DIR ?= data/raw
@@ -24,7 +27,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit capture manifest entregable
+	pre-commit config capture manifest entregable
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -76,6 +79,9 @@ pre-commit: ## Corre todos los hooks sobre todo el repositorio
 	$(UV) run pre-commit run --all-files
 
 ## --- Datos ---
+
+config: ## Valida un YAML de configuración y lo muestra resuelto (CONFIG)
+	$(UV) run polym4v config $(CONFIG)
 
 capture: ## Archiva el historial crudo de una serie (SERIES, RAW_DIR, PAUSE)
 	$(UV) run polym4v capture --series $(SERIES) --out $(RAW_DIR) --pause $(PAUSE)

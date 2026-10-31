@@ -16,11 +16,12 @@ from polymarket import (
     RequestRejectedError,
     UserInputError,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from .client import PolymarketClient
 from .config import ConfigurationError, PolymarketSettings
 from .data.capture import RawStore, capture_series, write_manifest
+from .utils.config import load_named
 
 
 def _json_default(value: Any) -> Any:
@@ -83,6 +84,9 @@ def _parser() -> argparse.ArgumentParser:
     capture.add_argument("--limit", type=int, help="Máximo de mercados por serie")
     capture.add_argument("--pause", type=float, default=0.2, help="Segundos entre descargas")
 
+    config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
+    config.add_argument("path", help="Por ejemplo configs/data.yaml")
+
     manifest = commands.add_parser("manifest", help="Recalcula el hash de cada archivo crudo")
     manifest.add_argument("--out", default="data/raw", help="Carpeta del crudo")
     return parser
@@ -115,6 +119,8 @@ def _capture(args: argparse.Namespace) -> Any:
 def _run(args: argparse.Namespace) -> Any:
     if args.command == "capture":
         return _capture(args)
+    if args.command == "config":
+        return load_named(args.path).model_dump(mode="json")
     if args.command == "manifest":
         manifest = write_manifest(RawStore(args.out))
         return {"files": manifest["n_files"]}
@@ -158,6 +164,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = _run(args)
         print(json.dumps(result, default=_json_default, ensure_ascii=False, indent=2))
+    except ValidationError as exc:
+        print(f"Configuración inválida:\n{exc}", file=sys.stderr)
+        return 1
     except ConfigurationError as exc:
         print(f"Error de configuración: {exc}", file=sys.stderr)
         return 1

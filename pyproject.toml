@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "polymarket-client==0.14.0",
+    "pydantic>=2.13",
     "python-dotenv>=1.0,<2",
+    "pyyaml>=6",
 ]
 
 [project.scripts]
