@@ -1,6 +1,6 @@
 # Conectar el proyecto con Polymarket
 
-La integración está en `src/rl_polymarket` y usa `polymarket-client==0.14.0`,
+La integración está en `src/polym4v` y usa `polymarket-client==0.14.0`,
 el SDK oficial unificado de Python. La versión se fija porque las versiones
 menores de la serie 0.x pueden introducir cambios incompatibles.
 
@@ -22,15 +22,15 @@ python -m pip install -e ".[dev]"
 En Windows PowerShell, activa el entorno con `venv\Scripts\Activate.ps1`.
 Si solo necesitas la integración, puedes instalar con `python -m pip install -e .`.
 
-Se instala el comando `rl-polymarket`. También puedes ejecutar
-`python -m rl_polymarket` con los mismos argumentos.
+Se instala el comando `polym4v`. También puedes ejecutar
+`python -m polym4v` con los mismos argumentos.
 
 ## 2. Probar la conexión pública
 
 Consultar datos públicos no requiere cuenta, API key ni clave privada:
 
 ```bash
-rl-polymarket markets --limit 5
+polym4v markets --limit 5
 ```
 
 El comando devuelve JSON con `items`, `has_more`, `next_cursor`, `total_count`
@@ -44,7 +44,7 @@ mercados negociables. Para consultar mercados cerrados, agrega `--closed`.
 Si `has_more` es `true`, copia el valor de `next_cursor` completo y sin modificar:
 
 ```bash
-rl-polymarket markets --limit 5 --cursor 'CURSOR_DE_LA_RESPUESTA'
+polym4v markets --limit 5 --cursor 'CURSOR_DE_LA_RESPUESTA'
 ```
 
 Conserva los filtros de la consulta original al continuar. El cursor del SDK
@@ -57,7 +57,7 @@ Usa un `slug` obtenido de `items`. Debe ser el slug del mercado individual;
 un evento de Polymarket puede agrupar varios mercados con slugs diferentes.
 
 ```bash
-rl-polymarket market SLUG_DEL_MERCADO
+polym4v market SLUG_DEL_MERCADO
 ```
 
 Cada resultado (`outcomes.yes` u `outcomes.no`) tiene su propio identificador.
@@ -66,11 +66,11 @@ Para mercados `version="v1"`, utiliza `token_id`. Para `version="v2"`, utiliza
 el `id`, el `condition_id` ni el slug del mercado en su lugar.
 
 ```bash
-rl-polymarket book ASSET_ID
-rl-polymarket price ASSET_ID --side BUY
-rl-polymarket price ASSET_ID --side SELL
-rl-polymarket midpoint ASSET_ID
-rl-polymarket history ASSET_ID --interval 1d --bucket-seconds 3600 --limit 100
+polym4v book ASSET_ID
+polym4v price ASSET_ID --side BUY
+polym4v price ASSET_ID --side SELL
+polym4v midpoint ASSET_ID
+polym4v history ASSET_ID --interval 1d --bucket-seconds 3600 --limit 100
 ```
 
 Los precios se devuelven como cadenas decimales en JSON para conservar su
@@ -88,7 +88,7 @@ debe estar entre 60 y 86400; el mínimo sube a 300 para `1w` y a 600 para
 Puedes guardar resultados con la redirección del shell:
 
 ```bash
-rl-polymarket history ASSET_ID --interval 1d > precios.json
+polym4v history ASSET_ID --interval 1d > precios.json
 ```
 
 ## 4. Conectar una cuenta existente
@@ -136,8 +136,8 @@ generadas para realizar las consultas públicas.
 Comprueba la conexión autenticada y consulta las órdenes existentes:
 
 ```bash
-rl-polymarket account
-rl-polymarket open-orders
+polym4v account
+polym4v open-orders
 ```
 
 `account` devuelve únicamente `wallet` y `wallet_type`. `open-orders` devuelve
@@ -149,7 +149,7 @@ están vacías. La lectura no modifica `os.environ`. También puedes elegir un
 archivo explícito; coloca la opción antes del subcomando:
 
 ```bash
-rl-polymarket --env-file /ruta/a/mi-config.env account
+polym4v --env-file /ruta/a/mi-config.env account
 ```
 
 ## 5. Usar desde Python o un notebook
@@ -157,7 +157,7 @@ rl-polymarket --env-file /ruta/a/mi-config.env account
 Después de instalar el paquete, puedes importarlo desde cualquier directorio:
 
 ```python
-from rl_polymarket import PolymarketClient, get_asset_id
+from polym4v import PolymarketClient, get_asset_id
 
 with PolymarketClient() as client:
     page = client.list_markets(limit=5)
@@ -184,7 +184,7 @@ La conexión autenticada se solicita explícitamente; tener claves en el entorno
 no cambia el modo público por defecto:
 
 ```python
-from rl_polymarket import PolymarketClient, PolymarketSettings
+from polym4v import PolymarketClient, PolymarketSettings
 
 settings = PolymarketSettings.from_env(".env")
 with PolymarketClient(settings, authenticated=True) as client:
@@ -235,7 +235,7 @@ python -m pytest
 
 Las pruebas simulan HTTP y la conexión de cuenta: no necesitan red, fondos
 ni credenciales reales. La autenticación con tu cuenta se verifica mediante
-`rl-polymarket account` una vez configurado `.env`.
+`polym4v account` una vez configurado `.env`.
 
 ## Referencias oficiales
 

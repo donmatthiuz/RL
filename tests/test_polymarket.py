@@ -9,13 +9,13 @@ import httpx
 import pytest
 from polymarket import Market, SecureClient, UserInputError
 
-from rl_polymarket import (
+from polym4v import (
     ConfigurationError,
     PolymarketClient,
     PolymarketSettings,
     get_asset_id,
 )
-from rl_polymarket.cli import main
+from polym4v.cli import main
 
 
 @pytest.fixture(autouse=True)

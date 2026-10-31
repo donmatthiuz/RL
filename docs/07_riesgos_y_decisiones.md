@@ -98,7 +98,7 @@ ADR-XXX*.
   `fidelity=1` devuelve un punto por minuto, incluso en mercados de mayo de 2025.
 - **Decisión:** El pipeline consulta el endpoint CLOB directamente. El SDK se sigue usando para
   listar mercados y eventos.
-- **Consecuencias:** `rl_polymarket.PolymarketClient.get_price_history` no sirve para el dataset.
+- **Consecuencias:** `polym4v.PolymarketClient.get_price_history` no sirve para el dataset.
   El endpoint no está cubierto por el SDK, por eso se cachean todas las respuestas (riesgo R15).
 
 ### ADR-008 — Un episodio es la vela de 60 minutos, en una grilla de 1 minuto
