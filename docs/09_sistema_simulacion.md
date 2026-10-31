@@ -15,8 +15,9 @@ Polymarket mostró que el sistema no tenía un modelo de tiempo definido. La reg
 prácticas y herramientas open source establecidas** en lugar de inventar.
 
 - **Estado (30/10/2026):** R1 aceptó S1, S2, S5, S6, S7, S8 y S11 con los ajustes de la revisión
-  independiente (sección 4), registradas en el ADR-013. S3, S4, S9 y S10 quedan pendientes y se
-  reformularon como preguntas para decidir en la sección 6 (31/10/2026).
+  independiente (sección 4), registradas en el ADR-013. S3, S4, S9 y S10 se reformularon como
+  preguntas en la sección 6. El 31/10/2026 R1 aceptó S3 y S9 (ADR-016); S4 vuelve a análisis
+  contra un CLOB real y S10 sigue pendiente.
 - **Base:** investigación de backtesters (backtrader, backtesting.py, zipline-reloaded, vectorbt,
   NautilusTrader, hftbacktest, LEAN) y entornos de RL de trading (gym-anytrading,
   Gym-Trading-Env, FinRL, TensorTrade, mbt_gym, ABIDES-gym), consultada el 30/10/2026.
@@ -102,7 +103,7 @@ costos, que es casi todo el entorno. Por eso el entorno es propio y lo demás se
 | --- | --- | --- | --- | --- |
 | S1 | Modelo de tiempo de los datos | Cada dato guarda cuándo ocurrió y cuándo estuvo disponible | `ts_event`/`ts_init` (NautilusTrader), `exch_ts`/`local_ts` (hftbacktest), `EndTime` (LEAN) | Aceptada con ajuste |
 | S2 | Reloj de decisión | Grilla fija de 1 minuto, 60 decisiones por episodio | Backtesters por barras y todos los entornos de RL revisados | Aceptada |
-| S3 | Qué ve el agente | Último dato disponible de cada fuente, más la antigüedad del precio | `merge_asof(direction="backward")`; regla de dato viejo de LEAN | Pendiente |
+| S3 | Qué ve el agente | Último dato disponible de cada fuente, más la antigüedad del precio | `merge_asof(direction="backward")`; regla de dato viejo de LEAN | Aceptada el 31/10/2026 (sección 6.1) |
 | S4 | Cuándo y a qué precio se ejecuta | Primer precio posterior a `t` + latencia; sin precio en 90 s, no hay ejecución | `trade_on_close=False` (backtesting.py), `coc=False` (backtrader), latencia constante (hftbacktest) | Pendiente |
 | S5 | Costos | Medio spread de 0,01 y comisión oficial con redondeo, igual para todos los mercados | `spread` (backtesting.py), bid/ask (mbt_gym), modelo de comisión de Polymarket (NautilusTrader) | Aceptada con ajuste |
 | S6 | Acciones inválidas | Se ejecutan como `WAIT`; el entorno expone `action_masks()` | MaskablePPO (sb3-contrib); Huang y Ontañón (2022) | Aceptada con ajuste |
@@ -274,7 +275,7 @@ aceptar S1 a S8. Ninguno rechaza una decisión. Casi todas necesitan un ajuste.
 
 | # | Qué define | Recomendación | Estado |
 | --- | --- | --- | --- |
-| S9 | Precio con que se valora la posición abierta (recompensa, PnL no realizado y drawdown) | Lo que se obtendría al vender ahora: `p - half_spread` | Pendiente |
+| S9 | Precio con que se valora la posición abierta (recompensa, PnL no realizado y drawdown) | Lo que se obtendría al vender ahora: `p - half_spread` | Aceptada el 31/10/2026 (sección 6.3) |
 | S10 | Reglas de fin de episodio | No abrir posiciones en los últimos 2 minutos; un `SELL` sin ejecutar antes de `w1` deja la posición a la liquidación | Pendiente |
 | S11 | Mercados de test usados en análisis previos | Excluir de test los mercados de las muestras de 298, 40 y 70; congelar la configuración antes de abrir test | Aceptada |
 
@@ -362,6 +363,11 @@ ahora o contra el valor justo del instante en que se registró ese precio?
 | "Solo el desacuerdo real" | Solo el `edge` en el instante del precio | Señal limpia del desacuerdo entre mercado y valor justo | No anticipa el próximo movimiento |
 | "Las dos, y que el agente aprenda" | **Ambas** (recomendada), con `FairValue` usando la del instante del precio | El agente puede aprender a descontar el atraso, y el baseline usa la señal limpia | Una feature más. La ablación de D7 dirá si sirven |
 
+**Decisión (31/10/2026, R1): S3a = A y S3b = ambas.** A usa toda la información realmente
+disponible sin datos del futuro, siempre que S4 respete los tiempos de decisión y de ejecución. Si
+el último precio tiene, por ejemplo, 4 minutos, `p_stale` se lo dice al agente, y S4 evita suponer
+que todavía puede comprar a ese precio.
+
 ### 6.2 S4 — Cuándo y a qué precio se ejecuta
 
 **No es pregunta:**
@@ -415,6 +421,25 @@ si la vendiera ya, o el precio del mercado?
 | "Lo que recibiría si vendo ya" | **Valor de liquidación** (recomendada): `p - half_spread`, menos la comisión de vender | La recompensa muestra el costo de entrar en el mismo paso y el drawdown es realista | Cada compra da una recompensa negativa inmediata, que puede empujar a no operar |
 | "El precio del mercado" | Precio medio `p` | Señal más suave al entrar | La posición parece valer más de lo que vale y el drawdown se subestima |
 | "Solo cuenta al cerrar" | Sin valoración intermedia | Sin ambigüedad | Señal escasa. Ya existe como la recompensa `terminal` de ENV-05 |
+
+**Decisión (31/10/2026, R1): valor de liquidación.** Se distinguen dos cosas:
+
+- **Cuánto vale la posición ahora:** el valor de liquidación. Se usa en `upnl`, en el drawdown y
+  en el valor de la cartera.
+- **Qué tan buena fue la decisión, por sus consecuencias:** el agente tiene que juzgar una compra
+  por su resultado económico, no por la pérdida inmediata del spread. Ejemplo: compra YES a 0,60,
+  vender en ese momento le daría 0,58 y ve una pérdida temporal; después el precio sube a 0,80 y
+  vende con ganancia. Comprar fue una buena decisión.
+
+Consecuencias para el entorno y el entrenamiento:
+
+- La recompensa `pnl` es el cambio del valor de la cartera. La suma de las recompensas del episodio
+  es el PnL final, así que **los costos se cuentan una sola vez**. La comisión de venta que incluye
+  la valoración se "devuelve" al liquidar si la posición se mantiene hasta `w1`. ENV-05 ya lo pide
+  como test.
+- Para no castigar la entrada artificialmente, el descuento `γ` tiene que quedar cerca de 1. Con
+  `γ = 0,99`, un resultado 60 pasos después pesa 0,55 frente al costo inmediato de entrar. Queda
+  como requisito para las configs de AGT-04 a AGT-08.
 
 ### 6.4 S10 — Cómo termina el episodio
 

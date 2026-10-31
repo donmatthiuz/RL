@@ -31,6 +31,7 @@ flowchart LR
     PR1 --> PR4["#4 INF-06 Policy<br/>sin revisor (R4)"]
     P --> PR6["#6 ENV-03 costos<br/>revisa R3"]
     PR5 --> PR7["#7 DAT-08 EDA<br/>revisa R2"]
+    P --> PR8["#8 EVA-01 protocolo<br/>sin revisor (R5)"]
 ```
 
 | Orden | PR | Tarea | Base | Revisa |
@@ -40,25 +41,25 @@ flowchart LR
 | 3 | #3 | DAT-06: split con exclusiones de S11 | #2 | R2 |
 | 4 | #5 | DAT-04 y DAT-05: `markets`, `prices_raw` y `spot_1m` | #3 | R2 |
 | 5 | #7 | DAT-08: EDA sobre train | #5 | R2 |
+| Independiente; antes de ver resultados en val | #8 | EVA-01: protocolo de evaluación, revisado por el agente estadístico | `proyecto` | Sin asignar (R5) |
 | 2 (en paralelo) | #4 | INF-06: `Policy` y `Action` | #1 | Sin asignar (R4) |
 | Independiente | #6 | ENV-03: costos, verificados con la investigación de [comisiones](ia/investigaciones/comisiones_polymarket.md). Falta quitarle el borrador en GitHub | `proyecto` | R3 |
 
-**Bloqueado por decisiones pendientes.** Las decisiones están en
-[09_sistema_simulacion.md](09_sistema_simulacion.md): S3 y S4 en la sección 3, S9 y S10 en la
-sección 4.3.
+**Bloqueado por decisiones pendientes.** Las preguntas, con su contexto y opciones, están en la
+sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S3 y S9 se aceptaron el
+31/10/2026 (ADR-016).
 
 | Tarea | Qué falta | Decisión |
 | --- | --- | --- |
-| `steps.parquet` (resto de DAT-04 y DAT-05) y features (DAT-07) | Qué ve el agente en cada minuto y con qué antigüedad | S3 |
 | Ejecución de órdenes en el entorno (ENV-04) y latencia de `prices_raw` | Cuándo y a qué precio se ejecuta una orden | S4 |
-| Recompensa, PnL no realizado y drawdown (ENV-02 y ENV-05) | Con qué precio se valora la posición abierta | S9 |
 | Fin de episodio (ENV-04) | Desde qué minuto no se compra y qué pasa con un `SELL` sin ejecutar | S10 |
-| Claves de `info` (resto de INF-06) | Lo anterior | S4, S9 y S10 |
-| Tests de no-fuga (ENV-10) y E2E (INF-07) | El entorno | S3, S4, S9 y S10 |
+| Claves de `info` (resto de INF-06) | Lo anterior | S4 y S10 |
+| Tests de no-fuga (ENV-10) y E2E (INF-07) | El entorno | S4 y S10 |
 
-**Sin bloqueos, en curso:**
+**Sin bloqueos, para empezar:**
 
-- DAT-10: captura del crudo de ETH (serie 10117), en curso desde el 31/10/2026. La de BTC terminó: 12 471 mercados. Cómo reproducirlas: [11_descarga_de_datos.md](11_descarga_de_datos.md).
+- `steps.parquet` (resto de DAT-04 y DAT-05) y features (DAT-07), desbloqueados por S3.
+- `Portfolio` (ENV-02), desbloqueado por S9.
 - DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
 
 Las decisiones previas al diseño (D1 a D9) están en
@@ -126,7 +127,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | DAT-07 | `features/`: features de la sección 2.2 de la arquitectura y normalización ajustada solo con train | F2 | P0 | DAT-05 | Test de no-*lookahead*: truncar la serie en `t` no cambia las features en `≤ t` |
 | DAT-08 | Notebook de EDA y una sección breve con sus hallazgos | F2 | P1 | DAT-05 | Notebook ejecutado y versionado, con ≥ 5 gráficos comentados |
 | DAT-09 | Extensión a ETH y/o a la segunda familia de mercados | F3 | P2 | DAT-07 | Dataset `eth_*` construido y evaluación de transferencia BTC → ETH |
-| DAT-10 | **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
+| DAT-10 | **Hecha el 31/10/2026:** BTC con 12 471 mercados y ETH con 12 149, sin errores ([11_descarga_de_datos.md](11_descarga_de_datos.md)). **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
 
 ### R3 — Ingeniero del entorno y la recompensa
 

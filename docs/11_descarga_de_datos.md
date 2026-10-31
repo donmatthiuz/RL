@@ -23,7 +23,7 @@ entre peticiones: unos **77 mercados por minuto**.
 | Paso | Comando | Qué hace | Tiempo medido | Resultado |
 | --- | --- | --- | --- | --- |
 | 1 | `make capture` | Metadatos y precios YES y NO de cada mercado BTC horario cerrado (serie 10114) | 2 h 45 min | 12 471 mercados, 0 errores |
-| 2 | `make capture SERIES=10117` | Lo mismo para ETH horario, respaldo de ADR-013 | Unas 2 h 40 min (estimado) | Unos 12 000 mercados |
+| 2 | `make capture SERIES=10117` | Lo mismo para ETH horario, respaldo de ADR-013 | 2 h 40 min | 12 149 mercados, 0 errores |
 | 3 | `make capture-spot` | Klines de Binance de 1 minuto y de 1 hora, con el activo y las fechas de `configs/data.yaml` | 8 min | 1 044 bloques de 1 m y 522 de 1 h, 0 errores |
 | 4 | `make manifest` | Recalcula el hash de cada archivo del crudo | Segundos | `data/raw/manifest.json` |
 | 5 | `make dataset` | Construye `markets`, `prices_raw` y `spot_1m` | Unos 15 s | 12 295 mercados (8 683 en train, 1 860 en val y 1 752 en test) |
