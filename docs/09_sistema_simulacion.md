@@ -15,7 +15,8 @@ Polymarket mostró que el sistema no tenía un modelo de tiempo definido. La reg
 prácticas y herramientas open source establecidas** en lugar de inventar.
 
 - **Estado (30/10/2026):** R1 aceptó S1, S2, S5, S6, S7, S8 y S11 con los ajustes de la revisión
-  independiente (sección 4), registradas en el ADR-013. S3, S4, S9 y S10 quedan pendientes.
+  independiente (sección 4), registradas en el ADR-013. S3, S4, S9 y S10 quedan pendientes y se
+  reformularon como preguntas para decidir en la sección 6 (31/10/2026).
 - **Base:** investigación de backtesters (backtrader, backtesting.py, zipline-reloaded, vectorbt,
   NautilusTrader, hftbacktest, LEAN) y entornos de RL de trading (gym-anytrading,
   Gym-Trading-Env, FinRL, TensorTrade, mbt_gym, ABIDES-gym), consultada el 30/10/2026.
@@ -296,5 +297,146 @@ superar el paso de la grilla (60 s).
 
 - Que `/prices-history` devuelva el punto medio y no el último trade. No está documentado; se puede
   contrastar con los trades de la Data API.
-- La fecha exacta desde la que rige la fórmula actual de comisiones.
+- **Resuelto el 31/10/2026:** la fecha desde la que rige la fórmula de comisiones. Desde el
+  06/03/2026 para los mercados creados desde esa fecha, con `crypto_fees_v2` desde la "Fee
+  Structure V2" del 30/03/2026 ([comisiones](ia/investigaciones/comisiones_polymarket.md)).
 - La única medición pública del rezago del mercado (0,3 s) viene de una sola fuente.
+
+## 6. Decisiones pendientes: qué se pregunta y qué no
+
+Reformulación del 31/10/2026 de S3, S4, S9 y S10. En cada una se separa lo que **no es una
+pregunta** (lo fija una buena práctica, una decisión ya tomada o la evidencia, y se resuelve en el
+código) de lo que **sí lo es**: una decisión de diseño del núcleo del proyecto, con varias opciones
+razonables, que cambia lo que el agente puede aprender o cómo se lo evalúa. Esas las decide una
+persona. Para cada pregunta hay una **pregunta clave**: según cómo se responda, corresponde una
+opción u otra.
+
+Las cuatro salen de la propuesta. Un agente decide en un simulador con datos históricos, sin
+información del futuro, y se compara con estrategias simples con los mismos costos. Para eso hay
+que definir el estado (S3), la transición (S4), la recompensa (S9) y el final del episodio (S10)
+del MDP.
+
+Evidencia nueva de la EDA (DAT-08, solo train):
+
+- En cada minuto de decisión, el último precio tiene una antigüedad mediana de 52 s.
+- Los puntos de precio llegan cerca del segundo 8 de cada minuto: el 50 % antes del segundo 8 y el
+  95 % antes del 40.
+- Comprar al precio de `t` siguiendo `edge` gana de 0,03 a 0,16 USDC por acción después de costos.
+  Comprando al precio siguiente, pierde.
+
+### 6.1 S3 — Qué ve el agente
+
+**No es pregunta:**
+
+- Solo se ven datos con `ts_available <= t` (S1, aceptada).
+- La consulta es un *as-of* hacia atrás sobre `ts_available`, como en todos los backtesters
+  revisados.
+- `p_stale` (la antigüedad del precio) entra en la observación: es información disponible en `t`
+  y sin ella el agente no puede saber que el precio va atrasado.
+- Los baselines ven exactamente lo mismo que el agente. La propuesta los compara, y la comparación
+  solo es justa con la misma información.
+
+**S3a. Pregunta clave:** ¿el agente debe decidir con todo lo que se sabe en `t`, aunque cada
+fuente tenga una antigüedad distinta, o con una foto de todas las fuentes en el mismo instante?
+
+- **Tipo:** diseño del núcleo. Define el estado del MDP.
+- **Por qué decide una persona:** no hay una respuesta técnica única. Es un compromiso entre usar
+  toda la información y mantener la observación coherente.
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Todo lo que se sabe en `t`" | **A. Último dato de cada fuente** (recomendada) | Usa el spot al día, que es información legítima en `t` | Mezcla antigüedades distintas. Lo compensan `p_stale` y S4 |
+| "Una foto coherente" | B. Todo en el instante del último precio | Ninguna fuente va adelantada respecto de otra | Descarta hasta un minuto de spot que ya estaba disponible |
+
+**S3b. Pregunta clave:** ¿la ventaja (`edge = p_fair - p_yes`) se mide contra el precio que se ve
+ahora o contra el valor justo del instante en que se registró ese precio?
+
+- **Tipo:** diseño de las features (D7). La EDA mostró que el `edge` actual mide sobre todo el
+  atraso del precio.
+- **Por qué decide una persona:** cambia qué señal persigue el agente y qué hace el baseline
+  `FairValue`.
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Lo que se ve ahora" | Solo el `edge` actual | Anticipa hacia dónde se moverá el precio | Agente y baseline persiguen una ventaja que S4 elimina: más operaciones y más costos |
+| "Solo el desacuerdo real" | Solo el `edge` en el instante del precio | Señal limpia del desacuerdo entre mercado y valor justo | No anticipa el próximo movimiento |
+| "Las dos, y que el agente aprenda" | **Ambas** (recomendada), con `FairValue` usando la del instante del precio | El agente puede aprender a descontar el atraso, y el baseline usa la señal limpia | Una feature más. La ablación de D7 dirá si sirven |
+
+### 6.2 S4 — Cuándo y a qué precio se ejecuta
+
+**No es pregunta:**
+
+- Nunca se ejecuta al precio de `t`. Es el error de D6, ningún backtester lo hace por defecto y en
+  la EDA regala de 0,03 a 0,16 USDC por acción.
+- La tolerancia no pasa de 60 s (restricción ya acordada): una ejecución posterior al siguiente
+  instante de decisión filtraría precios futuros a la observación.
+- Si no hay precio dentro de la tolerancia, la orden se cancela y se reporta. El agente vuelve a
+  decidir en el minuto siguiente.
+- La ejecución se calcula en el entorno, igual para el agente y para los baselines.
+
+**Pregunta clave:** ¿la orden se cumple al primer precio que llega después de decidir (casi
+siempre unos 8 s después), aunque ese punto refleje el mercado de algunos segundos antes, o solo a
+un precio que seguro ya incorpora todo lo que el agente sabía, aunque casi nunca llegue dentro del
+minuto?
+
+- **Tipo:** diseño del núcleo. Define la transición del MDP y si el agente puede operar.
+- **Por qué decide una persona:** hay un compromiso real entre fidelidad y ejecutabilidad. La
+  medición previa dice que cada punto refleja el spot de 0 a 15 s antes de su fecha. Esos 15 s son
+  el atraso interno del punto, no la latencia de una orden.
+- **Medido en train:** porcentaje de órdenes que encuentran precio, según la latencia:
+  - 0 s: 99,6 %
+  - 2 s: 94,5 %
+  - 5 s: 71,1 %
+  - 15 s: 23,1 %
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Al primer precio que llega" | **A. Latencia de 2 s y tolerancia de 60 s** (recomendada) | Se ejecuta el 94,5 % de las órdenes. Es el mejor reflejo histórico del precio real al momento de operar | Puede quedar un desfase de pocos segundos a favor del agente. En la EDA no alcanza a cubrir los costos. Lo vigilan el test de mercado nulo (ENV-10) y la sensibilidad a la latencia (EVA-01) |
+| "Solo un precio que ya lo incorpora todo" | B. Latencia de 15 s y tolerancia de 60 s | Elimina el desfase | Se ejecuta el 23 % de las órdenes: el resultado lo dominaría la mecánica, no la política |
+| "Fidelidad, aunque cueste complejidad" | C. Latencia de 15 s y orden pendiente hasta 75 s | Se ejecuta el 95 % sin desfase | El entorno tiene que manejar órdenes que se cumplen después del paso siguiente sin mostrarlas antes de tiempo. Choca con S6 y S10 |
+
+### 6.3 S9 — Con qué precio se valora una posición abierta
+
+**No es pregunta:**
+
+- Se valora con el último precio disponible en `t`, por coherencia con S3.
+- Al final del episodio todas las opciones dan el mismo PnL: la elección cambia **cuándo** recibe
+  el agente la señal y cómo se miden el drawdown y el PnL no realizado, no el resultado final.
+
+**Pregunta clave:** si el agente tiene una posición abierta, ¿cuánto vale ahora: lo que recibiría
+si la vendiera ya, o el precio del mercado?
+
+- **Tipo:** diseño del núcleo. Define la recompensa paso a paso y la feature `upnl`.
+- **Por qué decide una persona:** es un compromiso entre una señal honesta y una señal que no
+  desanime a operar (riesgo R5, que el agente aprenda a no operar).
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Lo que recibiría si vendo ya" | **Valor de liquidación** (recomendada): `p - half_spread`, menos la comisión de vender | La recompensa muestra el costo de entrar en el mismo paso y el drawdown es realista | Cada compra da una recompensa negativa inmediata, que puede empujar a no operar |
+| "El precio del mercado" | Precio medio `p` | Señal más suave al entrar | La posición parece valer más de lo que vale y el drawdown se subestima |
+| "Solo cuenta al cerrar" | Sin valoración intermedia | Sin ambigüedad | Señal escasa. Ya existe como la recompensa `terminal` de ENV-05 |
+
+### 6.4 S10 — Cómo termina el episodio
+
+**No es pregunta:**
+
+- En `w1` la posición se liquida a 1 o 0 según `outcome`, sin comisión. El pago de 1 USDC por
+  acción ganadora está confirmado y no se encontró ninguna comisión por cobrarlo
+  ([comisiones](ia/investigaciones/comisiones_polymarket.md)).
+- Un `SELL` que no se ejecuta antes de `w1` deja la posición hasta la liquidación: después de `w1`
+  no hay precios.
+- Un `BUY` en los minutos bloqueados es una acción inválida y se ejecuta como `WAIT` (S6).
+
+**Pregunta clave:** ¿hasta qué minuto de la vela puede el agente abrir posiciones?
+
+- **Tipo:** diseño del núcleo. Define el espacio de acción útil y la zona donde el simulador es
+  menos confiable.
+- **Por qué decide una persona:** al final de la vela el resultado está casi decidido y el atraso
+  del precio pesa más. En la EDA, en el minuto 55 los resultados son más extremos de lo que dice
+  el precio. Recortar protege la validez, pero quita decisiones.
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Mientras se pueda ejecutar" | Hasta el minuto 59 | No recorta acciones | El agente puede aprender a comprar "lo casi seguro" justo donde el simulador es menos fiable |
+| "Dejar un margen corto" | **No abrir en los últimos 2 minutos** (recomendada) | Quita la zona más sensible al atraso; `SELL` sigue permitido | 2 de las 60 decisiones de entrada |
+| "Dejar un margen amplio" | No abrir en los últimos 5 minutos | Más margen | Pierde entradas legítimas cerca de precios extremos, donde operar es más barato |
