@@ -86,7 +86,7 @@ entregado, y lo entregado tiene que venir con sus tests.
    commit `fix(...)` con su test de regresión.
 4. **Los contratos no se rompen en silencio.** Un cambio en los esquemas, en `Policy` o en `info` se
    propone en un PR hacia `proyecto` y se avisa en el canal. Lo aprueban R1 y los dueños de los
-   módulos que lo usan; la CI corre también en el PR.
+   módulos que lo usan; la CI corre también en el PR, aunque su base sea otra rama.
 
 **Checklist antes de cada push:**
 
