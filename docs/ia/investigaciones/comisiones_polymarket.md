@@ -1,4 +1,4 @@
-# Investigación: comisión taker de Polymarket para el simulador (ENV-03)
+# Investigación: comisión taker de Polymarket (ENV-03)
 
 Documentación oficial: [docs.polymarket.com](https://docs.polymarket.com).
 
@@ -62,6 +62,11 @@ Pegar aquí la respuesta completa, con sus enlaces:
 ```text
 (pendiente)
 ```
+
+## Evaluación de la respuesta
+
+Se completa al pegar la respuesta: qué datos tienen fuente oficial, cuáles no y si contradicen lo
+que ya sabemos. Se resume en el [historial de prompts](../historial_prompts.md) (P10).
 
 ## Cómo se usa
 
