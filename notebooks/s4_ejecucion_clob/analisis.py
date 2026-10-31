@@ -22,6 +22,8 @@ MEDIO_SPREAD = 0.01
 LATENCIA = 2
 TOLERANCIA = 60
 ORDEN_USDC = 100
+# Tamaño de orden de S4b (A2) para verificar cada ejecución.
+ORDEN_S4B = 20
 
 
 def descargar(carpeta: Path) -> None:
@@ -60,6 +62,28 @@ def _vwap(trades: pd.DataFrame, t: int) -> tuple[float, float]:
         return math.nan, 0.0
     toma = d[d["usdc"].cumsum().shift(fill_value=0) < ORDEN_USDC]
     return (toma["yp"] * toma["size"]).sum() / toma["size"].sum(), float(d["usdc"].sum())
+
+
+def _verificable(trades: pd.DataFrame, t: int, precio: float, lado: str, hasta: int) -> bool:
+    """¿Algún taker real operó del mismo lado a ese precio o mejor, por ORDEN_S4B o más?"""
+    d = trades[(trades["ts"] > t + LATENCIA) & (trades["ts"] <= t + hasta)]
+    mejor = d["yp"] <= precio + 1e-9 if lado == "BUY" else d["yp"] >= precio - 1e-9
+    return bool(d.loc[mejor, "usdc"].sum() >= ORDEN_S4B)
+
+
+def _verificar(instantes: pd.DataFrame, por_lado: dict, titulo: str) -> None:
+    """Porcentaje de ejecuciones simuladas que un trade real respalda, por ventana."""
+    resultados = {15: [], TOLERANCIA: []}
+    for r in instantes.itertuples():
+        trades = por_lado.get((r.market_id, r.lado), pd.DataFrame(columns=["ts", "yp", "usdc"]))
+        precio = r.p_next + (MEDIO_SPREAD if r.lado == "BUY" else -MEDIO_SPREAD)
+        for hasta in resultados:
+            resultados[hasta].append(_verificable(trades, r.t, precio, r.lado, hasta))
+    print(
+        f"{titulo}: ejecuciones respaldadas por un trade real del mismo lado a ese precio o mejor "
+        f"y por >= {ORDEN_S4B} USDC: "
+        + "; ".join(f"hasta t + {h} s {np.mean(v):.1%}" for h, v in resultados.items())
+    )
 
 
 def _comparar(instantes: pd.DataFrame, por_lado: dict, titulo: str) -> None:
@@ -157,6 +181,7 @@ def analizar(carpeta: Path) -> None:
     por_lado = {clave: d for clave, d in ventana.groupby(["market_id", "lado"])}
     ambos = pd.concat([grilla.assign(lado="BUY"), grilla.assign(lado="SELL")])
     _comparar(ambos, por_lado, "Todos los minutos")
+    _verificar(ambos, por_lado, "Todos los minutos")
 
     spot = pd.read_parquet(DATASET / "spot_1m.parquet").sort_values("ts_available")
     spot["sigma"] = np.log(spot["close"]).diff().rolling(60).std()
@@ -178,7 +203,9 @@ def analizar(carpeta: Path) -> None:
     z = (np.log(g["close"] / g["spot_open"]) / (g["sigma"] * np.sqrt(60 - g["k"]))).clip(-5, 5)
     g["edge"] = 0.5 * (1 + z.map(lambda v: math.erf(v / math.sqrt(2)))) - g["p_cur"]
     g = g[g["edge"].abs() > 0.05]
-    _comparar(g.assign(lado=np.where(g["edge"] > 0, "BUY", "SELL")), por_lado, "Con |edge| > 0,05")
+    con_edge = g.assign(lado=np.where(g["edge"] > 0, "BUY", "SELL"))
+    _comparar(con_edge, por_lado, "Con |edge| > 0,05")
+    _verificar(con_edge, por_lado, "Con |edge| > 0,05")
 
 
 if __name__ == "__main__":

@@ -228,6 +228,24 @@ ADR-XXX*.
   `Portfolio` (ENV-02) deja de estar bloqueado por S9. La recompensa `pnl` suma exactamente el PnL
   final, y los agentes usan un descuento `γ` cercano a 1 para no castigar la entrada.
 
+### ADR-017 — Ejecución de órdenes (S4) y fin del episodio (S10)
+
+- **Estado:** Aceptada el 31/10/2026 (R1). S4a es provisional hasta la validación con trades.
+- **Contexto:** Polymarket es un CLOB y no hay libros de órdenes históricos. Con los trades taker
+  de 60 mercados de train se midió que el historial se parece más a un punto medio que al último
+  trade, que el modelo `p_next ± 0,01` es conservador en promedio, que la liquidez no alcanza
+  siempre para 100 USDC y que solo el 58 % de las ejecuciones simuladas está respaldado por un
+  trade real (sección 6.2 de `docs/09_sistema_simulacion.md`).
+- **Decisión:**
+  - S4a: ejecución al primer precio posterior a `t + 2 s`, como mucho a `t + 60 s`. Si no hay
+    precio, la orden se cancela y se reporta.
+  - S4b: órdenes de 20 USDC (`stake_fraction = 0,02`). Los trades de val y test se capturan, cada
+    ejecución se clasifica como verificable o no y la evaluación se repite en modo estricto.
+  - S10: no se abren posiciones en los últimos 2 minutos.
+- **Consecuencias:** el entorno (ENV-02 a ENV-05) y las claves de `info` quedan sin decisiones
+  pendientes. Aparecen DAT-11 (trades de val y test) y EVA-11 (validación de ejecuciones). Si la
+  conclusión cambia en modo estricto, se reporta como dependiente de liquidez no verificable.
+
 <!-- Plantilla para nuevas decisiones:
 ### ADR-00X — Título
 - **Estado:** Propuesta | Aceptada | Reemplazada por ADR-XXX

@@ -160,7 +160,9 @@ Code. El equipo lo revisa y completa.
 - **Cómo se evaluó:** contra precios realmente pagados, también en los minutos en que la
   estrategia operaría. El script queda en `notebooks/s4_ejecucion_clob/`.
 - **Aporte:** S4 pasó de una pregunta sobre latencia a dos (S4a y S4b), con la liquidez como
-  factor nuevo.
+  factor nuevo. La condición que puso R1 (validar cada ejecución, no solo el promedio) mostró que
+  solo el 58 % de las ejecuciones simuladas está respaldado por un trade real, y de ahí salieron
+  el modo estricto de evaluación, DAT-11 y EVA-11.
 
 ## Plantilla
 

@@ -16,8 +16,8 @@ prácticas y herramientas open source establecidas** en lugar de inventar.
 
 - **Estado (30/10/2026):** R1 aceptó S1, S2, S5, S6, S7, S8 y S11 con los ajustes de la revisión
   independiente (sección 4), registradas en el ADR-013. S3, S4, S9 y S10 se reformularon como
-  preguntas en la sección 6. El 31/10/2026 R1 aceptó S3 y S9 (ADR-016); S4 vuelve a análisis
-  contra un CLOB real y S10 sigue pendiente.
+  preguntas en la sección 6. El 31/10/2026 R1 aceptó S3 y S9 (ADR-016), S10 y S4, esta última con
+  la condición de validar cada ejecución con trades reales (ADR-017).
 - **Base:** investigación de backtesters (backtrader, backtesting.py, zipline-reloaded, vectorbt,
   NautilusTrader, hftbacktest, LEAN) y entornos de RL de trading (gym-anytrading,
   Gym-Trading-Env, FinRL, TensorTrade, mbt_gym, ABIDES-gym), consultada el 30/10/2026.
@@ -104,7 +104,7 @@ costos, que es casi todo el entorno. Por eso el entorno es propio y lo demás se
 | S1 | Modelo de tiempo de los datos | Cada dato guarda cuándo ocurrió y cuándo estuvo disponible | `ts_event`/`ts_init` (NautilusTrader), `exch_ts`/`local_ts` (hftbacktest), `EndTime` (LEAN) | Aceptada con ajuste |
 | S2 | Reloj de decisión | Grilla fija de 1 minuto, 60 decisiones por episodio | Backtesters por barras y todos los entornos de RL revisados | Aceptada |
 | S3 | Qué ve el agente | Último dato disponible de cada fuente, más la antigüedad del precio | `merge_asof(direction="backward")`; regla de dato viejo de LEAN | Aceptada el 31/10/2026 (sección 6.1) |
-| S4 | Cuándo y a qué precio se ejecuta | Primer precio posterior a `t` + latencia; sin precio en 90 s, no hay ejecución | `trade_on_close=False` (backtesting.py), `coc=False` (backtrader), latencia constante (hftbacktest) | Pendiente |
+| S4 | Cuándo y a qué precio se ejecuta | Primer precio posterior a `t` + latencia; sin precio en 90 s, no hay ejecución | `trade_on_close=False` (backtesting.py), `coc=False` (backtrader), latencia constante (hftbacktest) | Aceptada con condición el 31/10/2026 (sección 6.2) |
 | S5 | Costos | Medio spread de 0,01 y comisión oficial con redondeo, igual para todos los mercados | `spread` (backtesting.py), bid/ask (mbt_gym), modelo de comisión de Polymarket (NautilusTrader) | Aceptada con ajuste |
 | S6 | Acciones inválidas | Se ejecutan como `WAIT`; el entorno expone `action_masks()` | MaskablePPO (sb3-contrib); Huang y Ontañón (2022) | Aceptada con ajuste |
 | S7 | Base del entorno | `gymnasium.Env` propio, gymnasium 1.0.0, patrones de entornos existentes | Restricciones de d3rlpy 2.8.1 y SB3 2.9.2 | Aceptada con ajuste |
@@ -276,7 +276,7 @@ aceptar S1 a S8. Ninguno rechaza una decisión. Casi todas necesitan un ajuste.
 | # | Qué define | Recomendación | Estado |
 | --- | --- | --- | --- |
 | S9 | Precio con que se valora la posición abierta (recompensa, PnL no realizado y drawdown) | Lo que se obtendría al vender ahora: `p - half_spread` | Aceptada el 31/10/2026 (sección 6.3) |
-| S10 | Reglas de fin de episodio | No abrir posiciones en los últimos 2 minutos; un `SELL` sin ejecutar antes de `w1` deja la posición a la liquidación | Pendiente |
+| S10 | Reglas de fin de episodio | No abrir posiciones en los últimos 2 minutos; un `SELL` sin ejecutar antes de `w1` deja la posición a la liquidación | Aceptada el 31/10/2026 (sección 6.4) |
 | S11 | Mercados de test usados en análisis previos | Excluir de test los mercados de las muestras de 298, 40 y 70; congelar la configuración antes de abrir test | Aceptada |
 
 Restricción que ya está acordada para cuando se decida S4: la tolerancia de ejecución no puede
@@ -443,6 +443,24 @@ ganancias ni liquidez que no podemos verificar?
 | "Ejecutar siempre con lo que realmente se negoció" | B. Trades reales en entrenamiento y evaluación: VWAP del flujo observado y ejecución parcial si no alcanza | Lo más fiel sin inventar liquidez | Capturar los trades de los 12 300 mercados (unas 10 h), con un contrato y un entorno más complejos y un entrenamiento más lento |
 | "Simular el libro completo" | C. Profundidad, cola y ejecuciones parciales con el libro | — | **Descartada:** no hay libros históricos, habría que inventar la liquidez |
 
+**Decisión (31/10/2026, R1):**
+
+- **S4a, provisional:** latencia de 2 s y tolerancia de 60 s, con una condición. El riesgo principal
+  no es la latencia, sino simular una compra a un precio al que no se habría podido comprar. Que el
+  modelo sea conservador en promedio no garantiza que cada ejecución sea válida.
+- **S4b:** A2, con órdenes de 20 USDC y validación con trades reales en val y test.
+
+**La condición, medida en la misma muestra:** una ejecución simulada se considera *verificable* si
+un taker real operó del mismo lado a ese precio o mejor, por al menos 20 USDC, dentro de la
+ventana. Lo son el 58 % de las ejecuciones con la ventana de 60 s (59 % en los minutos en que
+opera la regla de `edge`) y el 31 % con 15 s. La falta de un trade no prueba que no hubiera
+liquidez en el libro, pero tampoco permite confirmarla.
+
+Por eso, en val y test cada ejecución se clasifica como verificable o no, y la evaluación se repite
+en **modo estricto**, donde las ejecuciones no verificables cuentan como no ejecutadas. Si la
+conclusión cambia entre los dos modos, el resultado depende de liquidez no verificable y se
+reporta así (EVA-01).
+
 ### 6.3 S9 — Con qué precio se valora una posición abierta
 
 **No es pregunta:**
@@ -507,3 +525,6 @@ Consecuencias para el entorno y el entrenamiento:
 | "Mientras se pueda ejecutar" | Hasta el minuto 59 | No recorta acciones | El agente puede aprender a comprar "lo casi seguro" justo donde el simulador es menos fiable |
 | "Dejar un margen corto" | **No abrir en los últimos 2 minutos** (recomendada) | Quita la zona más sensible al atraso; `SELL` sigue permitido | 2 de las 60 decisiones de entrada |
 | "Dejar un margen amplio" | No abrir en los últimos 5 minutos | Más margen | Pierde entradas legítimas cerca de precios extremos, donde operar es más barato |
+
+**Decisión (31/10/2026, R1): no abrir posiciones en los últimos 2 minutos.** `SELL` sigue
+permitido hasta el final.
