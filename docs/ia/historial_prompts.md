@@ -27,6 +27,8 @@ Code. El equipo lo revisa y completa.
 | P8 | 31/10/2026 | Claude Code | Captura del crudo en segundo plano | Parcial: falló dos veces por causas distintas |
 | P9 | 31/10/2026 | Claude Code | EDA sobre train | Satisfactorio |
 | P10 | 31/10/2026 | Perplexity | Comisión exacta de Polymarket | Satisfactorio, con vacíos |
+| P11 | 31/10/2026 | Subagente `academic-statistician` | Revisar el protocolo de evaluación | Satisfactorio: cuatro fallas graves |
+| P12 | 31/10/2026 | Claude Code | ¿Es realista S4 en un CLOB? | Satisfactorio: cambió la pregunta de S4 |
 
 ## Entradas
 
@@ -133,6 +135,34 @@ Code. El equipo lo revisa y completa.
 - **Corrección:** la respuesta reveló un error del código: una comisión por debajo de 0,00001 se
   cobra como cero, no como el mínimo. Se corrigió en ENV-03.
 - **Aporte:** los ejemplos oficiales pasaron a ser tests de ENV-03.
+
+### P11 — Revisión del protocolo de evaluación
+
+- **Prompt:** revisar críticamente el borrador de EVA-01 (unidad de análisis, dependencia entre
+  días, semillas, mejor baseline, correcciones y diferencias iguales a cero) y proponer cambios
+  concretos.
+- **Herramienta:** subagente `academic-statistician`, como revisor independiente.
+- **Resultado:** satisfactorio. Encontró cuatro fallas graves del primer borrador: el "mejor
+  baseline" sería casi seguro `NoTrade`, el IC ignoraba la variación entre semillas, el umbral del
+  1 % no era detectable y faltaba distinguir "no supera" de "no se pudo saber".
+- **Cómo se evaluó:** cada hallazgo se contrastó con D1, D3 y D4 y con los tamaños reales de los
+  splits antes de aceptarlo.
+- **Aporte:** el protocolo del PR #8 incorpora todos los cambios (sección 11 del protocolo).
+
+### P12 — ¿Es realista la ejecución de S4 en un CLOB?
+
+- **Prompt:** "¿Es correcto nuestro modelo de ejecución S4 considerando que Polymarket utiliza un
+  CLOB? ... Revisa qué datos históricos tenemos disponibles y determina si el modelo actual es
+  realista o introduce ganancias artificiales ... sin inventar liquidez que no podemos verificar".
+- **Resultado:** satisfactorio. Con los trades taker públicos de 60 mercados se midió que el
+  historial se parece más a un punto medio que al último trade, que el modelo es conservador en
+  promedio y que la liquidez no alcanza siempre para 100 USDC.
+- **Cómo se evaluó:** contra precios realmente pagados, también en los minutos en que la
+  estrategia operaría. El script queda en `notebooks/s4_ejecucion_clob/`.
+- **Aporte:** S4 pasó de una pregunta sobre latencia a dos (S4a y S4b), con la liquidez como
+  factor nuevo. La condición que puso R1 (validar cada ejecución, no solo el promedio) mostró que
+  solo el 58 % de las ejecuciones simuladas está respaldado por un trade real, y de ahí salieron
+  el modo estricto de evaluación, DAT-11 y EVA-11.
 
 ## Plantilla
 
