@@ -301,7 +301,7 @@ RL/
 ├── .pre-commit-config.yaml
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml              # lint, mypy y tests con cobertura en cada push a proyecto
+│       ├── ci.yml              # lint, mypy y tests con cobertura en cada push y PR a proyecto
 │       ├── nightly.yml         # tests lentos y backtest corto (INF-08, previsto)
 │       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09, previsto)
 ├── configs/
@@ -346,7 +346,7 @@ RL/
 | Demo | `streamlit` | Una app interactiva en pocas líneas |
 | Calidad | `ruff` (lint + format), `mypy` (modo permisivo), `pre-commit` | |
 | Tests | `pytest`, `pytest-cov`, `responses`, `hypothesis` | Ver [05_testing.md](05_testing.md) |
-| CI/CD | GitHub Actions (ADR-014) | Gratis en repos de GitHub; corre en cada push a `proyecto` |
+| CI/CD | GitHub Actions (ADR-014) | Gratis en repos de GitHub; corre en cada push y PR a `proyecto` |
 
 **Hardware:** todo debe correr en una laptop con CPU. Las redes son MLP pequeñas (`[64, 64]`). Si
 hace falta más cómputo, se puede usar Google Colab.

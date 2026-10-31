@@ -94,24 +94,53 @@ en el manifest.
 
 ### 2.3 Carga: contrato de salida
 
-Amplía el contrato de la sección 2.1 de [02_arquitectura.md](02_arquitectura.md).
+Amplía el contrato de la sección 2.1 de [02_arquitectura.md](02_arquitectura.md). Está escrito
+como código en `src/polym4v/data/schemas.py` (INF-06): cada tabla se valida con `pandera` y no
+admite columnas de más. Siguiendo S1 de [09_sistema_simulacion.md](09_sistema_simulacion.md), cada
+dato guarda cuándo ocurrió (`ts_event`) y cuándo se pudo conocer (`ts_available`), y el simulador
+solo lee filas con `ts_available <= t`. Los tiempos son segundos unix en UTC.
 
-`markets.parquet`, una fila por mercado:
+`markets.parquet`, una fila por mercado. La última columna dice desde cuándo el simulador puede
+leer cada dato; un test falla si se agrega una columna sin declararlo:
+
+| Columna | Tipo | Descripción | Se conoce desde |
+| --------- | ------ | ------------- | ----------------- |
+| `market_id` | str | `condition_id` | Siempre |
+| `slug`, `question` | str | Para la demo y para depurar | Siempre |
+| `yes_token_id`, `no_token_id` | str | Para volver a consultar la API | Siempre |
+| `w0`, `w1` | int (unix s) | Ventana de la vela | Siempre |
+| `fees_enabled` | bool | Esquema de comisiones que tenía el mercado | Siempre |
+| `fee_rate`, `fee_exponent` | float | `0` si no tenía comisiones | Siempre |
+| `spot_open` | float | Open de la vela 1h de Binance | `w0` |
+| `spot_close` | float | Close de la vela 1h de Binance | `w1` |
+| `outcome` | int | `1` si ganó UP (YES) y `0` si ganó DOWN | `w1` |
+| `n_points_window`, `max_gap_s` | int | Calidad de los datos | Nunca (se calcula con el mercado completo) |
+| `split` | str | `train`, `val` o `test` | Nunca |
+
+`prices_raw.parquet`, cada punto del historial del CLOB sin re-muestrear (lo pidió la revisión de
+S1 a S8):
 
 | Columna | Tipo | Descripción |
 | --------- | ------ | ------------- |
-| `market_id` | str | `condition_id` |
-| `slug`, `question` | str | Para la demo y para depurar |
-| `yes_token_id`, `no_token_id` | str | Para volver a consultar la API |
-| `w0`, `w1` | int (unix s) | Ventana de la vela |
-| `outcome` | int | `1` si ganó UP (YES) y `0` si ganó DOWN |
-| `spot_open`, `spot_close` | float | Open y close de la vela 1h de Binance |
-| `fees_enabled` | bool | Esquema de comisiones que tenía el mercado |
-| `fee_rate`, `fee_exponent` | float | `0` si no tenía comisiones |
-| `n_points_window`, `max_gap_s` | int | Calidad de los datos |
-| `split` | str | `train`, `val` o `test` |
+| `market_id` | str | FK a `markets` |
+| `side` | str | `yes` o `no` |
+| `ts_event` | int | Fecha del punto según la API |
+| `ts_available` | int | `ts_event` más la latencia del feed, que fija S4; nunca menor que `ts_event` |
+| `p` | float | Precio entre 0 y 1 |
 
-`steps.parquet`, una fila por mercado y minuto:
+`spot_1m.parquet`, klines de 1 minuto de Binance, incluida la hora previa a cada ventana para
+calcular la volatilidad sin volver a Binance:
+
+| Columna | Tipo | Descripción |
+| --------- | ------ | ------------- |
+| `ts_event` | int | `open_time` de la kline |
+| `ts_available` | int | `ts_event + 60`: la kline se conoce al cerrar |
+| `open`, `high`, `low`, `close` | float | Precios; `open` y `close` dentro de `[low, high]` |
+| `volume` | float | Volumen negociado |
+
+`steps.parquet`, una fila por mercado y minuto. **Todavía no está en el contrato:** su contenido
+depende de qué ve el agente (S3) y de cuándo se ejecuta (S4), que siguen pendientes. La propuesta
+actual es:
 
 | Columna | Tipo | Descripción |
 | --------- | ------ | ------------- |
@@ -122,10 +151,8 @@ Amplía el contrato de la sección 2.1 de [02_arquitectura.md](02_arquitectura.m
 | `p_stale_s` | int | Segundos desde el último punto de precio |
 | `spot` | float | Close de la última kline de 1m cerrada |
 
-Más una tabla auxiliar `spot_1m.parquet` (`ts`, `close`) con la hora previa a cada ventana, para
-calcular la volatilidad sin volver a Binance. `manifest.json` guarda la configuración, la fecha de
-construcción, los mercados descartados con su motivo, el número de mercados por split y el hash de
-cada Parquet.
+`manifest.json` guarda la configuración, la fecha de construcción, los mercados descartados con su
+motivo, el número de mercados por split y el hash de cada Parquet.
 
 Configuración propuesta, `configs/data.yaml`:
 
