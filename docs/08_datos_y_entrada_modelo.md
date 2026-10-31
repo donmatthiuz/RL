@@ -44,8 +44,8 @@ metadatos inconsistentes y hay datos posteriores a la resolución que se tienen 
 | ------ | --------- | ------- |
 | Listar mercados | `PublicClient.list_events(series_ids=10114, closed=True, order="endDate", ascending=True)`, recorrido con `iter_items()` | `data/raw/gamma/events/<event_id>.json` |
 | Precio YES | `GET https://clob.polymarket.com/prices-history?market=<yes_token_id>&startTs=<w0 - 3600>&endTs=<w1>&fidelity=1` | `data/raw/clob/<yes_token_id>.json` |
-| Spot 1m | `GET /api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=&limit=1000`, en bloques consecutivos | `data/raw/binance/BTCUSDT_1m_<día>.json` |
-| Vela 1h | La misma llamada con `interval=1h` | `data/raw/binance/BTCUSDT_1h_<mes>.json` |
+| Spot 1m | `GET https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=&endTime=&limit=1000`, en bloques de 12 horas (720 klines) | `data/raw/binance/klines/BTCUSDT/1m/<día>T<hora>.json.gz` |
+| Vela 1h | La misma llamada con `interval=1h`, en bloques de un día | `data/raw/binance/klines/BTCUSDT/1h/<día>T00.json.gz` |
 
 Reglas:
 
@@ -53,6 +53,9 @@ Reglas:
   dataset no repite descargas.
 - Reintentos con espera exponencial y una pausa entre llamadas. Los límites de rate del endpoint
   CLOB no están documentados: conviene empezar con unas 5 llamadas por segundo.
+- Las klines se capturan con `make capture-spot` (DAT-03), que toma el activo y las fechas de
+  `configs/data.yaml`. Solo se piden bloques ya cerrados: un bloque abierto guardaría una vela a
+  medio formar.
 - Se pide una hora antes de la ventana (`w0 - 3600`) para tener contexto: el último precio previo
   y la volatilidad del spot.
 - Volumen estimado: unas 12 000 llamadas al CLOB (una por mercado) y unas 750 a Binance. Para
