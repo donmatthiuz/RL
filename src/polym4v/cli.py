@@ -20,8 +20,9 @@ from pydantic import BaseModel, ValidationError
 
 from .client import PolymarketClient
 from .config import ConfigurationError, PolymarketSettings
+from .data.binance import capture_klines, spot_range
 from .data.capture import RawStore, capture_series, write_manifest
-from .utils.config import load_named
+from .utils.config import DataConfig, load_config, load_named
 
 
 def _json_default(value: Any) -> Any:
@@ -84,6 +85,11 @@ def _parser() -> argparse.ArgumentParser:
     capture.add_argument("--limit", type=int, help="Máximo de mercados por serie")
     capture.add_argument("--pause", type=float, default=0.2, help="Segundos entre descargas")
 
+    spot = commands.add_parser("capture-spot", help="Archiva las klines de Binance de una config")
+    spot.add_argument("--config", default="configs/data.yaml", help="Config del dataset")
+    spot.add_argument("--out", default="data/raw", help="Carpeta del crudo")
+    spot.add_argument("--pause", type=float, default=0.1, help="Segundos entre descargas")
+
     config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
     config.add_argument("path", help="Por ejemplo configs/data.yaml")
 
@@ -116,9 +122,26 @@ def _capture(args: argparse.Namespace) -> Any:
     return {"series": summaries, "files": manifest["n_files"]}
 
 
+def _capture_spot(args: argparse.Namespace) -> Any:
+    config = load_config(args.config, DataConfig)
+    store = RawStore(args.out)
+    start, end = spot_range(config.date_from, config.date_to)
+    with httpx.Client(timeout=30) as http:
+        summaries = [
+            capture_klines(
+                f"{config.asset}USDT", interval, start, end, store, http=http, pause=args.pause
+            )
+            for interval in ("1m", "1h")
+        ]
+    manifest = write_manifest(store)
+    return {"klines": summaries, "files": manifest["n_files"]}
+
+
 def _run(args: argparse.Namespace) -> Any:
     if args.command == "capture":
         return _capture(args)
+    if args.command == "capture-spot":
+        return _capture_spot(args)
     if args.command == "config":
         return load_named(args.path).model_dump(mode="json")
     if args.command == "manifest":

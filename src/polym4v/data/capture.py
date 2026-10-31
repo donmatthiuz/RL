@@ -98,6 +98,9 @@ class RawStore:
     def event_path(self, series_id: int, event_id: str) -> Path:
         return self.root / "gamma" / "events" / str(series_id) / f"{event_id}.json.gz"
 
+    def kline_path(self, symbol: str, interval: str, label: str) -> Path:
+        return self.root / "binance" / "klines" / symbol / interval / f"{label}.json.gz"
+
     def write(self, path: Path, payload: dict[str, Any]) -> None:
         """Escribe de forma atómica; mtime=0 deja bytes estables para el hash."""
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -110,8 +113,9 @@ class RawStore:
         return sorted(self.root.rglob("*.json.gz"))
 
 
-def _fetch(
+def get_with_retries(
     http: httpx.Client,
+    url: str,
     params: dict[str, Any],
     sleep: Callable[[float], None],
     retries: int = 4,
@@ -120,7 +124,7 @@ def _fetch(
     status, body = 0, None
     for attempt in range(retries):
         try:
-            response = http.get(CLOB_PRICES_HISTORY, params=params)
+            response = http.get(url, params=params)
         except httpx.TransportError as exc:
             status, body = 0, type(exc).__name__
         else:
@@ -219,7 +223,7 @@ def capture_series(
                 summary["cached"] += 1
                 continue
             params = {"market": str(token), "startTs": window[0], "endTs": window[1], "fidelity": 1}
-            status, body = _fetch(http, params, sleep)
+            status, body = get_with_retries(http, CLOB_PRICES_HISTORY, params, sleep)
             if status != 200:
                 summary["errors"].append(
                     {"event_id": event_id, "token_id": str(token), "status": status, "detail": body}

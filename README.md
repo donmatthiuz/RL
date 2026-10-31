@@ -46,6 +46,9 @@ make config
 
 # Archivar el historial crudo de precios (BTC horario por defecto; ETH con SERIES=10117)
 make capture
+
+# Archivar las klines de Binance (1m y 1h) del activo y las fechas de configs/data.yaml
+make capture-spot
 make manifest
 
 # Generar el PDF de una entrega
