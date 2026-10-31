@@ -380,7 +380,7 @@ que todavía puede comprar a ese precio.
   decidir en el minuto siguiente.
 - La ejecución se calcula en el entorno, igual para el agente y para los baselines.
 
-**Pregunta clave:** ¿la orden se cumple al primer precio que llega después de decidir (casi
+**S4a. Pregunta clave:** ¿la orden se cumple al primer precio que llega después de decidir (casi
 siempre unos 8 s después), aunque ese punto refleje el mercado de algunos segundos antes, o solo a
 un precio que seguro ya incorpora todo lo que el agente sabía, aunque casi nunca llegue dentro del
 minuto?
@@ -400,6 +400,48 @@ minuto?
 | "Al primer precio que llega" | **A. Latencia de 2 s y tolerancia de 60 s** (recomendada) | Se ejecuta el 94,5 % de las órdenes. Es el mejor reflejo histórico del precio real al momento de operar | Puede quedar un desfase de pocos segundos a favor del agente. En la EDA no alcanza a cubrir los costos. Lo vigilan el test de mercado nulo (ENV-10) y la sensibilidad a la latencia (EVA-01) |
 | "Solo un precio que ya lo incorpora todo" | B. Latencia de 15 s y tolerancia de 60 s | Elimina el desfase | Se ejecuta el 23 % de las órdenes: el resultado lo dominaría la mecánica, no la política |
 | "Fidelidad, aunque cueste complejidad" | C. Latencia de 15 s y orden pendiente hasta 75 s | Se ejecuta el 95 % sin desfase | El entorno tiene que manejar órdenes que se cumplen después del paso siguiente sin mostrarlas antes de tiempo. Choca con S6 y S10 |
+
+#### Revisión contra el CLOB (31/10/2026)
+
+R1 preguntó si el modelo es correcto en un CLOB. El precio del historial podría ser el último trade
+y no un precio ejecutable, y el modelo no considera profundidad, liquidez ni ejecuciones parciales.
+Se midió con los trades taker públicos de 60 mercados de train repartidos en el tiempo (131 960
+trades), con [analisis.py](../notebooks/s4_ejecucion_clob/analisis.py).
+
+**Qué datos hay:**
+
+| Dato | ¿Lo tenemos? | Para qué sirve |
+| --- | --- | --- |
+| Historial de precios por minuto (`prices-history`) | Sí, en el crudo | Observación y precio de referencia |
+| Trades taker públicos: lado, precio, tamaño y segundo | En la API (`list_trades` del SDK), no en el crudo | Precio realmente pagado y flujo negociado |
+| Libro de órdenes histórico: bid, ask y profundidad | No: las APIs públicas que usamos solo dan el libro actual | — |
+| Foto final de Gamma: mejor bid y ask, y spread | Sí, pero es posterior a la resolución | Nada para la simulación |
+
+**Qué se encontró:**
+
+- **El historial no es el último trade.** Coincide con él en el 6,7 % de los puntos y con el medio
+  entre la última compra y la última venta en el 22,3 %. Además, el 5,1 % de sus puntos cae en
+  medio tick, algo que en los trades casi no pasa. Se comporta más como un punto medio, que es lo
+  que supone `p ± half_spread`.
+- **En promedio el modelo es conservador.** El precio real se mide como el VWAP de los primeros
+  100 USDC de trades taker del mismo lado, entre `t + 2 s` y `t + 60 s`. Le resulta al agente
+  0,005 USDC por acción mejor que el modelo (`p_next ± 0,01`), y 0,004 en los minutos en que la
+  regla de `edge` operaría. El modelo no inventa ganancias en promedio.
+- **La cola es optimista.** En el 10 % de los minutos la realidad es de 2,5 a 3 centavos peor que
+  el modelo. Lo cubre la sensibilidad con medio spread de 0,02 (EVA-01).
+- **La liquidez no siempre alcanza para 100 USDC.** Hay trades del lado en el 90 % de los minutos,
+  pero solo en el 53 % a 58 % se negociaron 100 USDC o más; la mediana es de unos 120 a 135 USDC
+  por minuto. Una orden de 100 USDC supone liquidez que en casi la mitad de los minutos no se vio.
+
+**S4b. Pregunta clave:** ¿con qué precio y qué liquidez se ejecuta una orden, sin inventar
+ganancias ni liquidez que no podemos verificar?
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Lo más simple que no invente ganancias" | A1. Modelo actual: `p_next ± 0,01` y órdenes de 100 USDC | Medido como conservador en promedio | Supone 100 USDC de liquidez por minuto, que no siempre existió |
+| "Simple, pero sin suponer liquidez que no se vio" | **A2. Modelo actual, órdenes de 20 USDC y validación con trades reales en val y test** (recomendada) | 20 USDC son cerca del 15 % del flujo mediano y superan el mínimo de 5 acciones. La validación detecta si el modelo regala ganancias | Capturar los trades de val y test: unos 3 600 mercados, cerca de 3 h. El retorno se mide sobre el stake, así que el tamaño no cambia la escala de los resultados |
+| "Ejecutar siempre con lo que realmente se negoció" | B. Trades reales en entrenamiento y evaluación: VWAP del flujo observado y ejecución parcial si no alcanza | Lo más fiel sin inventar liquidez | Capturar los trades de los 12 300 mercados (unas 10 h), con un contrato y un entorno más complejos y un entrenamiento más lento |
+| "Simular el libro completo" | C. Profundidad, cola y ejecuciones parciales con el libro | — | **Descartada:** no hay libros históricos, habría que inventar la liquidez |
 
 ### 6.3 S9 — Con qué precio se valora una posición abierta
 
