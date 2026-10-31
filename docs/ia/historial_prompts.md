@@ -26,7 +26,7 @@ Code. El equipo lo revisa y completa.
 | P7 | 30/10/2026 | Claude Code y Context7 | Versiones de herramientas y CI | Satisfactorio |
 | P8 | 31/10/2026 | Claude Code | Captura del crudo en segundo plano | Parcial: falló dos veces por causas distintas |
 | P9 | 31/10/2026 | Claude Code | EDA sobre train | Satisfactorio |
-| P10 | 31/10/2026 | Perplexity | Comisión exacta de Polymarket | Pendiente |
+| P10 | 31/10/2026 | Perplexity | Comisión exacta de Polymarket | Satisfactorio, con vacíos |
 
 ## Entradas
 
@@ -121,8 +121,18 @@ Code. El equipo lo revisa y completa.
 
 ### P10 — Comisión exacta de Polymarket
 
-- **Prompt:** completo en [investigaciones/comisiones_polymarket.md](investigaciones/comisiones_polymarket.md).
-- **Resultado:** pendiente de la respuesta.
+- **Prompt:** completo en [investigaciones/comisiones_polymarket.md](investigaciones/comisiones_polymarket.md),
+  con la respuesta y su evaluación.
+- **Resultado:** satisfactorio, con vacíos. Confirmó la fórmula, el redondeo a 5 decimales y la
+  tabla oficial de ejemplos, y marcó como "no confirmado" lo que no tenía fuente. No confirmó el
+  esquema `crypto_fees` ni el tick.
+- **Por qué los vacíos:** no relacionó el "1,56 % en 50 %" del changelog con `rate 0,25` y
+  `exponent 2`, y citó una frase técnica que contradice la fórmula sin advertirlo.
+- **Cómo se evaluó:** cada punto se contrastó con su fuente y con el crudo. Las fechas de creación
+  de los mercados de cada esquema y el tick de los 12 471 mercados cubrieron los vacíos.
+- **Corrección:** la respuesta reveló un error del código: una comisión por debajo de 0,00001 se
+  cobra como cero, no como el mínimo. Se corrigió en ENV-03.
+- **Aporte:** los ejemplos oficiales pasaron a ser tests de ENV-03.
 
 ## Plantilla
 
