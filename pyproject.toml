@@ -13,15 +13,6 @@ dependencies = [
     "python-dotenv>=1.0,<2",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "mypy>=2.4.1",
-    "pre-commit>=4.7.0",
-    "pytest>=8,<10",
-    "pytest-cov>=7.1.0",
-    "ruff>=0.17.3",
-]
-
 [project.scripts]
 polym4v = "polym4v.cli:main"
 
@@ -59,3 +50,12 @@ select = ["E", "F", "W", "I", "UP", "B"]
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "pytest>=8,<10",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.3",
+]

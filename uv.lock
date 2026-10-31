@@ -1162,7 +1162,7 @@ dependencies = [
     { name = "python-dotenv" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "mypy" },
     { name = "pre-commit" },
@@ -1173,15 +1173,18 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.4.1" },
     { name = "polymarket-client", specifier = "==0.14.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.7.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8,<10" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1.0" },
     { name = "python-dotenv", specifier = ">=1.0,<2" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.17.3" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=2.4.1" },
+    { name = "pre-commit", specifier = ">=4.7.0" },
+    { name = "pytest", specifier = ">=8,<10" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "ruff", specifier = ">=0.17.3" },
+]
 
 [[package]]
 name = "polymarket-client"
