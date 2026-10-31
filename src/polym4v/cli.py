@@ -1,7 +1,5 @@
 """Comandos de consulta con salida JSON y errores sin secretos."""
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -10,8 +8,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+import httpx
 from polymarket import (
     PolymarketError,
+    PublicClient,
     RateLimitError,
     RequestRejectedError,
     UserInputError,
@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from .client import PolymarketClient
 from .config import ConfigurationError, PolymarketSettings
+from .data.capture import RawStore, capture_series, write_manifest
 
 
 def _json_default(value: Any) -> Any:
@@ -69,10 +70,36 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("account", help="Verifica la conexión autenticada")
     orders = commands.add_parser("open-orders", help="Consulta órdenes de tu cuenta")
     orders.add_argument("--cursor")
+
+    capture = commands.add_parser("capture", help="Archiva el historial crudo de una serie")
+    capture.add_argument("--series", type=int, action="append", required=True,
+                         help="ID de la serie en Gamma; se puede repetir")
+    capture.add_argument("--out", default="data/raw", help="Carpeta del crudo")
+    capture.add_argument("--limit", type=int, help="Máximo de mercados por serie")
+    capture.add_argument("--pause", type=float, default=0.2, help="Segundos entre descargas")
     return parser
 
 
+def _capture(args: argparse.Namespace) -> Any:
+    store = RawStore(args.out)
+
+    def progress(n: int) -> None:
+        if n % 250 == 0:
+            print(f"{n} mercados procesados", file=sys.stderr, flush=True)
+
+    with PublicClient() as gamma, httpx.Client(timeout=30) as http:
+        summaries = [
+            capture_series(series, store, gamma=gamma, http=http, pause=args.pause,
+                           limit=args.limit, on_event=progress)
+            for series in args.series
+        ]
+    manifest = write_manifest(store)
+    return {"series": summaries, "files": manifest["n_files"]}
+
+
 def _run(args: argparse.Namespace) -> Any:
+    if args.command == "capture":
+        return _capture(args)
     authenticated = args.command in ("account", "open-orders")
     settings = PolymarketSettings.from_env(args.env_file) if authenticated else None
     with PolymarketClient(settings, authenticated=authenticated) as client:
