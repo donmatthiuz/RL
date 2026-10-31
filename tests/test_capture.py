@@ -185,3 +185,15 @@ def test_cli_capture_writes_manifest(tmp_path, monkeypatch, capsys, events):
     assert result["files"] == 3
     assert result["series"][0]["downloaded"] == 2
     assert (tmp_path / "manifest.json").exists()
+
+
+def test_cli_manifest_rebuilds_hashes(tmp_path, capsys):
+    from polym4v import cli
+
+    RawStore(tmp_path).write(RawStore(tmp_path).price_path("111"), {"body": {"history": []}})
+
+    assert cli.main(["manifest", "--out", str(tmp_path)]) == 0
+
+    assert json.loads(capsys.readouterr().out) == {"files": 1}
+    manifest = json.loads((tmp_path / "manifest.json").read_text())
+    assert manifest["files"][0]["path"] == "clob/prices-history/111.json.gz"

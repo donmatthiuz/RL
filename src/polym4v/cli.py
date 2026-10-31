@@ -82,6 +82,9 @@ def _parser() -> argparse.ArgumentParser:
     capture.add_argument("--out", default="data/raw", help="Carpeta del crudo")
     capture.add_argument("--limit", type=int, help="Máximo de mercados por serie")
     capture.add_argument("--pause", type=float, default=0.2, help="Segundos entre descargas")
+
+    manifest = commands.add_parser("manifest", help="Recalcula el hash de cada archivo crudo")
+    manifest.add_argument("--out", default="data/raw", help="Carpeta del crudo")
     return parser
 
 
@@ -112,6 +115,9 @@ def _capture(args: argparse.Namespace) -> Any:
 def _run(args: argparse.Namespace) -> Any:
     if args.command == "capture":
         return _capture(args)
+    if args.command == "manifest":
+        manifest = write_manifest(RawStore(args.out))
+        return {"files": manifest["n_files"]}
     authenticated = args.command in ("account", "open-orders")
     settings = PolymarketSettings.from_env(args.env_file) if authenticated else None
     with PolymarketClient(settings, authenticated=authenticated) as client:
