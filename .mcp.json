@@ -2,7 +2,19 @@
   "mcpServers": {
     "graphify-rl": {
       "command": "graphify-mcp",
-      "args": ["--transport", "stdio", "graphify-out/graph.json"]
+      "args": [
+        "--transport",
+        "stdio",
+        "graphify-out/graph.json"
+      ]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd \"$(git rev-parse --show-toplevel)\" && CONTEXT7_API_KEY=\"$(cat keys/context7.key 2>/dev/null)\" exec npx -y @upstash/context7-mcp@4.4.4"
+      ]
     }
   }
 }

@@ -220,5 +220,9 @@ context/
 graphify-out
 
 # Datos crudos, procesados y modelos: se generan localmente
-data/
-models/
+/data/
+/models/
+
+# Claves locales (cada integrante crea las suyas; nunca se versionan)
+keys/*
+!keys/.gitkeep
