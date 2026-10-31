@@ -20,7 +20,7 @@ Dado el estado de un mercado en el instante `t` (precio YES/NO, su historia reci
 la resolución, precio spot de BTC/ETH y la posición actual del agente), decidir una acción:
 
 | Acción | Significado |
-|--------|-------------|
+| -------- | ------------- |
 | `WAIT` | No hacer nada (mantener la posición actual, o seguir sin posición) |
 | `BUY_YES` | Abrir una posición en YES con un monto fijo del saldo |
 | `BUY_NO` | Abrir una posición en NO con un monto fijo del saldo |
@@ -53,7 +53,7 @@ históricos. El agente nunca opera en vivo.
 ## 4. Técnicas
 
 | Técnica | Rol en el proyecto |
-|---------|--------------------|
+| --------- | -------------------- |
 | **PPO** (on-policy, actor-crítico) | Agente principal. Aprende la política directamente y es estable. |
 | **DQN** (off-policy, basado en valor) | Punto de comparación. Aprende `Q(s, a)` para cada acción discreta. |
 | **Offline RL** (Discrete CQL / BC) | Aprende a partir de un dataset fijo de transiciones, sin interactuar con el entorno. |
@@ -104,8 +104,8 @@ válida.
 ## 7. Criterios de éxito (entregables evaluables)
 
 | # | Criterio | Cómo se verifica |
-|---|----------|------------------|
-| C1 | Dataset reproducible | `polyrl data build` genera el mismo dataset (hash) a partir de la configuración |
+| --- | ---------- | ------------------ |
+| C1 | Dataset reproducible | `polym4v data build` genera el mismo dataset (hash) a partir de la configuración |
 | C2 | Entorno validado | Pasa `gymnasium.utils.env_checker.check_env` y los tests de conservación del dinero |
 | C3 | 3 agentes entrenados | PPO, DQN y Offline RL con checkpoints guardados y curvas de entrenamiento |
 | C4 | Comparación rigurosa | Tabla de métricas en el conjunto de test, con ≥ 5 semillas e IC 95 % |

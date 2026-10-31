@@ -8,8 +8,8 @@ escriben una parte del informe.
 > **Asignación de personas:** completar la columna "Integrante" en la primera reunión.
 
 | Rol | Integrante | Módulos de los que es dueño | Backup (lo cubre si se ausenta) |
-|-----|------------|-----------------------------|---------------------------------|
-| **R1** Líder técnico e integrador (MLOps) | _por asignar_ | `utils/`, `cli.py`, CI/CD, `pyproject.toml`, `docs/` | R4 |
+| ----- | ------------ | ----------------------------- | --------------------------------- |
+| **R1** Líder técnico e integrador (MLOps) | Josué | `utils/`, `cli.py`, `pyproject.toml`, `docs/`, contratos entre módulos (CI/CD fuera del alcance, ADR-010) | R4 |
 | **R2** Ingeniero de datos | Mathew | `data/`, `features/`, `notebooks/eda` | R5 |
 | **R3** Ingeniero del entorno y la recompensa | Gustavo | `env/` (incluye `reward.py`) | R4 |
 | **R4** Ingeniero de agentes RL | _por asignar_ | `agents/` (PPO, DQN, Offline RL) | R3 |
@@ -24,14 +24,14 @@ escriben una parte del informe.
 **Responsabilidades:**
 
 - Montar la base del repositorio: `pyproject.toml`, `uv`, `ruff`, `pre-commit`, estructura de
-  carpetas y el paquete `polyrl` instalable.
+  carpetas y el paquete `polym4v` instalable.
 - Configurar y mantener la **CI/CD** (GitHub Actions) sobre la rama `proyecto`.
 - Implementar `utils/` (configuración, semillas, logging, rutas) y la **CLI** (`typer`).
 - Definir y hacer cumplir los **contratos** entre módulos: esquemas de datos, la interfaz `Policy`
   y el formato de `info`.
 - Hacer las **integraciones** de extremo a extremo (datos → entorno → entrenamiento → evaluación).
 - Dirigir las reuniones de avance y mantener el tablero (GitHub Projects).
-- Mantener `docs/` coherente y escribir las secciones de *Metodología* y *Reproducibilidad* del
+- Mantener `docs/` coherente y escribir las secciones de _Metodología_ y _Reproducibilidad_ del
   informe.
 
 **Entregables clave:** repositorio base, `ci.yml`, CLI funcional, pipeline E2E y release `v1.0`.
@@ -49,16 +49,16 @@ escriben una parte del informe.
 - Investigar las APIs de Polymarket (Gamma y CLOB) y de Binance. **Antes de cualquier otra tarea**
   debe validar qué granularidad entregan para los mercados cerrados (riesgo R1).
 - Implementar los clientes HTTP con caché, reintentos y rate limiting.
-- Seleccionar los mercados (familia *BTC Up or Down*, y ETH como extensión) y documentar los
+- Seleccionar los mercados (familia _BTC Up or Down_, y ETH como extensión) y documentar los
   criterios de filtrado.
 - Limpiar, re-muestrear y alinear temporalmente el precio del token con el spot.
-- Implementar `features/` como funciones puras, sin *lookahead*.
+- Implementar `features/` como funciones puras, sin _lookahead_.
 - Implementar el **split temporal por mercado** y el `manifest.json` con hash.
 - Hacer un notebook de **EDA**: distribución de resultados, curvas de precio típicas y relación
   entre `spot_vs_open` y el resultado.
-- Escribir la sección *Datos* del informe.
+- Escribir la sección _Datos_ del informe.
 
-**Entregables clave:** `polyrl data build`, `data/processed/<id>/`, fixtures para los tests y el
+**Entregables clave:** `polym4v data build`, `data/processed/<id>/`, fixtures para los tests y el
 notebook de EDA.
 
 **Perfil sugerido:** experiencia con pandas y con consumo de APIs.
@@ -80,7 +80,7 @@ lo que se haga encima no sirve.
 - Escribir los tests más exigentes del proyecto: `check_env`, invariantes y tests de propiedades
   con `hypothesis`.
 - Diseñar, junto con R4, los experimentos de **ablación de la recompensa**.
-- Escribir la sección *Formulación como MDP y función de recompensa* del informe.
+- Escribir la sección _Formulación como MDP y función de recompensa_ del informe.
 
 **Entregables clave:** `PolymarketEnv` v1 validado, `reward.py` con ≥ 3 variantes y la suite de
 tests del entorno.
@@ -98,12 +98,12 @@ tests del entorno.
 - Implementar la interfaz `Policy` y los adaptadores para SB3 y d3rlpy.
 - Implementar los **baselines heurísticos**, junto con R5, que los usa en la evaluación.
 - Escribir los scripts de entrenamiento de **PPO** y **DQN**: callbacks, checkpoints, evaluación
-  periódica en *val* y TensorBoard.
+  periódica en _val_ y TensorBoard.
 - Recolectar el **dataset offline** y entrenar **Discrete CQL** y **BC**.
 - Ajustar los hiperparámetros con una búsqueda pequeña y acotada (grid o Optuna con un presupuesto
   fijo).
 - Entrenar con ≥ 5 semillas por configuración final.
-- Escribir la sección *Algoritmos y entrenamiento* del informe.
+- Escribir la sección _Algoritmos y entrenamiento_ del informe.
 
 **Entregables clave:** `configs/{ppo,dqn,offline}.yaml`, modelos entrenados en `models/`, curvas de
 aprendizaje y una tabla de hiperparámetros.
@@ -122,13 +122,13 @@ en la presentación.
 - Implementar `run_backtest`, que es común para cualquier `Policy`, y guardar las trayectorias.
 - Implementar las métricas (retorno, Sharpe, drawdown, win rate, operaciones y costos) y la parte
   estadística (bootstrap, comparación pareada).
-- Generar las tablas y figuras del informe (`polyrl report`).
+- Generar las tablas y figuras del informe (`polym4v report`).
 - Construir la **demo en Streamlit**: reproductor paso a paso, gráficos y panel de estado.
 - Mantener el despliegue de la demo (CD), si se publica.
 - Coordinar la redacción del **informe final** y de la **presentación**. Escribir las secciones
-  *Resultados* y *Discusión*.
+  _Resultados_ y _Discusión_.
 
-**Entregables clave:** `polyrl evaluate`, `reports/` con tablas y figuras, `app/demo.py`, el
+**Entregables clave:** `polym4v evaluate`, `reports/` con tablas y figuras, `app/demo.py`, el
 informe y las diapositivas.
 
 **Perfil sugerido:** interés en estadística y en visualización, y buena comunicación.
@@ -137,11 +137,11 @@ informe y las diapositivas.
 
 ## Matriz RACI
 
-**R** = Responsable (lo hace) · **A** = Aprueba (*accountable*) · **C** = Consultado ·
+**R** = Responsable (lo hace) · **A** = Aprueba (_accountable_) · **C** = Consultado ·
 **I** = Informado
 
 | Entregable | R1 | R2 | R3 | R4 | R5 |
-|------------|----|----|----|----|----|
+| ------------ | ---- | ---- | ---- | ---- | ---- |
 | Repositorio base, CI/CD | **R/A** | I | I | I | I |
 | Contratos entre módulos | **A** | C | R | R | C |
 | Clientes API y dataset | C | **R/A** | I | I | C |
@@ -161,9 +161,9 @@ informe y las diapositivas.
 ## Dinámica del equipo
 
 | Ritual | Frecuencia | Duración | Quién |
-|--------|------------|----------|-------|
+| -------- | ------------ | ---------- | ------- |
 | Reunión de avance (avances, bloqueos y plan) | Cada 2–3 días | 30 min | Todos. La modera R1. |
-| *Check-in* asíncrono (qué hice, qué haré, qué me bloquea) | Diario | — | Todos, en el canal del grupo |
+| _Check-in_ asíncrono (qué hice, qué haré, qué me bloquea) | Diario | — | Todos, en el canal del grupo |
 | Verificación de entregas (correr los tests de lo subido a `proyecto`) | En cada entrega | — | El dueño del módulo |
 | Demo interna al cierre de cada fase | Por hito | 30 min | Todos |
 

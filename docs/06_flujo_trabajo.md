@@ -10,7 +10,7 @@ El repositorio es del curso y ya tiene ramas de otras entregas (`main`, `lab1`�
 ramas nuevas.
 
 | Regla | Detalle |
-|-------|---------|
+| ------- | --------- |
 | Una sola rama | Todos hacen commit y push directamente a `proyecto` |
 | No tocar otras ramas | Las ramas de laboratorios y exámenes no se modifican ni se mezclan con `proyecto` |
 | Sincronizar antes de subir | `git pull --rebase origin proyecto` antes de cada `git push` |
@@ -59,8 +59,9 @@ entregado, y lo entregado tiene que venir con sus tests.
 1. **Cada entrega trae sus tests.** El commit que completa una tarea incluye los tests de su
    criterio de aceptación ([04_tareas.md](04_tareas.md)), siguiendo las normas de
    [05_testing.md](05_testing.md).
-2. **La CI corre en cada push a `proyecto`.** Si un push deja la CI en rojo, su autor lo arregla
-   **antes de seguir con otra cosa**. Si no puede, avisa en el canal y R1 ayuda.
+2. **Los tests pasan antes de cada push a `proyecto`.** No hay CI (ADR-010), así que cada autor
+   corre `uv run pytest` localmente. Si un push rompe los tests, su autor lo arregla **antes de
+   seguir con otra cosa**. Si no puede, avisa en el canal y R1 ayuda.
 3. **El dueño del módulo verifica.** Cuando alguien sube algo que toca un módulo ajeno, el dueño
    corre los tests de ese módulo y revisa el cambio. Si encuentra un problema, se corrige con un
    commit `fix(...)` con su test de regresión.
@@ -98,7 +99,7 @@ orden:
 ## 6. Qué se versiona y qué no
 
 | Se versiona | No se versiona (`.gitignore`) |
-|-------------|-------------------------------|
+| ------------- | ------------------------------- |
 | Código, configs, tests y fixtures pequeñas | `data/raw/`, `data/processed/`, `data/offline/` |
 | `docs/`, `reports/` (tablas y figuras finales) | `models/` (salvo los `metrics.json` finales) |
 | Notebooks **con las salidas limpias** o EDA final ejecutado | Logs de TensorBoard (`runs/`) |
@@ -111,7 +112,7 @@ orden:
 Una tarea está **hecha** cuando cumple todo esto:
 
 1. Cumple el **criterio de aceptación** de [04_tareas.md](04_tareas.md).
-2. Tiene tests, y la CI está en verde después del push.
+2. Tiene tests, y `uv run pytest` pasa localmente antes del push (la CI está fuera del alcance, ADR-010).
 3. Tiene docstrings en las funciones públicas y type hints.
 4. Está subida a la rama `proyecto`.
 5. Si cambió una decisión de diseño, se actualizó `docs/` o se agregó un ADR.

@@ -6,7 +6,7 @@ cada rol trabaje en paralelo) y la facilidad de testear, por sobre el rendimient
 
 **Principios:**
 
-1. **Un solo paquete Python** (`polyrl`) con módulos desacoplados por contratos claros.
+1. **Un solo paquete Python** (`polym4v`) con módulos desacoplados por contratos claros.
 2. **Todo se configura en YAML**: nada de números mágicos dentro del código.
 3. **Reproducibilidad**: semillas fijas, datasets versionados por hash y configuraciones guardadas
    junto a cada modelo.
@@ -18,25 +18,20 @@ cada rol trabaje en paralelo) y la facilidad de testear, por sobre el rendimient
 
 ## 1. Vista general
 
-```
-                ┌──────────────────────────────────────────────────────────────┐
-                │                         configs/*.yaml                       │
-                └──────────────────────────────────────────────────────────────┘
-                      │                 │                  │               │
-                      ▼                 ▼                  ▼               ▼
- ┌─────────────┐  ┌──────────┐  ┌──────────────┐  ┌─────────────────┐  ┌──────────────┐
- │ Gamma API   │  │          │  │              │  │    agents/      │  │ evaluation/  │
- │ CLOB API    │─▶│  data/   │─▶│  features/   │─▶│  env/ (Gym)  ◀─▶│─▶│ backtest     │
- │ Binance API │  │ ingesta  │  │  ingeniería  │  │  PPO · DQN ·    │  │ métricas     │
- └─────────────┘  │ limpieza │  │  de features │  │  CQL · baselines│  │ estadística  │
-                  └────┬─────┘  └──────┬───────┘  └────────┬────────┘  └──────┬───────┘
-                       │               │                   │                  │
-                       ▼               ▼                   ▼                  ▼
-                 data/raw/       data/processed/       models/           reports/
-                 (JSON crudo)    (Parquet + split)  (checkpoints +    (tablas, gráficos)
-                                                    config + logs)            │
-                                                                              ▼
-                                                                    app/demo.py (Streamlit)
+```mermaid
+flowchart LR
+    CFG["configs/*.yaml"]
+    API["APIs<br/>Gamma · CLOB · Binance"] --> DATA["data/<br/>ingesta y limpieza"]
+    DATA --> FEAT["features/<br/>ingeniería de features"]
+    FEAT --> ENV["env/<br/>PolymarketEnv (Gymnasium)"]
+    ENV <--> AG["agents/<br/>PPO · DQN · CQL · baselines"]
+    AG --> EVAL["evaluation/<br/>backtest · métricas · estadística"]
+    CFG -.-> DATA & FEAT & ENV & AG & EVAL
+    DATA --> RAW[("data/raw/<br/>JSON crudo")]
+    FEAT --> PROC[("data/processed/<br/>Parquet + split")]
+    AG --> MOD[("models/<br/>checkpoints, config y logs")]
+    EVAL --> REP[("reports/<br/>tablas y gráficos")]
+    REP --> APP["app/demo.py<br/>Streamlit"]
 ```
 
 Flujo: **ingesta → dataset procesado → entorno → entrenamiento → evaluación → demo**.
@@ -52,20 +47,23 @@ y testear de forma independiente, usando *fixtures*.
 **Fuentes:**
 
 | Fuente | Endpoint | Para qué |
-|--------|----------|----------|
-| Gamma API | `GET https://gamma-api.polymarket.com/markets` (filtros `closed=true`, tags, fechas) | Metadatos: pregunta, `conditionId`, `clobTokenIds`, `endDate`, resultado |
-| CLOB API | `GET https://clob.polymarket.com/prices-history?market=<token_id>&startTs=&endTs=&fidelity=<min>` | Serie de precios `{t, p}` del token YES |
-| Binance (público) | `GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m` | Precio spot de BTC/ETH como feature externa |
-| *Fallback* | Data API de Polymarket (`/trades`) o el subgraph on-chain | Si `prices-history` no da la granularidad suficiente en mercados cerrados |
+| -------- | ---------- | ---------- |
+| Gamma API (vía SDK) | `PublicClient.list_events(series_ids=10114, closed=True)` | Metadatos: pregunta, `condition_id`, tokens, ventana, resultado, esquema de comisiones |
+| CLOB API | `GET https://clob.polymarket.com/prices-history?market=<token_id>&startTs=&endTs=&fidelity=1` | Serie de precios `{t, p}` del token YES, un punto por minuto (ADR-007) |
+| Binance (público) | `GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m` (y `1h`) | Precio spot como feature y verificación del resultado |
 
-**Familia de mercados recomendada:** *"Bitcoin Up or Down"* (horarios o diarios). Hay cientos de
-episodios homogéneos, cada uno con una duración fija y una resolución clara. Los mercados de tipo
-*"¿BTC llegará a $X antes de la fecha Y?"* son una segunda familia opcional.
+La Data API v2 del SDK (`list_price_history`) devuelve vacío en mercados cerrados, por eso no se
+usa para el historial ([spike de datos](notas/spike_datos.md)).
+
+**Familia de mercados:** *"Bitcoin Up or Down"* **horario** (ADR-004). Hay del orden de 12 000
+episodios homogéneos y resuelven con la vela 1h de Binance. El detalle del ETL, el contrato de
+datos ampliado y la observación del agente están en
+[08_datos_y_entrada_modelo.md](08_datos_y_entrada_modelo.md).
 
 **Componentes:**
 
 ```
-src/polyrl/data/
+src/polym4v/data/
 ├── clients/
 │   ├── gamma.py        # GammaClient: lista y filtra mercados, maneja paginación
 │   ├── clob.py         # ClobClient: historia de precios por token
@@ -93,7 +91,7 @@ src/polyrl/data/
 `markets.parquet` — una fila por mercado:
 
 | Columna | Tipo | Descripción |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | `market_id` | str | `conditionId` |
 | `question` | str | Texto de la pregunta |
 | `asset` | str | `BTC` / `ETH` |
@@ -104,7 +102,7 @@ src/polyrl/data/
 `steps.parquet` — una fila por (mercado, paso):
 
 | Columna | Tipo | Descripción |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | `market_id` | str | FK a `markets` |
 | `ts` | int | Timestamp del paso |
 | `p_yes` | float ∈ [0,1] | Precio del token YES (el de NO se aproxima como `1 - p_yes`) |
@@ -119,7 +117,7 @@ SHA-256 de los Parquet.
 Funciones **puras** que solo reciben la historia hasta `t` (inclusive):
 
 | Feature | Descripción |
-|---------|-------------|
+| --------- | ------------- |
 | `p_yes_t` | Precio actual |
 | `ret_p_{1,5,15}` | Cambio de `p_yes` en los últimos 1/5/15 pasos |
 | `vol_p_15` | Desviación estándar de los cambios de `p_yes` (15 pasos) |
@@ -129,12 +127,16 @@ Funciones **puras** que solo reciben la historia hasta `t` (inclusive):
 
 La normalización (media y desviación) se ajusta **solo con train** y se guarda junto al dataset.
 
+La lista concreta para la serie horaria, con la volatilidad del spot, el valor justo `p_fair` y
+`edge = p_fair - p_yes`, está en la sección 4.1 de
+[08_datos_y_entrada_modelo.md](08_datos_y_entrada_modelo.md).
+
 ### 2.3 `env/` — Entorno simulado (Rol 3)
 
 `PolymarketEnv(gymnasium.Env)`: **un episodio = un mercado**.
 
 ```
-src/polyrl/env/
+src/polym4v/env/
 ├── market_env.py   # PolymarketEnv: reset/step/render
 ├── portfolio.py    # Portfolio: cash, posición, ejecución de órdenes, mark-to-market
 ├── execution.py    # Modelo de costos: spread, slippage, comisión
@@ -153,14 +155,14 @@ src/polyrl/env/
 **Reglas de la simulación:**
 
 | Regla | Detalle |
-|-------|---------|
+| ------- | --------- |
 | Price-taker | El agente no mueve el precio. Ejecuta al precio de `t` más el spread y el slippage. |
-| Ejecución | La acción elegida con la observación de `t` se ejecuta al precio de `t` (configurable: `t+1` para ser más conservadores). |
+| Ejecución | La acción elegida con la observación de `t` se ejecuta al precio de `t+1` (`execute_at: next`, propuesta en el ADR-011). `current` queda como ablación. |
 | Una posición a la vez | `BUY_*` con una posición ya abierta es una **acción inválida**: se trata como `WAIT` y se aplica una pequeña penalización. |
 | Tamaño fijo | Cada compra usa `stake_fraction` del saldo inicial (por ejemplo, 10 %). |
 | `SELL` sin posición | Acción inválida, se trata como `WAIT` y se penaliza. |
-| Costos | `buy_price = p + spread/2 + slippage`, `sell_price = p - spread/2 - slippage`, más `fee_rate` sobre el nocional. |
-| Fin del episodio | Al llegar a `end_ts`, la posición abierta **se liquida** a `1` o `0` según `outcome`. |
+| Costos | `buy_price = p + spread/2 + slippage`, `sell_price = p - spread/2 - slippage`, más la comisión taker `acciones × fee_rate × (precio × (1 - precio))^fee_exponent` (ADR-009). |
+| Fin del episodio | Al llegar a `w1` (fin de la vela), la posición abierta **se liquida** a `1` o `0` según `outcome`, sin comisión. |
 | Precio de NO | `p_no = 1 - p_yes` (aproximación documentada en el ADR-003). |
 
 **Invariantes** (verificados por tests, ver [05_testing.md](05_testing.md)):
@@ -187,7 +189,7 @@ r_t =  ΔV_t / V_0                         # beneficio/pérdida mark-to-market d
 donde `V_t = cash_t + valor_mark_to_market_t` y `DD_t = max_{τ≤t} V_τ - V_t`.
 
 | Variante (`reward.name`) | Descripción | Uso |
-|--------------------------|-------------|-----|
+| -------------------------- | ------------- | ----- |
 | `pnl` | Solo `ΔV_t / V_0` | Línea base de la recompensa |
 | `pnl_risk` | `pnl` más la penalización de drawdown | **Recompensa principal** |
 | `terminal` | Solo el PnL final del episodio (recompensa escasa) | Ablación |
@@ -209,7 +211,7 @@ class Policy(Protocol):
 ```
 
 | Agente | Implementación | Notas |
-|--------|----------------|-------|
+| -------- | ---------------- | ------- |
 | `RandomPolicy` | propia | Piso mínimo |
 | `NoTradePolicy` | propia | Siempre `WAIT`. Retorno = 0 |
 | `FavoritePolicy` | propia | Compra el lado con precio > 0.5 en el paso `k` y mantiene hasta la resolución |
@@ -224,7 +226,7 @@ class Policy(Protocol):
 `data/offline/<id>.h5`. Con eso se entrena CQL, que nunca interactúa con el entorno.
 
 ```
-src/polyrl/agents/
+src/polym4v/agents/
 ├── base.py         # Policy Protocol + wrapper SB3/d3rlpy → Policy
 ├── baselines.py    # Políticas heurísticas
 ├── train_sb3.py    # Entrenamiento PPO/DQN (callbacks, checkpoints, early stopping por val)
@@ -238,7 +240,7 @@ src/polyrl/agents/
 ### 2.6 `evaluation/` — Backtesting y métricas (Rol 5)
 
 ```
-src/polyrl/evaluation/
+src/polym4v/evaluation/
 ├── backtest.py     # run_backtest(policy, env, markets) → DataFrame de trayectorias
 ├── metrics.py      # Métricas por episodio y agregadas
 ├── stats.py        # Bootstrap IC 95 %, test de diferencias pareadas
@@ -248,7 +250,7 @@ src/polyrl/evaluation/
 **Métricas:**
 
 | Métrica | Definición |
-|---------|------------|
+| --------- | ------------ |
 | Retorno medio por mercado | `mean(V_final / V_0 - 1)` |
 | Retorno acumulado | Capital compuesto mercado a mercado, en orden cronológico |
 | Sharpe (por episodio) | `mean(ret) / std(ret)` |
@@ -278,12 +280,12 @@ Streamlit (`app/demo.py`):
 ### 2.8 `utils/` y CLI (Rol 1)
 
 ```
-src/polyrl/utils/
+src/polym4v/utils/
 ├── config.py       # Carga YAML → dataclasses/pydantic validados
 ├── seeding.py      # set_global_seed(seed): random, numpy, torch, gym
 ├── logging.py      # logging estándar + TensorBoard
 └── paths.py        # Rutas centralizadas (data/, models/, reports/)
-src/polyrl/cli.py   # Typer: polyrl data build | train | evaluate | collect-offline | report
+src/polym4v/cli.py   # Typer: polym4v data build | train | evaluate | collect-offline | report
 ```
 
 ---
@@ -295,12 +297,6 @@ RL/
 ├── README.md
 ├── pyproject.toml              # dependencias, ruff, pytest, coverage, mypy
 ├── uv.lock
-├── .pre-commit-config.yaml
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml              # lint + tests + smoke en cada push a proyecto
-│   │   ├── nightly.yml         # tests lentos + backtest corto (manual/programado)
-│   │   └── release.yml         # CD: en tag v* publica reporte y modelos
 ├── configs/
 │   ├── data.yaml
 │   ├── env.yaml
@@ -308,7 +304,7 @@ RL/
 │   ├── dqn.yaml
 │   ├── offline.yaml
 │   └── eval.yaml
-├── src/polyrl/
+├── src/polym4v/
 │   ├── data/  features/  env/  agents/  evaluation/  utils/
 │   └── cli.py
 ├── app/
@@ -329,7 +325,7 @@ RL/
 ## 4. Stack tecnológico
 
 | Área | Herramienta | Justificación |
-|------|-------------|---------------|
+| ------ | ------------- | --------------- |
 | Lenguaje | Python 3.11 | Estándar en RL. Lo soportan todas las librerías. |
 | Gestión de entorno | `uv` (alternativa: `pip` + `venv`) | Rápido y con lockfile reproducible |
 | Entorno RL | `gymnasium` | API estándar que esperan SB3 y d3rlpy |
@@ -343,7 +339,7 @@ RL/
 | Demo | `streamlit` | Una app interactiva en pocas líneas |
 | Calidad | `ruff` (lint + format), `mypy` (modo permisivo), `pre-commit` | |
 | Tests | `pytest`, `pytest-cov`, `responses`, `hypothesis` | Ver [05_testing.md](05_testing.md) |
-| CI/CD | GitHub Actions | Gratis en repos de GitHub |
+| CI/CD | Fuera del alcance (ADR-010) | Los tests se corren localmente |
 
 **Hardware:** todo debe correr en una laptop con CPU. Las redes son MLP pequeñas (`[64, 64]`). Si
 hace falta más cómputo, se puede usar Google Colab.
@@ -363,10 +359,11 @@ dataset_id: btc_updown_1h_v1
 env:
   stake_fraction: 0.10
   initial_cash: 1000.0
-  spread: 0.01
+  spread: 0.02
   slippage: 0.005
-  fee_rate: 0.0
-  execute_at: current     # current | next
+  fee_rate: 0.07          # comisión taker vigente (ADR-009); 0.0 para la ablación
+  fee_exponent: 1
+  execute_at: next        # next | current (ADR-011)
 reward:
   name: pnl_risk
   lambda_dd: 0.5
@@ -389,11 +386,12 @@ seeds: [0, 1, 2, 3, 4]
 ## 6. Límites conocidos del diseño
 
 | Simplificación | Impacto | Por qué se acepta |
-|----------------|---------|-------------------|
+| ---------------- | --------- | ------------------- |
 | No hay order book histórico | El spread y el slippage son supuestos | Polymarket no publica la historia del libro |
 | Price-taker | Sobreestima lo ejecutable con tamaños grandes | Los tamaños simulados son pequeños |
 | `p_no = 1 - p_yes` | Ignora pequeñas diferencias entre los dos libros | Se compensa con el spread |
-| Granularidad de la API | Puede ser gruesa en mercados cerrados | Se verifica en el spike DAT-01, antes de todo lo demás (riesgo R1) |
+| Granularidad de la API | Un punto por minuto; algunos minutos sin dato | Verificado en el spike DAT-01. Se rellena hacia adelante y se informa la antigüedad del precio (`p_stale`). |
+| Comisiones uniformes | Los mercados anteriores a 2026 no cobraban | Se evalúa con el costo real de hoy (ADR-009) |
 
 Estas limitaciones van en el informe final. Más detalle en
 [07_riesgos_y_decisiones.md](07_riesgos_y_decisiones.md).

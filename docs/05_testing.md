@@ -18,7 +18,7 @@ sirve. Por eso el testing no es opcional: es parte del método científico del p
    laptop. Lo lento se marca con `@pytest.mark.slow`.
 5. **Un bug encontrado = un test de regresión** que lo reproduce, agregado en el mismo commit que lo
    arregla.
-6. **Cobertura mínima: 70 %** de líneas en `src/polyrl/`. Los módulos críticos (`env/`,
+6. **Cobertura mínima: 70 %** de líneas en `src/polym4v/`. Los módulos críticos (`env/`,
    `evaluation/metrics.py` y `data/splits.py`) deben llegar a **≥ 90 %**. `app/` y `notebooks/`
    quedan fuera de la medición.
 7. **No se baja la cobertura**: una entrega que la reduce más de 1 punto debe justificarlo.
@@ -28,7 +28,7 @@ sirve. Por eso el testing no es opcional: es parte del método científico del p
 ## 2. Tipos de tests y marcadores
 
 | Tipo | Carpeta | Marcador | Qué prueba | Corre en |
-|------|---------|----------|------------|----------|
+| ------ | --------- | ---------- | ------------ | ---------- |
 | Unitario | `tests/unit/` | (ninguno) | Funciones y clases aisladas | Cada push |
 | Propiedades | `tests/unit/` | (ninguno) | Invariantes con `hypothesis` | Cada push |
 | Integración | `tests/integration/` | `integration` | Varios módulos juntos sobre el mini-dataset | Cada push |
@@ -50,7 +50,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/polyrl"]
+source = ["src/polym4v"]
 branch = true
 
 [tool.coverage.report]
@@ -74,7 +74,7 @@ uv run pytest --cov --cov-report=term-missing   # con cobertura
 ### 3.1 `data/` (R2)
 
 | Test | Qué verifica |
-|------|--------------|
+| ------ | -------------- |
 | Parseo de clientes | Con un JSON grabado de Gamma/CLOB, se obtienen los campos y tipos esperados (`clobTokenIds` viene como string JSON y se parsea bien) |
 | Paginación | El cliente recorre todas las páginas y se detiene bien |
 | Reintentos | Ante un 429 o 5xx, reintenta con backoff y al final lanza un error claro |
@@ -87,7 +87,7 @@ uv run pytest --cov --cov-report=term-missing   # con cobertura
 ### 3.2 `features/` (R2)
 
 | Test | Qué verifica |
-|------|--------------|
+| ------ | -------------- |
 | **No-lookahead** | `features(serie[:t+1])[t] == features(serie)[t]` para todo `t`: agregar datos futuros no cambia el pasado |
 | Valores conocidos | En una serie lineal o constante, los retornos y volatilidades son los esperados |
 | Normalización | Se ajusta solo con train, y val/test usan esos mismos parámetros |
@@ -96,7 +96,7 @@ uv run pytest --cov --cov-report=term-missing   # con cobertura
 ### 3.3 `env/` (R3) — el módulo más crítico
 
 | Test | Qué verifica |
-|------|--------------|
+| ------ | -------------- |
 | API Gymnasium | `gymnasium.utils.env_checker.check_env(env)` pasa |
 | Espacios | Las observaciones están siempre dentro de `observation_space` |
 | Reset | `reset(seed=s)` es determinista y elige un mercado del split correcto |
@@ -130,7 +130,7 @@ def test_cash_never_negative(fixture_env, actions):
 ### 3.4 `agents/` (R4)
 
 | Test | Qué verifica |
-|------|--------------|
+| ------ | -------------- |
 | Interfaz `Policy` | Todas las políticas devuelven un `int` dentro de `[0, 3]` |
 | Baselines | En escenarios sintéticos obvios hacen lo esperado (por ejemplo, `Favorite` compra YES si `p_yes = 0.8`) |
 | Guardar y cargar | Un modelo guardado y cargado de nuevo da las mismas acciones para las mismas observaciones |
@@ -141,7 +141,7 @@ def test_cash_never_negative(fixture_env, actions):
 ### 3.5 `evaluation/` (R5)
 
 | Test | Qué verifica |
-|------|--------------|
+| ------ | -------------- |
 | `NoTrade` | Retorno 0 y drawdown 0 en todos los mercados |
 | Métricas | Max drawdown, Sharpe y win rate de curvas hechas a mano coinciden con los valores calculados a mano |
 | Bootstrap | En datos simulados con media conocida, el IC 95 % la cubre en ≈ 95 % de las repeticiones (`slow`) |
@@ -151,7 +151,7 @@ def test_cash_never_negative(fixture_env, actions):
 ### 3.6 `utils/` y CLI (R1)
 
 | Test | Qué verifica |
-|------|--------------|
+| ------ | -------------- |
 | Config | Un YAML inválido (tipo incorrecto, campo faltante) lanza un error claro de pydantic |
 | Semillas | `set_global_seed` fija random, numpy y torch |
 | CLI | `typer.testing.CliRunner` ejecuta cada comando con `--help` y con el mini-dataset |
@@ -164,7 +164,7 @@ def test_cash_never_negative(fixture_env, actions):
 En `tests/conftest.py` (lo mantiene R1, con aportes de cada dueño):
 
 | Fixture | Contenido |
-|---------|-----------|
+| --------- | ----------- |
 | `api_responses` | JSON grabados de Gamma, CLOB y Binance (`tests/fixtures/api/`) |
 | `mini_dataset` | ≈ 5 mercados reales recortados, en Parquet (`tests/fixtures/mini_dataset/`) |
 | `synthetic_market` | Generador de mercados sintéticos con parámetros controlados (tendencia, ruido, resultado) |
@@ -177,6 +177,9 @@ red y anonimiza o recorta. Las fixtures grabadas **se versionan** y no se regene
 ---
 
 ## 5. Integración continua (CI) — GitHub Actions
+
+> **Fuera del alcance (ADR-010).** Las secciones 5 y 6 quedan como referencia. Los tests se
+> corren localmente con `uv run pytest`.
 
 ### 5.1 `ci.yml` — en cada push a `proyecto`
 
@@ -200,7 +203,7 @@ jobs:
       - run: uv sync --all-extras --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy src/polyrl
+      - run: uv run mypy src/polym4v
 
   test:
     needs: lint
@@ -279,7 +282,7 @@ forma automática y reproducible:
 
 | Qué | Cuándo | Cómo |
 |-----|--------|------|
-| **GitHub Release** con el reporte (tablas y figuras), `metrics.json` y los modelos finales (`.zip`) | Al crear un tag `v*` (`v0.1` en H1, `v0.2` en H2, `v1.0` en la entrega) | `release.yml`: corre `polyrl report` y `softprops/action-gh-release` adjunta los archivos |
+| **GitHub Release** con el reporte (tablas y figuras), `metrics.json` y los modelos finales (`.zip`) | Al crear un tag `v*` (`v0.1` en H1, `v0.2` en H2, `v1.0` en la entrega) | `release.yml`: corre `polym4v report` y `softprops/action-gh-release` adjunta los archivos |
 | **Demo pública** (opcional, P2) | En cada push a `proyecto` | Streamlit Community Cloud, conectado al repo, despliega `app/demo.py` de forma automática |
 
 ```yaml
@@ -298,7 +301,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --all-extras --frozen
       - run: uv run pytest -m "not slow and not network"
-      - run: uv run polyrl report --from models/final --out reports/release
+      - run: uv run polym4v report --from models/final --out reports/release
       - uses: softprops/action-gh-release@v2
         with:
           files: |
