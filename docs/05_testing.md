@@ -115,6 +115,7 @@ Ejemplo de test de propiedades:
 ```python
 from hypothesis import given, settings, strategies as st
 
+
 @settings(max_examples=200, deadline=None)
 @given(actions=st.lists(st.integers(min_value=0, max_value=3), min_size=1, max_size=60))
 def test_cash_never_negative(fixture_env, actions):
@@ -178,8 +179,9 @@ red y anonimiza o recorta. Las fixtures grabadas **se versionan** y no se regene
 
 ## 5. Integración continua (CI) — GitHub Actions
 
-> **Fuera del alcance (ADR-010).** Las secciones 5 y 6 quedan como referencia. Los tests se
-> corren localmente con `uv run pytest`.
+> **Implementado (ADR-014):** el workflow real está en `.github/workflows/ci.yml` y los hooks en
+> `.pre-commit-config.yaml`. Sus versiones (checkout v7, setup-uv v10.3.3 fijado por hash, ruff
+> 0.17.3) mandan sobre las de los ejemplos de esta sección, que quedan como diseño original.
 
 ### 5.1 `ci.yml` — en cada push a `proyecto`
 

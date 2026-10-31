@@ -24,9 +24,7 @@ def get_asset_id(market: Market, outcome: Literal["yes", "no"] = "yes") -> str:
     if outcome not in ("yes", "no"):
         raise UserInputError("El resultado debe ser 'yes' o 'no'.")
     selected = getattr(market.outcomes, outcome)
-    asset_id = (
-        selected.position_id if market.version == "v2" else selected.token_id
-    )
+    asset_id = selected.position_id if market.version == "v2" else selected.token_id
     if asset_id is None:
         raise UserInputError("El resultado no tiene un identificador negociable.")
     return str(asset_id)
@@ -80,9 +78,7 @@ class PolymarketClient:
     def get_order_book(self, asset_id: str) -> OrderBook:
         return self._client.get_order_book(asset_id=asset_id)
 
-    def get_price(
-        self, asset_id: str, *, side: Literal["BUY", "SELL"] = "BUY"
-    ) -> Decimal:
+    def get_price(self, asset_id: str, *, side: Literal["BUY", "SELL"] = "BUY") -> Decimal:
         """Devuelve un Decimal para conservar la precisión del precio."""
         return self._client.get_price(asset_id=asset_id, side=side)
 

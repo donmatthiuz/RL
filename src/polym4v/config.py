@@ -43,9 +43,7 @@ class PolymarketSettings:
     def validate_authentication(self) -> None:
         """Comprueba los campos requeridos antes de hacer peticiones."""
         if not self.private_key:
-            raise ConfigurationError(
-                "Configura POLYMARKET_PRIVATE_KEY para usar una cuenta."
-            )
+            raise ConfigurationError("Configura POLYMARKET_PRIVATE_KEY para usar una cuenta.")
         if not self.wallet_address:
             raise ConfigurationError(
                 "Configura POLYMARKET_WALLET_ADDRESS con la dirección de tu cuenta."
@@ -62,7 +60,7 @@ class PolymarketSettings:
         self.validate_authentication()
         if self.api_key and self.api_secret and self.api_passphrase:
             return ApiKeyCreds(
-                apiKey=self.api_key,
+                key=self.api_key,
                 secret=self.api_secret,
                 passphrase=self.api_passphrase,
             )

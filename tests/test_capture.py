@@ -1,7 +1,7 @@
 import gzip
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import httpx
@@ -9,7 +9,7 @@ import pytest
 
 from polym4v.data.capture import RawStore, capture_series, parse_window_start, write_manifest
 
-UTC = timezone.utc
+UTC = UTC
 
 
 def ts(text):
@@ -20,7 +20,11 @@ def ts(text):
     ("title", "end_date", "expected"),
     [
         # Formato de 2025, con horario de verano (EDT, UTC-4).
-        ("Bitcoin Up or Down – May 28 (1 AM ET Candle)", "2025-05-28T12:00:00", "2025-05-28T05:00:00"),
+        (
+            "Bitcoin Up or Down – May 28 (1 AM ET Candle)",
+            "2025-05-28T12:00:00",
+            "2025-05-28T05:00:00",
+        ),
         # Formato de 2026, todavía en EDT.
         ("Bitcoin Up or Down - October 30, 8PM ET", "2026-10-31T01:00:00", "2026-10-31T00:00:00"),
         # Horario estándar (EST, UTC-5).
@@ -41,8 +45,12 @@ def test_window_start_unknown_title_is_none():
 
 def make_event(event_id, title, end_date, yes, no):
     market = SimpleNamespace(
-        outcomes=SimpleNamespace(yes=SimpleNamespace(token_id=yes), no=SimpleNamespace(token_id=no)),
-        state=SimpleNamespace(end_date=datetime.fromisoformat(end_date).replace(tzinfo=UTC), closed_time=None),
+        outcomes=SimpleNamespace(
+            yes=SimpleNamespace(token_id=yes), no=SimpleNamespace(token_id=no)
+        ),
+        state=SimpleNamespace(
+            end_date=datetime.fromisoformat(end_date).replace(tzinfo=UTC), closed_time=None
+        ),
     )
     event = SimpleNamespace(id=event_id, title=title, markets=[market])
     event.model_dump = lambda mode="json": {"id": event_id, "title": title}
@@ -62,7 +70,11 @@ class FakeGamma:
 
 @pytest.fixture
 def events():
-    return [make_event("1", "Bitcoin Up or Down - October 30, 8PM ET", "2026-10-31T01:00:00", "111", "222")]
+    return [
+        make_event(
+            "1", "Bitcoin Up or Down - October 30, 8PM ET", "2026-10-31T01:00:00", "111", "222"
+        )
+    ]
 
 
 def clob(handler):
@@ -93,7 +105,10 @@ def test_capture_stores_raw_responses_with_request(tmp_path, events):
         assert saved["body"] == body
         assert saved["status"] == 200
         assert saved["request"]["params"] == {
-            "market": token, "startTs": w0 - 6 * 3600, "endTs": w0 + 2 * 3600, "fidelity": 1,
+            "market": token,
+            "startTs": w0 - 6 * 3600,
+            "endTs": w0 + 2 * 3600,
+            "fidelity": 1,
         }
     assert {r.url.params["market"] for r in requests} == {"111", "222"}
     assert read(store.event_path(10114, "1"))["title"].endswith("8PM ET")
@@ -116,7 +131,9 @@ def test_rate_limit_is_retried(tmp_path, events):
     http, requests = clob(lambda request: next(answers))
     waits = []
 
-    summary = capture_series(10114, RawStore(tmp_path), gamma=FakeGamma(events), http=http, sleep=waits.append)
+    summary = capture_series(
+        10114, RawStore(tmp_path), gamma=FakeGamma(events), http=http, sleep=waits.append
+    )
 
     assert summary["downloaded"] == 2 and not summary["errors"]
     assert len(requests) == 4 and waits

@@ -14,7 +14,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10"]
+dev = [
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "pytest>=8,<10",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.3",
+]
 
 [project.scripts]
 polym4v = "polym4v.cli:main"
@@ -25,3 +31,31 @@ include = ["polym4v*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-ra --strict-markers -m 'not slow and not network'"
+markers = [
+    "integration: varios módulos sobre el mini-dataset",
+    "smoke: entrenamiento muy corto para detectar errores de integración",
+    "slow: tarda más de 10 s",
+    "network: usa la red real (APIs de Polymarket y Binance)",
+]
+
+[tool.coverage.run]
+source = ["polym4v"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+# Skills y agentes de terceros: se versionan tal cual.
+extend-exclude = [".skills", ".agents"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true

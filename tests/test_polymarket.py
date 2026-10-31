@@ -86,8 +86,10 @@ def test_env_file_priority_and_no_global_mutation(monkeypatch, tmp_path):
 
 def test_settings_repr_hides_all_secrets():
     settings = PolymarketSettings(
-        private_key="private-value", api_key="key-value",
-        api_secret="secret-value", api_passphrase="passphrase-value",
+        private_key="private-value",
+        api_key="key-value",
+        api_secret="secret-value",
+        api_passphrase="passphrase-value",
     )
     assert "value" not in repr(settings)
 
@@ -97,8 +99,10 @@ def test_settings_repr_hides_all_secrets():
     [
         ({}, "POLYMARKET_PRIVATE_KEY"),
         ({"private_key": "private"}, "POLYMARKET_WALLET_ADDRESS"),
-        ({"private_key": "private", "wallet_address": "wallet", "api_key": "partial"},
-         "POLYMARKET_API_SECRET"),
+        (
+            {"private_key": "private", "wallet_address": "wallet", "api_key": "partial"},
+            "POLYMARKET_API_SECRET",
+        ),
     ],
 )
 def test_invalid_authentication_fails_before_requests(kwargs, missing):
@@ -113,8 +117,11 @@ def test_authenticated_connection_forwards_credentials_and_closes(monkeypatch):
     factory = MagicMock(return_value=sdk)
     monkeypatch.setattr(SecureClient, "create", factory)
     settings = PolymarketSettings(
-        private_key="private", wallet_address="0xaccount", api_key="key",
-        api_secret="secret", api_passphrase="passphrase",
+        private_key="private",
+        wallet_address="0xaccount",
+        api_key="key",
+        api_secret="secret",
+        api_passphrase="passphrase",
     )
     with PolymarketClient(settings, authenticated=True) as client:
         assert client.get_account() == {"wallet": "0xaccount", "wallet_type": "GNOSIS_SAFE"}
@@ -122,6 +129,7 @@ def test_authenticated_connection_forwards_credentials_and_closes(monkeypatch):
     passed = factory.call_args.kwargs
     assert passed["private_key"] == "private"
     assert passed["wallet"] == "0xaccount"
+    assert passed["credentials"].key == "key"
     assert passed["credentials"].secret == "secret"
     sdk.list_open_orders.assert_called_once_with()
     sdk.close.assert_called_once_with()
@@ -175,7 +183,7 @@ def test_asset_id_selects_protocol_and_outcome(raw_market, version, expected):
 
 
 def test_asset_id_missing_is_explicit(raw_market):
-    raw_market["clobTokenIds"] = '[]'
+    raw_market["clobTokenIds"] = "[]"
     market = Market.model_validate(raw_market)
     with pytest.raises(UserInputError, match="identificador"):
         get_asset_id(market)
@@ -184,13 +192,23 @@ def test_asset_id_missing_is_explicit(raw_market):
 @pytest.mark.parametrize(
     ("command", "path", "payload", "expected"),
     [
-        (["price", "123", "--side", "SELL"], "/price", {"price": "0.123456789012345678"},
-         {"asset_id": "123", "side": "SELL", "price": "0.123456789012345678"}),
-        (["midpoint", "123"], "/midpoint", {"mid": "0.425"},
-         {"asset_id": "123", "midpoint": "0.425"}),
+        (
+            ["price", "123", "--side", "SELL"],
+            "/price",
+            {"price": "0.123456789012345678"},
+            {"asset_id": "123", "side": "SELL", "price": "0.123456789012345678"},
+        ),
+        (
+            ["midpoint", "123"],
+            "/midpoint",
+            {"mid": "0.425"},
+            {"asset_id": "123", "midpoint": "0.425"},
+        ),
     ],
 )
-def test_clob_commands_preserve_decimal_precision(mock_http, capsys, command, path, payload, expected):
+def test_clob_commands_preserve_decimal_precision(
+    mock_http, capsys, command, path, payload, expected
+):
     def handler(request):
         assert request.url.host == "clob.polymarket.com"
         assert request.url.path == path
@@ -214,10 +232,13 @@ def test_history_uses_data_v2_and_serializes_timestamps(mock_http, capsys):
         assert request.url.params["interval"] == "1d"
         assert request.url.params["bucket_seconds"] == "3600"
         assert request.url.params["limit"] == "100"
-        return httpx.Response(200, json={
-            "data": [{"timestamp": 1792713600, "price": "0.42", "resolution_seconds": 3600}],
-            "pagination": {"has_more": False, "next_cursor": None},
-        })
+        return httpx.Response(
+            200,
+            json={
+                "data": [{"timestamp": 1792713600, "price": "0.42", "resolution_seconds": 3600}],
+                "pagination": {"has_more": False, "next_cursor": None},
+            },
+        )
 
     mock_http(handler)
     assert main(["history", "123"]) == 0

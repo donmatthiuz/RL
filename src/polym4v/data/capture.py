@@ -11,7 +11,7 @@ import os
 import re
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 from zoneinfo import ZoneInfo
@@ -28,8 +28,20 @@ _ET = ZoneInfo("America/New_York")
 _MONTHS = {
     name: number
     for number, name in enumerate(
-        ("january", "february", "march", "april", "may", "june", "july", "august",
-         "september", "october", "november", "december"),
+        (
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+        ),
         start=1,
     )
 }
@@ -38,7 +50,15 @@ _HOUR = re.compile(r"(\d{1,2})(?::(\d{2}))?\s*([ap])m\s*et")
 
 
 class EventSource(Protocol):
-    def list_events(self, **kwargs: Any) -> Any: ...
+    def list_events(
+        self,
+        *,
+        series_ids: int,
+        closed: bool,
+        order: str,
+        ascending: bool,
+        page_size: int,
+    ) -> Any: ...
 
 
 def parse_window_start(title: str, end_date: datetime) -> int | None:
@@ -52,8 +72,14 @@ def parse_window_start(title: str, end_date: datetime) -> int | None:
     if day is None or hour is None:
         return None
     clock = int(hour.group(1)) % 12 + (12 if hour.group(3) == "p" else 0)
-    start = datetime(end_date.year, _MONTHS[day.group(1)], int(day.group(2)),
-                     clock, int(hour.group(2) or 0), tzinfo=_ET)
+    start = datetime(
+        end_date.year,
+        _MONTHS[day.group(1)],
+        int(day.group(2)),
+        clock,
+        int(hour.group(2) or 0),
+        tzinfo=_ET,
+    )
     if start > end_date + timedelta(days=2):
         start = start.replace(year=end_date.year - 1)
     return int(start.timestamp())
@@ -84,7 +110,10 @@ class RawStore:
 
 
 def _fetch(
-    http: httpx.Client, params: dict[str, Any], sleep: Callable[[float], None], retries: int = 4,
+    http: httpx.Client,
+    params: dict[str, Any],
+    sleep: Callable[[float], None],
+    retries: int = 4,
 ) -> tuple[int, Any]:
     """Reintenta ante 429, errores 5xx y fallas de red, con espera exponencial."""
     status, body = 0, None
@@ -100,7 +129,7 @@ def _fetch(
             body = response.text[:200]
             if status != 429 and status < 500:
                 break
-        sleep(2.0 ** attempt)
+        sleep(2.0**attempt)
     return status, body
 
 
@@ -117,10 +146,18 @@ def capture_series(
 ) -> dict[str, Any]:
     """Descarga el historial de los tokens YES y NO de cada mercado cerrado de la serie."""
     summary: dict[str, Any] = {
-        "series_id": series_id, "events": 0, "downloaded": 0, "cached": 0, "errors": [],
+        "series_id": series_id,
+        "events": 0,
+        "downloaded": 0,
+        "cached": 0,
+        "errors": [],
     }
     events = gamma.list_events(
-        series_ids=series_id, closed=True, order="endDate", ascending=True, page_size=50,
+        series_ids=series_id,
+        closed=True,
+        order="endDate",
+        ascending=True,
+        page_size=50,
     ).iter_items()
     for event in events:
         if limit is not None and summary["events"] >= limit:
@@ -157,14 +194,17 @@ def capture_series(
                     {"event_id": event_id, "token_id": str(token), "status": status, "detail": body}
                 )
                 continue
-            store.write(path, {
-                "request": {"url": CLOB_PRICES_HISTORY, "params": params},
-                "fetched_at": datetime.now(timezone.utc).isoformat(),
-                "status": status,
-                "event_id": event_id,
-                "window_source": source,
-                "body": body,
-            })
+            store.write(
+                path,
+                {
+                    "request": {"url": CLOB_PRICES_HISTORY, "params": params},
+                    "fetched_at": datetime.now(UTC).isoformat(),
+                    "status": status,
+                    "event_id": event_id,
+                    "window_source": source,
+                    "body": body,
+                },
+            )
             summary["downloaded"] += 1
             sleep(pause)
         if on_event is not None:
@@ -177,13 +217,15 @@ def write_manifest(store: RawStore) -> dict[str, Any]:
     files = []
     for path in store.files():
         data = path.read_bytes()
-        files.append({
-            "path": path.relative_to(store.root).as_posix(),
-            "bytes": len(data),
-            "sha256": hashlib.sha256(data).hexdigest(),
-        })
+        files.append(
+            {
+                "path": path.relative_to(store.root).as_posix(),
+                "bytes": len(data),
+                "sha256": hashlib.sha256(data).hexdigest(),
+            }
+        )
     manifest = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "n_files": len(files),
         "files": files,
     }

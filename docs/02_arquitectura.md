@@ -206,8 +206,9 @@ Todos implementan la misma interfaz:
 ```python
 class Policy(Protocol):
     name: str
+
     def act(self, obs: np.ndarray, info: dict | None = None) -> int: ...
-    def reset(self) -> None: ...          # para políticas con estado interno
+    def reset(self) -> None: ...  # para políticas con estado interno
 ```
 
 | Agente | Implementación | Notas |
@@ -297,6 +298,12 @@ RL/
 ├── README.md
 ├── pyproject.toml              # dependencias, ruff, pytest, coverage, mypy
 ├── uv.lock
+├── .pre-commit-config.yaml
+├── .github/
+│   └── workflows/
+│       ├── ci.yml              # lint, mypy y tests con cobertura en cada push a proyecto
+│       ├── nightly.yml         # tests lentos y backtest corto (INF-08, previsto)
+│       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09, previsto)
 ├── configs/
 │   ├── data.yaml
 │   ├── env.yaml
@@ -339,7 +346,7 @@ RL/
 | Demo | `streamlit` | Una app interactiva en pocas líneas |
 | Calidad | `ruff` (lint + format), `mypy` (modo permisivo), `pre-commit` | |
 | Tests | `pytest`, `pytest-cov`, `responses`, `hypothesis` | Ver [05_testing.md](05_testing.md) |
-| CI/CD | Fuera del alcance (ADR-010) | Los tests se corren localmente |
+| CI/CD | GitHub Actions (ADR-014) | Gratis en repos de GitHub; corre en cada push a `proyecto` |
 
 **Hardware:** todo debe correr en una laptop con CPU. Las redes son MLP pequeñas (`[64, 64]`). Si
 hace falta más cómputo, se puede usar Google Colab.

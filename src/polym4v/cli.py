@@ -72,8 +72,13 @@ def _parser() -> argparse.ArgumentParser:
     orders.add_argument("--cursor")
 
     capture = commands.add_parser("capture", help="Archiva el historial crudo de una serie")
-    capture.add_argument("--series", type=int, action="append", required=True,
-                         help="ID de la serie en Gamma; se puede repetir")
+    capture.add_argument(
+        "--series",
+        type=int,
+        action="append",
+        required=True,
+        help="ID de la serie en Gamma; se puede repetir",
+    )
     capture.add_argument("--out", default="data/raw", help="Carpeta del crudo")
     capture.add_argument("--limit", type=int, help="Máximo de mercados por serie")
     capture.add_argument("--pause", type=float, default=0.2, help="Segundos entre descargas")
@@ -89,8 +94,15 @@ def _capture(args: argparse.Namespace) -> Any:
 
     with PublicClient() as gamma, httpx.Client(timeout=30) as http:
         summaries = [
-            capture_series(series, store, gamma=gamma, http=http, pause=args.pause,
-                           limit=args.limit, on_event=progress)
+            capture_series(
+                series,
+                store,
+                gamma=gamma,
+                http=http,
+                pause=args.pause,
+                limit=args.limit,
+                on_event=progress,
+            )
             for series in args.series
         ]
     manifest = write_manifest(store)
@@ -105,9 +117,7 @@ def _run(args: argparse.Namespace) -> Any:
     with PolymarketClient(settings, authenticated=authenticated) as client:
         match args.command:
             case "markets":
-                return client.list_markets(
-                    limit=args.limit, closed=args.closed, cursor=args.cursor
-                )
+                return client.list_markets(limit=args.limit, closed=args.closed, cursor=args.cursor)
             case "market":
                 return client.get_market(slug=args.slug)
             case "book":
@@ -125,8 +135,10 @@ def _run(args: argparse.Namespace) -> Any:
                 }
             case "history":
                 return client.get_price_history(
-                    args.asset_id, interval=args.interval,
-                    bucket_seconds=args.bucket_seconds, limit=args.limit,
+                    args.asset_id,
+                    interval=args.interval,
+                    bucket_seconds=args.bucket_seconds,
+                    limit=args.limit,
                     cursor=args.cursor,
                 )
             case "account":
@@ -150,12 +162,16 @@ def main(argv: list[str] | None = None) -> int:
         print("Parámetros o credenciales inválidos. Revisa docs/polymarket.md.", file=sys.stderr)
         return 1
     except RequestRejectedError as exc:
-        print(f"Polymarket rechazó la consulta (HTTP {exc.status}). "
-              "Revisa docs/polymarket.md.", file=sys.stderr)
+        print(
+            f"Polymarket rechazó la consulta (HTTP {exc.status}). Revisa docs/polymarket.md.",
+            file=sys.stderr,
+        )
         return 1
     except PolymarketError as exc:
         # Las excepciones del SDK pueden contener detalles de la petición.
-        print(f"No se pudo consultar Polymarket ({type(exc).__name__}). "
-              "Revisa docs/polymarket.md.", file=sys.stderr)
+        print(
+            f"No se pudo consultar Polymarket ({type(exc).__name__}). Revisa docs/polymarket.md.",
+            file=sys.stderr,
+        )
         return 1
     return 0
