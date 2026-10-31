@@ -19,7 +19,7 @@ y un criterio de aceptación verificable.
 
 | Fase | Objetivo | Hito de cierre |
 | ------ | ---------- | ---------------- |
-| **F0 — Setup** | Repo, herramientas y validar las APIs | **H0:** spike de datos con su conclusión |
+| **F0 — Setup** | Repo, herramientas, CI y validar las APIs | **H0:** CI en verde, spike de datos con su conclusión |
 | **F1 — Datos y entorno** | Dataset v1 y `PolymarketEnv` v1 testeado | **H1:** un baseline corre episodios de extremo a extremo sobre datos reales |
 | **F2 — Agentes online** | Baselines, PPO y DQN entrenados, primer backtest | **H2:** primera tabla comparativa en *val* |
 | **F3 — Offline RL y ajuste** | CQL/BC, ablación de la recompensa, ajuste de hiperparámetros, 5 semillas | **H3:** modelos finales congelados |
@@ -34,13 +34,13 @@ flowchart LR
 
 | Rol | F0 | F1 | F2 | F3 | F4 |
 | --- | --- | --- | --- | --- | --- |
-| R1 Infra | INF-01, 02, 04 | INF-05, 06 | INF-07 (E2E local) | — | INF-10 |
+| R1 Infra | INF-01 a 04 | INF-05, 06 | INF-07 E2E | INF-08 | INF-09, 10 |
 | R2 Datos | DAT-01 (hecha) | DAT-02 a 06 | DAT-07, 08 | DAT-09 ETH (P2) | DOC |
 | R3 Entorno | ENV-01 | ENV-02 a 06 | ENV-07 | ENV-08 ablación | DOC |
 | R4 Agentes | AGT-01 | AGT-02, 03 | AGT-04 a 06 | AGT-07 a 10 | DOC |
-| R5 Eval/Demo | EVA-01 | EVA-02 | EVA-03 a 05 | EVA-06, 07 | EVA-08, 10 |
+| R5 Eval/Demo | EVA-01 | EVA-02 | EVA-03 a 05 | EVA-06, 07 | EVA-08 a 10 |
 
-INF-03, INF-08, INF-09 y EVA-09 quedan fuera por el ADR-010.
+La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 
 ---
 
@@ -51,14 +51,14 @@ INF-03, INF-08, INF-09 y EVA-09 quedan fuera por el ADR-010.
 | ID | Tarea | Fase | Prio | Depende de | Criterio de aceptación |
 | ---- | ------- | ------ | ------ | ------------ | ------------------------ |
 | INF-01 | **Hecha el 30/10/2026.** Crear la estructura del repo, `pyproject.toml` con `uv`, el paquete `polym4v` instalable y `src/` layout | F0 | P0 | — | `uv sync && uv run python -c "import polym4v"` funciona en una máquina limpia |
-| INF-02 | Configurar `ruff`, `mypy` (permisivo) y `pre-commit` | F0 | P0 | INF-01 | `pre-commit run --all-files` pasa |
-| INF-03 | **Omitida (ADR-010).** Workflow `ci.yml`: lint, tests y cobertura en cada push a `proyecto` | F0 | P0 | INF-02 | La CI corre en un push de prueba y marca en rojo el commit si falla |
+| INF-02 | **Hecha el 30/10/2026.** Configurar `ruff`, `mypy` (permisivo) y `pre-commit` | F0 | P0 | INF-01 | `pre-commit run --all-files` pasa |
+| INF-03 | **Hecha el 30/10/2026.** Workflow `ci.yml`: lint, tests y cobertura en cada push a `proyecto` | F0 | P0 | INF-02 | La CI corre en un push de prueba y marca en rojo el commit si falla |
 | INF-04 | Tablero en GitHub Projects con todas las tareas de este documento | F0 | P0 | — | Cada tarea es un issue con su rol, fase y prioridad |
 | INF-05 | `utils/`: `config.py` (pydantic), `seeding.py`, `logging.py`, `paths.py` | F1 | P0 | INF-01 | Tests unitarios. La misma semilla da resultados idénticos. |
 | INF-06 | Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
 | INF-07 | CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
-| INF-08 | **Omitida (ADR-010).** Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
-| INF-09 | **Omitida (ADR-010).** `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
+| INF-08 | Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
+| INF-09 | `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
 | INF-10 | Revisión de reproducibilidad: un integrante que no participó clona el repo y reproduce un resultado siguiendo el README | F4 | P0 | H3 | El resultado coincide dentro de la tolerancia (± IC) |
 
 ### R2 — Ingeniero de datos
@@ -118,7 +118,7 @@ INF-03, INF-08, INF-09 y EVA-09 quedan fuera por el ADR-010.
 | EVA-06 | **Evaluación final en test** (una sola vez, con los modelos congelados de AGT-10) | F4 | P0 | AGT-10 | `reports/test/` con la tabla final e IC 95 % |
 | EVA-07 | Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
 | EVA-08 | Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
-| EVA-09 | **Omitida (ADR-010).** (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
+| EVA-09 | (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 
 ### Informe y presentación (todos)
@@ -162,6 +162,7 @@ flowchart LR
 
 **H0 (cierre de F0)**
 
+- [ ] Repo con CI en verde sobre la rama `proyecto`
 - [x] Spike de datos documentado y familia de mercados elegida (ADR-004)
 - [ ] MDP especificado (ENV-01) y protocolo de evaluación aprobado (EVA-01)
 - [ ] Integrantes asignados a cada rol en [03_roles.md](03_roles.md)
@@ -177,7 +178,7 @@ flowchart LR
 - [ ] PPO y DQN entrenados, y ambos superan a `Random` en val
 - [ ] Test de cordura en el entorno sintético aprobado (AGT-06)
 - [ ] Primera tabla comparativa en val (`reports/val/`)
-- [ ] Pipeline E2E corriendo localmente (INF-07)
+- [ ] Pipeline E2E en la CI (INF-07)
 
 **H3 (cierre de F3)**
 

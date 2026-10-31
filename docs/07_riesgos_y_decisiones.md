@@ -127,7 +127,7 @@ ADR-XXX*.
 
 ### ADR-010 — CI/CD fuera del alcance
 
-- **Estado:** Aceptada el 30/10/2026
+- **Estado:** Reemplazada por ADR-014 el 30/10/2026
 - **Contexto:** El equipo prioriza datos, entorno, agentes y evaluación.
 - **Decisión:** Se omiten INF-03, INF-08, INF-09 y EVA-09 (GitHub Actions, nightly, release y
   despliegue de la demo). Los tests se siguen escribiendo y se corren localmente con `pytest`.
@@ -188,6 +188,19 @@ ADR-XXX*.
   S10 (fin de episodio). Restricción ya acordada: la tolerancia de ejecución no supera 60 s.
 - **Consecuencias:** El contrato de datos (INF-06) suma `ts_available` y una tabla de precios
   crudos. Se agregan las tareas DAT-10 (captura) y ENV-10 (tests de no-fuga).
+
+### ADR-014 — CI/CD vuelve al alcance
+
+- **Estado:** Aceptada el 30/10/2026 (R1). Reemplaza al ADR-010.
+- **Contexto:** El ADR-010 había dejado fuera la CI/CD para llegar a la entrega de avances. Con
+  esa entrega enviada, el equipo tiene tiempo para retomarla.
+- **Decisión:** Se reincorporan INF-03 (CI en cada push a `proyecto`), INF-08 (nightly), INF-09
+  (release) y EVA-09 (despliegue de la demo), además de INF-02 (ruff, mypy y pre-commit). Las
+  versiones de las herramientas se verificaron con Context7 y con las releases oficiales:
+  `actions/checkout@v7`, `astral-sh/setup-uv` v10.3.3 fijado por hash (ya no publica una etiqueta
+  `v10`), `actions/upload-artifact@v7`, ruff 0.17.3 y pre-commit-hooks v6.0.0.
+- **Consecuencias:** "CI en verde" vuelve a la Definition of Done. Ruff y pre-commit excluyen
+  `.skills/` y `.agents/`, que se versionan tal cual. Los tests corren en Python 3.11 y 3.12.
 
 <!-- Plantilla para nuevas decisiones:
 ### ADR-00X — Título
