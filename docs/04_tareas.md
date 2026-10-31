@@ -15,6 +15,55 @@ y un criterio de aceptación verificable.
 
 ---
 
+## Tablero provisional
+
+El tablero de GitHub Projects (INF-04) todavía no existe. Mientras tanto, el estado se lleva aquí y
+en la lista de PR del repositorio. Se actualiza en cada PR que se abre o se mezcla.
+
+**En revisión.** Los PR forman una pila: cada uno se mezcla después del que tiene como base
+(ver "Pilas de PR" en [06_flujo_trabajo.md](06_flujo_trabajo.md)).
+
+```mermaid
+flowchart LR
+    P["proyecto"] --> PR1["#1 INF-06 datos<br/>revisan R2 y R3"]
+    PR1 --> PR2["#2 DAT-03 klines<br/>revisa R2"] --> PR3["#3 DAT-06 split<br/>revisa R2"] --> PR5["#5 DAT-04/05 dataset<br/>revisa R2"]
+    PR1 --> PR4["#4 INF-06 Policy<br/>sin revisor (R4)"]
+```
+
+| Orden | PR | Tarea | Base | Revisa |
+| --- | --- | --- | --- | --- |
+| 1 | #1 | INF-06: contratos de datos | `proyecto` | R2 y R3 |
+| 2 | #2 | DAT-03: klines de Binance | #1 | R2 |
+| 3 | #3 | DAT-06: split con exclusiones de S11 | #2 | R2 |
+| 4 | #5 | DAT-04 y DAT-05: `markets`, `prices_raw` y `spot_1m` | #3 | R2 |
+| 2 (en paralelo) | #4 | INF-06: `Policy` y `Action` | #1 | Sin asignar (R4) |
+
+**Bloqueado por decisiones pendientes.** Las decisiones están en
+[09_sistema_simulacion.md](09_sistema_simulacion.md): S3 y S4 en la sección 3, S9 y S10 en la
+sección 4.3.
+
+| Tarea | Qué falta | Decisión |
+| --- | --- | --- |
+| `steps.parquet` (resto de DAT-04 y DAT-05) y features (DAT-07) | Qué ve el agente en cada minuto y con qué antigüedad | S3 |
+| Ejecución de órdenes en el entorno (ENV-04) y latencia de `prices_raw` | Cuándo y a qué precio se ejecuta una orden | S4 |
+| Recompensa, PnL no realizado y drawdown (ENV-02 y ENV-05) | Con qué precio se valora la posición abierta | S9 |
+| Fin de episodio (ENV-04) | Desde qué minuto no se compra y qué pasa con un `SELL` sin ejecutar | S10 |
+| Claves de `info` (resto de INF-06) | Lo anterior | S4, S9 y S10 |
+| Tests de no-fuga (ENV-10) y E2E (INF-07) | El entorno | S3, S4, S9 y S10 |
+
+**Sin bloqueos, todavía sin empezar:**
+
+- ENV-03: costos con medio spread y comisión oficial redondeada (S5, aceptada). Falta tomar los
+  ejemplos oficiales de comisión para los tests.
+- DAT-08: EDA, sobre el dataset de #5.
+- DAT-10: captura del crudo de ETH (serie 10117), al terminar la de BTC.
+
+Las decisiones previas al diseño (D1 a D9) están en
+[decisiones_previas_al_diseno.md](notas/decisiones_previas_al_diseno.md) y las ya tomadas, como
+ADR, en [07_riesgos_y_decisiones.md](07_riesgos_y_decisiones.md).
+
+---
+
 ## 1. Fases e hitos
 
 | Fase | Objetivo | Hito de cierre |
