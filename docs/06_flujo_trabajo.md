@@ -114,6 +114,8 @@ orden:
 | `uv.lock` | Versiones exactas resueltas de todo lo anterior | Solo uv (`uv lock`, `uv add`); nunca a mano |
 | `Makefile` | Comandos de flujo de trabajo: instalar, revisar, testear, capturar datos y generar entregas | A mano; cada comando nuevo del proyecto se agrega aquí |
 | `.skills/entregable-pdf/scripts/requirements.txt` | Versiones fijas del generador de PDF, que corre aislado con `uv run --no-project` | La skill; no entra en `uv.lock` |
+| `configs/*.yaml` | Parámetros de cada experimento, validados con pydantic | A mano; se versionan y se guardan resueltos con cada corrida |
+| `.env` | Rutas de la máquina, nivel de log y credenciales | Cada integrante, a partir de `.env.example`; no se versiona |
 
 Regla: si un comando se usa más de una vez, va al `Makefile`. La CI llama a los mismos targets
 (`make install`, `make lint typecheck`, `make coverage`).

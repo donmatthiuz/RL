@@ -41,6 +41,9 @@ make setup
 # Antes de subir: lo mismo que corre la CI (lint, tipos y tests con cobertura)
 make check
 
+# Validar la configuración del dataset (parámetros en configs/, rutas y claves en .env)
+make config
+
 # Archivar el historial crudo de precios (BTC horario por defecto; ETH con SERIES=10117)
 make capture
 make manifest

@@ -355,6 +355,13 @@ hace falta más cómputo, se puede usar Google Colab.
 
 ## 5. Configuración y reproducibilidad
 
+- **Qué va en YAML y qué en `.env`:** todo parámetro que define un experimento va en
+  `configs/*.yaml`, se versiona y se valida con pydantic (claves desconocidas y valores
+  inconsistentes se rechazan). Las rutas de cada máquina (`POLYM4V_DATA_DIR`,
+  `POLYM4V_MODELS_DIR`, `POLYM4V_REPORTS_DIR`), el nivel de log (`POLYM4V_LOG_LEVEL`) y las
+  credenciales van en `.env`, que no se versiona; `.env.example` es la plantilla. El entorno
+  nunca cambia parámetros de un experimento. `make config CONFIG=configs/data.yaml` valida un
+  archivo y lo muestra resuelto.
 - Cada run guarda en `models/<agente>/<run_id>/` el `config.yaml` **resuelto**, el `dataset_id`, el
   `git commit`, la semilla, el checkpoint y `metrics.json`.
 - `run_id = <fecha>_<agente>_<reward>_s<seed>`.
