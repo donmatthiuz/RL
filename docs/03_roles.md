@@ -31,8 +31,8 @@ escriben una parte del informe.
   y el formato de `info`.
 - Hacer las **integraciones** de extremo a extremo (datos → entorno → entrenamiento → evaluación).
 - Dirigir las reuniones de avance y mantener el tablero (sección "Tablero" de `docs/04_tareas.md`).
-- Mantener `docs/` coherente y escribir las secciones de _Metodología_ y _Reproducibilidad_ del
-  informe.
+- Mantener `docs/` coherente y escribir la sección _Herramientas aplicadas_ del documento, con el
+  historial de prompts de IA ([10_entrega_final.md](10_entrega_final.md)).
 
 **Entregables clave:** repositorio base, `ci.yml`, CLI funcional, pipeline E2E y release `v1.0`.
 
@@ -56,7 +56,7 @@ escriben una parte del informe.
 - Implementar el **split temporal por mercado** y el `manifest.json` con hash.
 - Hacer un notebook de **EDA**: distribución de resultados, curvas de precio típicas y relación
   entre `spot_vs_open` y el resultado.
-- Escribir la sección _Datos_ del informe.
+- Escribir la sección _Análisis_ del documento (datos y EDA).
 
 **Entregables clave:** `polym4v data build`, `data/processed/<id>/`, fixtures para los tests y el
 notebook de EDA.
@@ -80,7 +80,7 @@ lo que se haga encima no sirve.
 - Escribir los tests más exigentes del proyecto: `check_env`, invariantes y tests de propiedades
   con `hypothesis`.
 - Diseñar, junto con R4, los experimentos de **ablación de la recompensa**.
-- Escribir la sección _Formulación como MDP y función de recompensa_ del informe.
+- Escribir la sección _Propuesta de solución_ del documento (MDP y función de recompensa).
 
 **Entregables clave:** `PolymarketEnv` v1 validado, `reward.py` con ≥ 3 variantes y la suite de
 tests del entorno.
@@ -103,7 +103,7 @@ tests del entorno.
 - Ajustar los hiperparámetros con una búsqueda pequeña y acotada (grid o Optuna con un presupuesto
   fijo).
 - Entrenar con ≥ 5 semillas por configuración final.
-- Escribir la sección _Algoritmos y entrenamiento_ del informe.
+- Escribir la parte de agentes y entrenamiento de la _Descripción de la solución_.
 
 **Entregables clave:** `configs/{ppo,dqn,offline}.yaml`, modelos entrenados en `models/`, curvas de
 aprendizaje y una tabla de hiperparámetros.
@@ -125,11 +125,11 @@ en la presentación.
 - Generar las tablas y figuras del informe (`polym4v report`).
 - Construir la **demo en Streamlit**: reproductor paso a paso, gráficos y panel de estado.
 - Mantener el despliegue de la demo (CD), si se publica.
-- Coordinar la redacción del **informe final** y de la **presentación**. Escribir las secciones
-  _Resultados_ y _Discusión_.
+- Coordinar el **documento final**, las **slides** y el **video**. Escribir las secciones
+  _Resultados (métricas)_ y _Conclusión_.
 
 **Entregables clave:** `polym4v evaluate`, `reports/` con tablas y figuras, `app/demo.py`, el
-informe y las diapositivas.
+documento, las slides en HTML y el video.
 
 **Perfil sugerido:** interés en estadística y en visualización, y buena comunicación.
 

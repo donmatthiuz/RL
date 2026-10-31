@@ -79,8 +79,10 @@ entregado, y lo entregado tiene que venir con sus tests.
 
 - El tablero es la sección "Tablero" de [04_tareas.md](04_tareas.md) (ADR-015). No se usan GitHub
   Projects ni issues.
-- Quien empieza una tarea marca su fila como **En curso** o **En PR**. El commit o el PR que la
-  entrega la marca como **Hecha** con la fecha.
+- Quien empieza una tarea marca su fila como **En curso**; si va por PR, el PR la marca como
+  **En PR**. Quien mezcla el PR la marca como **Hecha** con la fecha.
+- R1 actualiza la sección "Tablero" directamente en `proyecto` cada vez que se abre o se mezcla un
+  PR. Si la actualizara el PR, no se vería hasta mezclarlo.
 - Los bugs se anotan en el tablero con los pasos para reproducirlos y se corrigen con un commit
   `fix(...)` que trae su test de regresión.
 
