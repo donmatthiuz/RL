@@ -31,33 +31,26 @@ Las notas de trabajo están en [`docs/notas/`](docs/notas/): el
 
 ## Inicio rápido
 
-> Los comandos se habilitan a medida que avanzan las tareas de [`docs/04_tareas.md`](docs/04_tareas.md).
+Todos los comandos del proyecto están en el `Makefile`; `make help` los lista. Requiere
+[uv](https://docs.astral.sh/uv/) y `make`.
 
 ```bash
-# 1. Instalar dependencias (requiere uv: https://docs.astral.sh/uv/)
-uv sync --all-extras
+# Primera vez: dependencias exactas de uv.lock, hooks de pre-commit y archivos de claves
+make setup
 
-# 1b. Crear los archivos de claves locales (hoy solo Context7) y pegar cada clave
-make keys-init
+# Antes de subir: lo mismo que corre la CI (lint, tipos y tests con cobertura)
+make check
 
-# 1c. Archivar el historial crudo de precios de BTC horario
-uv run polym4v capture --series 10114 --out data/raw
+# Archivar el historial crudo de precios (BTC horario por defecto; ETH con SERIES=10117)
+make capture
+make manifest
 
-# 2. Descargar y construir el dataset
-uv run polym4v data build --config configs/data.yaml
-
-# 3. Entrenar un agente
-uv run polym4v train --config configs/ppo.yaml --seed 0
-
-# 4. Evaluar contra las estrategias base
-uv run polym4v evaluate --config configs/eval.yaml
-
-# 5. Abrir la demo
-uv run streamlit run app/demo.py
-
-# Tests
-uv run pytest
+# Generar el PDF de una entrega
+make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
 ```
+
+> Los comandos de dataset, entrenamiento, evaluación y demo se agregan al `Makefile` a medida que
+> avanzan las tareas de [`docs/04_tareas.md`](docs/04_tareas.md).
 
 ## Mantenimiento de la documentación
 

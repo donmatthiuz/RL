@@ -61,11 +61,13 @@ show_missing = true
 Comandos:
 
 ```bash
-uv run pytest                                   # suite por defecto (rápida)
-uv run pytest -m integration                    # solo integración
-uv run pytest -m "slow or network"              # lo que corre el nightly
-uv run pytest --cov --cov-report=term-missing   # con cobertura
+make test        # suite por defecto (rápida)
+make coverage    # con cobertura (mínimo 70 %)
+make check       # lo mismo que la CI: lint, tipos y cobertura
 ```
+
+Los targets de integración (`-m integration`) y del nightly (`-m "slow or network"`) se agregan
+al `Makefile` cuando existan esos tests (INF-07 e INF-08).
 
 ---
 
@@ -273,7 +275,7 @@ repos:
       - id: check-yaml
 ```
 
-Cada integrante ejecuta `uv run pre-commit install` una vez después de clonar el repo.
+Cada integrante ejecuta `make setup` (o solo `make hooks`) una vez después de clonar el repo.
 
 ---
 

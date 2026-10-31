@@ -24,12 +24,11 @@ ramas nuevas.
 git switch proyecto
 git pull --rebase origin proyecto      # traer lo último
 # ... trabajar en la tarea, con sus tests ...
-uv run ruff check . && uv run ruff format --check .
-uv run pytest                          # tiene que pasar
+make check                             # lint, tipos y tests: tiene que pasar
 git add <archivos>
 git commit -m "feat(env): ... [ENV-04]"
 git pull --rebase origin proyecto      # por si alguien subió algo mientras tanto
-uv run pytest                          # volver a correr si el rebase trajo cambios
+make check                             # volver a correr si el rebase trajo cambios
 git push origin proyecto
 ```
 
@@ -61,7 +60,7 @@ entregado, y lo entregado tiene que venir con sus tests.
    [05_testing.md](05_testing.md).
 2. **La CI corre en cada push a `proyecto`** (ADR-014). Si un push deja la CI en rojo, su autor
    lo arregla **antes de seguir con otra cosa**. Si no puede, avisa en el canal y R1 ayuda. Antes
-   de subir, `uv run pre-commit run --all-files` y `uv run pytest` dan el mismo resultado local.
+   de subir, `make check` corre localmente lo mismo que la CI.
 3. **El dueño del módulo verifica.** Cuando alguien sube algo que toca un módulo ajeno, el dueño
    corre los tests de ese módulo y revisa el cambio. Si encuentra un problema, se corrige con un
    commit `fix(...)` con su test de regresión.
@@ -105,7 +104,19 @@ orden:
 | Notebooks **con las salidas limpias** o EDA final ejecutado | Logs de TensorBoard (`runs/`) |
 | `uv.lock` | `.env`, credenciales |
 
-> Agregar al `.gitignore` actual: `data/`, `models/`, `runs/`, `*.h5` y `.env`.
+> Todo lo de la columna derecha ya está en `.gitignore`.
+
+### Dónde va cada cosa
+
+| Archivo | Qué contiene | Quién lo edita |
+| --- | --- | --- |
+| `pyproject.toml` | Dependencias que usa el paquete (`[project.dependencies]`), comandos propios del paquete (`[project.scripts]`, hoy `polym4v`), herramientas de desarrollo (`[dependency-groups] dev`) y la configuración de ruff, mypy, pytest y cobertura | Se edita a mano o con `uv add` / `uv add --dev` |
+| `uv.lock` | Versiones exactas resueltas de todo lo anterior | Solo uv (`uv lock`, `uv add`); nunca a mano |
+| `Makefile` | Comandos de flujo de trabajo: instalar, revisar, testear, capturar datos y generar entregas | A mano; cada comando nuevo del proyecto se agrega aquí |
+| `.skills/entregable-pdf/scripts/requirements.txt` | Versiones fijas del generador de PDF, que corre aislado con `uv run --no-project` | La skill; no entra en `uv.lock` |
+
+Regla: si un comando se usa más de una vez, va al `Makefile`. La CI llama a los mismos targets
+(`make install`, `make lint typecheck`, `make coverage`).
 
 ## 7. Definition of Done (DoD)
 

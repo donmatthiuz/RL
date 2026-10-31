@@ -225,7 +225,7 @@ sin aviso. La documentación oficial (consultada con Context7) lo confirma: en l
 datos de 1 minuto duran al menos 7 días, cualquier resolución menor a 3 horas cubre solo los
 últimos 30 días, y los rangos explícitos tienen un máximo de 15 días.
 
-**Estado:** la captura de BTC horario está en curso con `polym4v capture --series 10114`.
+**Estado:** la captura de BTC horario está en curso con `make capture` (`SERIES=10114`).
 
 **Recomendación:** descargar y archivar **ahora** el historial de 1 minuto de todos los mercados
 BTC horarios (unos 12 500 pedidos) y las klines de Binance, como datos crudos inmutables
