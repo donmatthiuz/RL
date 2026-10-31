@@ -211,7 +211,14 @@ __marimo__/
 # markdown lint
 .markdownlint.json
 context/
-.claude/
+# .claude: se versionan solo los enlaces a .skills/ y .agents/; la configuración local queda fuera
+.claude/*
+!.claude/skills
+!.claude/agents
 
 # graphify
 graphify-out
+
+# Datos crudos, procesados y modelos: se generan localmente
+data/
+models/
