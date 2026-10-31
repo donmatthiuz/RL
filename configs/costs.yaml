@@ -1,5 +1,5 @@
 # Costos del simulador (ENV-03), iguales en train, val y test (S5 y ADR-009).
-# Pendiente de confirmar con docs/notas/investigacion_comisiones.md: redondeo, mínimo y tick.
+# Pendiente de confirmar con docs/ia/investigaciones/comisiones_polymarket.md: redondeo, mínimo y tick.
 half_spread: 0.01      # S5: sensibilidad con 0.02
 fee_rate: 0.07         # esquema crypto_fees_v2; 0.0 para la ablación sin comisión
 fee_exponent: 1
