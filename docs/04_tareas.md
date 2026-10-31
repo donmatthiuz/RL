@@ -15,10 +15,11 @@ y un criterio de aceptación verificable.
 
 ---
 
-## Tablero provisional
+## Tablero
 
-El tablero de GitHub Projects (INF-04) todavía no existe. Mientras tanto, el estado se lleva aquí y
-en la lista de PR del repositorio. Se actualiza en cada PR que se abre o se mezcla.
+El seguimiento del proyecto se lleva **solo en este documento** (ADR-015): no hay tablero en GitHub
+Projects ni issues. Esta sección se actualiza en cada PR que se abre o se mezcla, y el estado de
+cada tarea se marca en su fila (por ejemplo, **Hecha el 31/10/2026** o **En PR**).
 
 **En revisión.** Los PR forman una pila: cada uno se mezcla después del que tiene como base
 (ver "Pilas de PR" en [06_flujo_trabajo.md](06_flujo_trabajo.md)).
@@ -102,7 +103,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | INF-01 | **Hecha el 30/10/2026.** Crear la estructura del repo, `pyproject.toml` con `uv`, el paquete `polym4v` instalable y `src/` layout | F0 | P0 | — | `uv sync && uv run python -c "import polym4v"` funciona en una máquina limpia |
 | INF-02 | **Hecha el 30/10/2026.** Configurar `ruff`, `mypy` (permisivo) y `pre-commit` | F0 | P0 | INF-01 | `pre-commit run --all-files` pasa |
 | INF-03 | **Hecha el 30/10/2026.** Workflow `ci.yml`: lint, tests y cobertura en cada push a `proyecto` | F0 | P0 | INF-02 | La CI corre en un push de prueba y marca en rojo el commit si falla |
-| INF-04 | Tablero en GitHub Projects con todas las tareas de este documento | F0 | P0 | — | Cada tarea es un issue con su rol, fase y prioridad |
+| INF-04 | **Hecha el 31/10/2026 (ADR-015):** el tablero es la sección "Tablero" de este documento, sin GitHub Projects ni issues | F0 | P0 | — | Cada tarea tiene su estado en su fila y la sección "Tablero" muestra lo que está en PR, bloqueado o sin empezar |
 | INF-05 | **Hecha el 31/10/2026.** `utils/`: `config.py` (pydantic), `seeding.py`, `logging.py`, `paths.py` | F1 | P0 | INF-01 | Tests unitarios. La misma semilla da resultados idénticos. |
 | INF-06 | Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
 | INF-07 | CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |

@@ -75,13 +75,14 @@ entregado, y lo entregado tiene que venir con sus tests.
 - [ ] Hice `git pull --rebase` y los tests siguen pasando después
 - [ ] El mensaje de commit sigue el formato de la sección 2
 
-## 4. Issues y tablero
+## 4. Tablero
 
-- Cada tarea de [04_tareas.md](04_tareas.md) es un **issue** en GitHub, con etiquetas de rol
-  (`R1`–`R5`), fase (`F0`–`F4`) y prioridad (`P0`–`P2`).
-- El tablero de GitHub Projects tiene las columnas `Pendiente → En progreso → Hecho`.
-- Un issue se cierra desde el commit que entrega la tarea: `feat(env): ... [ENV-04] (cierra #12)`.
-- Los bugs se reportan como issues con la etiqueta `bug` e incluyen los pasos para reproducirlos.
+- El tablero es la sección "Tablero" de [04_tareas.md](04_tareas.md) (ADR-015). No se usan GitHub
+  Projects ni issues.
+- Quien empieza una tarea marca su fila como **En curso** o **En PR**. El commit o el PR que la
+  entrega la marca como **Hecha** con la fecha.
+- Los bugs se anotan en el tablero con los pasos para reproducirlos y se corrigen con un commit
+  `fix(...)` que trae su test de regresión.
 
 ## 5. Experimentos
 
@@ -129,7 +130,7 @@ Una tarea está **hecha** cuando cumple todo esto:
 3. Tiene docstrings en las funciones públicas y type hints.
 4. Está subida a la rama `proyecto`.
 5. Si cambió una decisión de diseño, se actualizó `docs/` o se agregó un ADR.
-6. El issue está cerrado y movido a "Hecho" en el tablero.
+6. Su fila en [04_tareas.md](04_tareas.md) está marcada como **Hecha**, con la fecha.
 
 ## 8. Estilo de código
 

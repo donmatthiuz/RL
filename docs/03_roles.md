@@ -30,7 +30,7 @@ escriben una parte del informe.
 - Definir y hacer cumplir los **contratos** entre módulos: esquemas de datos, la interfaz `Policy`
   y el formato de `info`.
 - Hacer las **integraciones** de extremo a extremo (datos → entorno → entrenamiento → evaluación).
-- Dirigir las reuniones de avance y mantener el tablero (GitHub Projects).
+- Dirigir las reuniones de avance y mantener el tablero (sección "Tablero" de `docs/04_tareas.md`).
 - Mantener `docs/` coherente y escribir las secciones de _Metodología_ y _Reproducibilidad_ del
   informe.
 

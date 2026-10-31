@@ -202,6 +202,16 @@ ADR-XXX*.
 - **Consecuencias:** "CI en verde" vuelve a la Definition of Done. Ruff y pre-commit excluyen
   `.skills/` y `.agents/`, que se versionan tal cual. Los tests corren en Python 3.11 y 3.12.
 
+### ADR-015 — El tablero es el documento de tareas
+
+- **Estado:** Aceptada el 31/10/2026 (R1).
+- **Contexto:** INF-04 pedía un tablero en GitHub Projects con un issue por tarea. El estado del
+  proyecto ya se lleva en `docs/04_tareas.md`, y mantener dos lugares los desincroniza.
+- **Decisión:** No hay GitHub Projects ni issues. El tablero es la sección "Tablero" de
+  `docs/04_tareas.md`, y cada tarea marca su estado en su fila.
+- **Consecuencias:** Los commits y PR referencian el ID de la tarea (`[DAT-05]`), no un número de
+  issue. Cada PR que se abre o se mezcla actualiza el tablero. Los bugs también se anotan ahí.
+
 <!-- Plantilla para nuevas decisiones:
 ### ADR-00X — Título
 - **Estado:** Propuesta | Aceptada | Reemplazada por ADR-XXX
