@@ -54,6 +54,9 @@ make manifest
 # Construir markets, prices_raw y spot_1m desde el crudo (data/processed/<dataset_id>/)
 make dataset
 
+# Ejecutar la EDA (notebooks/eda/), solo con train; las figuras quedan en docs/images/eda/
+make eda
+
 # Generar el PDF de una entrega
 make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
 ```

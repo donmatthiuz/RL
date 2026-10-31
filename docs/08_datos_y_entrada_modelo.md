@@ -200,6 +200,30 @@ algo que aprender:
 | ¿Hay sesgos por hora o por día? | Posibles features de contexto | Tasa de UP por hora del día y por día de la semana |
 | ¿Qué tan buenos son los datos? | Afecta la confianza en los resultados | Huecos, `p_stale_s` y mercados descartados por motivo |
 
+### Hallazgos (DAT-08, solo train)
+
+El detalle está en [01_eda_btc_horario.ipynb](../notebooks/eda/01_eda_btc_horario.ipynb), con 8 683
+mercados de train (28/05/2025 a 27/05/2026). Val y test no se miraron.
+
+- **Datos:** casi todos los mercados tienen 60 puntos en la ventana y el mayor hueco típico es de
+  74 s. En cada instante de decisión, el último precio tiene una antigüedad mediana de 52 s.
+- **Calibración:** el precio está bien calibrado; el favorito acierta el 52 % en el minuto 0, el
+  74 % en el 30 y el 92 % en el 55.
+- **Desfase:** el cambio del precio se correlaciona 0,64 con el cambio del spot del minuto
+  anterior y 0,04 con el del mismo minuto. Es el atraso de los datos, no un mercado lento (ver la
+  sección 2.3 de las [decisiones previas](notas/decisiones_previas_al_diseno.md)).
+- **Ventaja aparente:** seguir `edge` y entrar al precio de `t` gana de 0,03 a 0,16 USDC por acción
+  después de costos. Entrando en el precio siguiente gana de 0,01 a 0,02 sin costos y pierde con
+  costos. La ventaja viene del atraso del precio: respalda S4 y la advertencia sobre `edge` en S3.
+- **Comisiones:** el precio se comporta igual con y sin comisión, lo que apoya el ADR-009.
+- **Costos:** comprar con `p = 0,5` y mantener cuesta 0,0275 por acción (5,4 %); ida y vuelta, el
+  doble.
+- **Sesgos:** no hay sesgos por hora ni por día (permutación, valor p de 0,18 y 0,32).
+- **Qué esperar:** no aparece una estrategia simple rentable después de costos. Es probable que el
+  agente aprenda a operar poco (R5 y R14); según D4, se reporta y el proyecto sigue.
+
+![Ganancia por acción al seguir edge](images/eda/05_ventaja_aparente.png)
+
 ## 4. Entrada del modelo
 
 ### 4.1 Observación

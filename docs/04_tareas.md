@@ -72,7 +72,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | DAT-05 | **En PR desde el 31/10/2026:** `markets`, `prices_raw`, `spot_1m` y manifest con `make dataset`; falta `steps` (S3 y S4). `build_dataset.py`: `markets.parquet`, `steps.parquet` y `manifest.json` con hash. **Mini-dataset de fixtures** (≈ 5 mercados) para los tests. | F1 | P0 | DAT-04, INF-06 | `polym4v data build` dos veces da el mismo hash. Valida con `pandera`. |
 | DAT-06 | **En PR desde el 31/10/2026.** Split temporal por mercado (70/15/15), sacando de test los mercados de S11 | F1 | P0 | DAT-05 | Test: hay intersección vacía entre splits y `max(ts_train) < min(ts_val) < min(ts_test)` |
 | DAT-07 | `features/`: features de la sección 2.2 de la arquitectura y normalización ajustada solo con train | F2 | P0 | DAT-05 | Test de no-*lookahead*: truncar la serie en `t` no cambia las features en `≤ t` |
-| DAT-08 | Notebook de EDA y una sección breve con sus hallazgos | F2 | P1 | DAT-05 | Notebook ejecutado y versionado, con ≥ 5 gráficos comentados |
+| DAT-08 | **En PR desde el 31/10/2026:** `notebooks/eda/01_eda_btc_horario.ipynb` y hallazgos en la sección 3 de `docs/08`. Notebook de EDA y una sección breve con sus hallazgos | F2 | P1 | DAT-05 | Notebook ejecutado y versionado, con ≥ 5 gráficos comentados |
 | DAT-09 | Extensión a ETH y/o a la segunda familia de mercados | F3 | P2 | DAT-07 | Dataset `eth_*` construido y evaluación de transferencia BTC → ETH |
 | DAT-10 | **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
 
