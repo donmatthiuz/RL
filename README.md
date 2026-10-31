@@ -23,11 +23,14 @@ que se leyó el anterior.
 | 07 | [Riesgos y decisiones](docs/07_riesgos_y_decisiones.md) | Riesgos técnicos, mitigaciones y registro de decisiones (ADR) |
 | 08 | [Datos y entrada del modelo](docs/08_datos_y_entrada_modelo.md) | Extracción, ETL, EDA, observación del agente, costos y supuestos verificados |
 | 09 | [Sistema de simulación](docs/09_sistema_simulacion.md) | Modelo de tiempo, ejecución, costos y comportamiento del entorno, basado en prácticas open source |
+| 10 | [Entrega final](docs/10_entrega_final.md) | Qué pide el curso, dónde vive cada entregable y si cumplimos |
 
 Las notas de trabajo están en [`docs/notas/`](docs/notas/): el
-[spike de datos](docs/notas/spike_datos.md), las
-[decisiones previas al diseño](docs/notas/decisiones_previas_al_diseno.md) y el
-[uso de IA](docs/notas/uso_de_ia.md) (skills y subagentes del proyecto, y por qué se usa cada uno).
+[spike de datos](docs/notas/spike_datos.md) y las
+[decisiones previas al diseño](docs/notas/decisiones_previas_al_diseno.md). El uso de IA está en
+[`docs/ia/`](docs/ia/): [herramientas y por qué](docs/ia/uso_de_ia.md),
+[historial de prompts](docs/ia/historial_prompts.md) e [investigaciones](docs/ia/investigaciones/).
+Las entregas al profesor están en [`entregas/`](entregas/).
 
 ## Inicio rápido
 
