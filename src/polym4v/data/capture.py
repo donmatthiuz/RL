@@ -10,13 +10,14 @@ import json
 import os
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 from zoneinfo import ZoneInfo
 
 import httpx
+from polymarket import TransportError
 
 CLOB_PRICES_HISTORY = "https://clob.polymarket.com/prices-history"
 HOUR = 3600
@@ -133,6 +134,34 @@ def _fetch(
     return status, body
 
 
+def _iter_events(
+    paginator: Any, sleep: Callable[[float], None], summary: dict[str, Any], retries: int = 4
+) -> Iterator[Any]:
+    """Recorre las páginas de Gamma; ante una falla de red repite la misma página.
+
+    El SDK solo reintenta los 429, así que sin esto una caída de red a mitad del listado
+    corta toda la captura.
+    """
+    cursor = None
+    while True:
+        for attempt in range(retries):
+            try:
+                page = (
+                    paginator.from_cursor(cursor).first_page() if cursor else paginator.first_page()
+                )
+                break
+            except TransportError:
+                if attempt == retries - 1:
+                    raise
+                sleep(2.0**attempt)
+        yield from page.items
+        if page.limit_reached:
+            summary["limit_reached"] = True
+        if page.limit_reached or not page.has_more:
+            return
+        cursor = page.next_cursor
+
+
 def capture_series(
     series_id: int,
     store: RawStore,
@@ -151,14 +180,16 @@ def capture_series(
         "downloaded": 0,
         "cached": 0,
         "errors": [],
+        "limit_reached": False,
     }
-    events = gamma.list_events(
+    paginator = gamma.list_events(
         series_ids=series_id,
         closed=True,
         order="endDate",
         ascending=True,
         page_size=50,
-    ).iter_items()
+    )
+    events = _iter_events(paginator, sleep, summary)
     for event in events:
         if limit is not None and summary["events"] >= limit:
             break

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
+from polymarket import TransportError
 
 from polym4v.data.capture import RawStore, capture_series, parse_window_start, write_manifest
 
@@ -57,15 +58,41 @@ def make_event(event_id, title, end_date, yes, no):
     return event
 
 
+class FakePaginator:
+    """Imita el Paginator del SDK: páginas con cursor y fallas de red opcionales."""
+
+    def __init__(self, events, page_size, failures=0, limit_pages=None):
+        self.pages = [events[i : i + page_size] for i in range(0, len(events), page_size)] or [[]]
+        self.failures = failures
+        self.limit_pages = limit_pages
+        self.requested = []
+
+    def first_page(self, cursor=None):
+        self.requested.append(cursor)
+        if self.failures:
+            self.failures -= 1
+            raise TransportError("conexión cortada")
+        index = int(cursor or 0)
+        last = len(self.pages) - 1
+        limited = self.limit_pages is not None and index == self.limit_pages - 1
+        return SimpleNamespace(
+            items=tuple(self.pages[index]),
+            has_more=index < last,
+            next_cursor=str(index + 1) if index < last else None,
+            limit_reached=limited and index < last,
+        )
+
+    def from_cursor(self, cursor):
+        return SimpleNamespace(first_page=lambda: self.first_page(cursor))
+
+
 class FakeGamma:
-    def __init__(self, events):
-        self.events = events
-        self.calls = 0
+    def __init__(self, events, page_size=50, **paginator):
+        self.paginator = FakePaginator(events, page_size, **paginator)
 
     def list_events(self, **kwargs):
-        self.calls += 1
         assert kwargs["series_ids"] == 10114 and kwargs["closed"] is True
-        return SimpleNamespace(iter_items=lambda: iter(self.events))
+        return self.paginator
 
 
 @pytest.fixture
@@ -148,6 +175,50 @@ def test_failures_are_reported_and_not_cached(tmp_path, events):
     assert summary["downloaded"] == 0
     assert {e["token_id"] for e in summary["errors"]} == {"111", "222"}
     assert not store.price_path("111").exists()
+
+
+def many_events(n):
+    return [
+        make_event(
+            str(i),
+            "Bitcoin Up or Down - October 30, 8PM ET",
+            "2026-10-31T01:00:00",
+            f"y{i}",
+            f"n{i}",
+        )
+        for i in range(n)
+    ]
+
+
+def test_network_failure_while_listing_retries_the_same_page(tmp_path):
+    http, _ = clob(lambda request: httpx.Response(200, json={"history": []}))
+    gamma = FakeGamma(many_events(5), page_size=2, failures=2)
+    waits = []
+
+    summary = capture_series(10114, RawStore(tmp_path), gamma=gamma, http=http, sleep=waits.append)
+
+    assert summary["events"] == 5 and summary["downloaded"] == 10
+    assert gamma.paginator.requested == [None, None, None, "1", "2"]
+    assert waits[:2] == [1.0, 2.0]
+
+
+def test_listing_gives_up_after_repeated_network_failures(tmp_path):
+    http, _ = clob(lambda request: httpx.Response(200, json={"history": []}))
+    gamma = FakeGamma(many_events(1), failures=10)
+
+    with pytest.raises(TransportError):
+        capture_series(10114, RawStore(tmp_path), gamma=gamma, http=http, sleep=lambda s: None)
+
+
+def test_pagination_depth_limit_is_reported(tmp_path):
+    http, _ = clob(lambda request: httpx.Response(200, json={"history": []}))
+    gamma = FakeGamma(many_events(5), page_size=2, limit_pages=2)
+
+    summary = capture_series(
+        10114, RawStore(tmp_path), gamma=gamma, http=http, sleep=lambda s: None
+    )
+
+    assert summary["events"] == 4 and summary["limit_reached"] is True
 
 
 def test_manifest_lists_every_file_with_its_hash(tmp_path, events):
