@@ -29,7 +29,7 @@ flowchart LR
     P["proyecto"] --> PR1["#1 INF-06 datos<br/>revisan R2 y R3"]
     PR1 --> PR2["#2 DAT-03 klines<br/>revisa R2"] --> PR3["#3 DAT-06 split<br/>revisa R2"] --> PR5["#5 DAT-04/05 dataset<br/>revisa R2"]
     PR1 --> PR4["#4 INF-06 Policy<br/>sin revisor (R4)"]
-    P --> PR6["#6 ENV-03 costos<br/>revisa R3, borrador"]
+    P --> PR6["#6 ENV-03 costos<br/>revisa R3"]
     PR5 --> PR7["#7 DAT-08 EDA<br/>revisa R2"]
 ```
 
@@ -41,7 +41,7 @@ flowchart LR
 | 4 | #5 | DAT-04 y DAT-05: `markets`, `prices_raw` y `spot_1m` | #3 | R2 |
 | 5 | #7 | DAT-08: EDA sobre train | #5 | R2 |
 | 2 (en paralelo) | #4 | INF-06: `Policy` y `Action` | #1 | Sin asignar (R4) |
-| Independiente | #6 | ENV-03: costos. Borrador hasta la investigación de [comisiones](ia/investigaciones/comisiones_polymarket.md) | `proyecto` | R3 |
+| Independiente | #6 | ENV-03: costos, verificados con la investigación de [comisiones](ia/investigaciones/comisiones_polymarket.md). Falta quitarle el borrador en GitHub | `proyecto` | R3 |
 
 **Bloqueado por decisiones pendientes.** Las decisiones están en
 [09_sistema_simulacion.md](09_sistema_simulacion.md): S3 y S4 en la sección 3, S9 y S10 en la
@@ -58,7 +58,7 @@ sección 4.3.
 
 **Sin bloqueos, en curso:**
 
-- DAT-10: captura del crudo de ETH (serie 10117), en curso desde el 31/10/2026.
+- DAT-10: captura del crudo de ETH (serie 10117), en curso desde el 31/10/2026. La de BTC terminó: 12 471 mercados. Cómo reproducirlas: [11_descarga_de_datos.md](11_descarga_de_datos.md).
 - DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
 
 Las decisiones previas al diseño (D1 a D9) están en
