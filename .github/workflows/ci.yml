@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [proyecto]
+  pull_request:
+    branches: [proyecto]
   workflow_dispatch: {}
 
 concurrency:

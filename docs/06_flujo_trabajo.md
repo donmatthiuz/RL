@@ -15,6 +15,7 @@ ramas nuevas.
 | No tocar otras ramas | Las ramas de laboratorios y exámenes no se modifican ni se mezclan con `proyecto` |
 | Sincronizar antes de subir | `git pull --rebase origin proyecto` antes de cada `git push` |
 | Nada de `push --force` | Reescribir la historia compartida rompe el trabajo de los demás |
+| Excepción: contratos | Un cambio de contrato (esquemas, `Policy`, `info`) va en una rama corta `feat/<id>-<tema>` y un PR hacia `proyecto`. Se mezcla cuando lo aprueban los dueños de los módulos afectados y se borra la rama |
 | Commits pequeños | Un commit por cambio lógico, idealmente por tarea o subtarea de [04_tareas.md](04_tareas.md) |
 | No subir con tests rotos | Si `uv run pytest` falla en local, no se hace push (ver sección 3) |
 
@@ -52,7 +53,7 @@ docs(arquitectura): documentar variante execute_at=next [ENV-09]
 
 ## 3. Entregas y tests
 
-Como no hay Pull Requests, **los tests son la revisión**. Lo que se sube a `proyecto` se considera
+Salvo en los contratos (sección 1), no hay Pull Requests: **los tests son la revisión**. Lo que se sube a `proyecto` se considera
 entregado, y lo entregado tiene que venir con sus tests.
 
 1. **Cada entrega trae sus tests.** El commit que completa una tarea incluye los tests de su
@@ -65,7 +66,8 @@ entregado, y lo entregado tiene que venir con sus tests.
    corre los tests de ese módulo y revisa el cambio. Si encuentra un problema, se corrige con un
    commit `fix(...)` con su test de regresión.
 4. **Los contratos no se rompen en silencio.** Un cambio en los esquemas, en `Policy` o en `info` se
-   avisa antes en el canal, y lo aprueba R1.
+   propone en un PR hacia `proyecto` y se avisa en el canal. Lo aprueban R1 y los dueños de los
+   módulos que lo usan; la CI corre también en el PR.
 
 **Checklist antes de cada push:**
 
