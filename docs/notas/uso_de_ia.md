@@ -86,7 +86,19 @@ RL) y `project-manager-senior` (atado a Laravel; `docs/04_tareas.md` ya cumple e
 catálogo no tiene un agente de RL: para eso están los apuntes del curso y la documentación de
 stable-baselines3 y d3rlpy.
 
-## 4. Skills (`.skills/`)
+## 4. Documentación actualizada (Context7)
+
+El código se escribe contra la documentación vigente de cada librería, no contra lo que el
+asistente recuerde. Para eso el proyecto configura Context7 como servidor MCP en `.mcp.json`.
+
+- Cada integrante ejecuta `make keys-init`, que crea `keys/context7.key` vacío, y pega su clave
+  en una sola línea. Todo `keys/` está ignorado por git, salvo `.gitkeep`.
+- El servidor lee la clave de ese archivo y la pasa como variable de entorno.
+- Ejemplo de uso: con Context7 se confirmó que `from __future__ import annotations` está
+  deprecado desde Python 3.14 y se quitó del código, y que la API nueva de historial de Polymarket
+  solo guarda 1 minuto durante 7 días (decisión S8).
+
+## 5. Skills (`.skills/`)
 
 | Skill | Para qué | Cuándo usarla |
 | --- | --- | --- |
@@ -97,7 +109,7 @@ stable-baselines3 y d3rlpy.
 | `security-compliance` | Revisar secretos y controles | Al tocar `.env` o credenciales de Polymarket |
 | `entregable-pdf` | Generar los entregables con el formato acordado | Cada entrega al profesor |
 
-## 5. Cómo pedirle algo a un agente
+## 6. Cómo pedirle algo a un agente
 
 Nombrarlo en la petición, por ejemplo: "usa el agente `specialized-model-qa` para revisar
 `src/polym4v/data/transform.py`". El agente devuelve un informe; la persona responsable decide qué

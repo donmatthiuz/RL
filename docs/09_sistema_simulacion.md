@@ -221,7 +221,11 @@ acepta de 0.29.1 a 2.0. Usar NautilusTrader solo para validar costos y resultado
 **Qué se encontró:** desde el 04/09/2026, Polymarket tiene una API nueva de historial
 (`/v2/prices-history`) que guarda el detalle de 1 minuto solo durante 7 días. El endpoint antiguo
 (`/prices-history` del CLOB) todavía devuelve 1 minuto para mercados de 2025, pero puede retirarse
-sin aviso.
+sin aviso. La documentación oficial (consultada con Context7) lo confirma: en la API nueva, los
+datos de 1 minuto duran al menos 7 días, cualquier resolución menor a 3 horas cubre solo los
+últimos 30 días, y los rangos explícitos tienen un máximo de 15 días.
+
+**Estado:** la captura de BTC horario está en curso con `polym4v capture --series 10114`.
 
 **Recomendación:** descargar y archivar **ahora** el historial de 1 minuto de todos los mercados
 BTC horarios (unos 12 500 pedidos) y las klines de Binance, como datos crudos inmutables

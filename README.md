@@ -37,6 +37,12 @@ Las notas de trabajo están en [`docs/notas/`](docs/notas/): el
 # 1. Instalar dependencias (requiere uv: https://docs.astral.sh/uv/)
 uv sync --all-extras
 
+# 1b. Crear los archivos de claves locales (hoy solo Context7) y pegar cada clave
+make keys-init
+
+# 1c. Archivar el historial crudo de precios de BTC horario
+uv run polym4v capture --series 10114 --out data/raw
+
 # 2. Descargar y construir el dataset
 uv run polym4v data build --config configs/data.yaml
 

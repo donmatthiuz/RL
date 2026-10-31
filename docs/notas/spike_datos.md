@@ -118,6 +118,7 @@ volver a medir con el pipeline de [08_datos_y_entrada_modelo.md](../08_datos_y_e
 
 ## 6. Impacto en el código actual
 
-`rl_polymarket.PolymarketClient.get_price_history` usa la Data API v2 del SDK, así que **devuelve
-vacío para mercados cerrados**. El pipeline de datos tiene que llamar al endpoint CLOB
+`polym4v.PolymarketClient.get_price_history` (antes en `rl_polymarket`) usa la Data API v2 del
+SDK, así que **devuelve vacío para mercados cerrados**. La documentación oficial lo explica: en la
+v2, cualquier resolución menor a 3 horas cubre solo los últimos 30 días. El pipeline de datos tiene que llamar al endpoint CLOB
 directamente. El resto del cliente (consulta de mercados y eventos) sí sirve para la extracción.
