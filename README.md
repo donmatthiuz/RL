@@ -51,6 +51,9 @@ make capture
 make capture-spot
 make manifest
 
+# Construir markets, prices_raw y spot_1m desde el crudo (data/processed/<dataset_id>/)
+make dataset
+
 # Generar el PDF de una entrega
 make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
 ```

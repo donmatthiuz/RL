@@ -89,10 +89,18 @@ en el manifest.
   resolución y se conoce desde `w0`.
 - Se descarta todo dato con `ts >= w1`. Hay precios y trades posteriores a la resolución.
 
+**Construcción.** `make dataset` (DAT-05) lee solo `data/raw/` y escribe `markets`, `prices_raw` y
+`spot_1m` en `data/processed/<dataset_id>/`, validados con los contratos de la sección 2.3. Cada
+mercado descartado queda en el manifest con su motivo. Se toman los mercados cuya ventana empieza
+entre `date_from` y `date_to` (fecha UTC de `w0`). Los puntos de precio se guardan desde
+`w0 - context_minutes` hasta antes de `w1`. La grilla (`steps`) espera a S3 y S4.
+
 **Filtros de calidad** (configurables):
 
 - Menos de 45 puntos de precio dentro de la ventana.
-- Un hueco de más de 600 s dentro de la ventana.
+- Un hueco de más de 600 s dentro de la ventana: el mayor tiempo sin un punto nuevo, contando
+  desde `w0` hasta el primer punto y desde el último hasta `w1`.
+- Un precio fuera de `[0, 1]` o un token sin historial.
 - No coincide el resultado con Binance, o no se pudo leer la ventana del título.
 
 ### 2.3 Carga: contrato de salida

@@ -21,8 +21,11 @@ from pydantic import BaseModel, ValidationError
 from .client import PolymarketClient
 from .config import ConfigurationError, PolymarketSettings
 from .data.binance import capture_klines, spot_range
+from .data.build_dataset import build_dataset
 from .data.capture import RawStore, capture_series, write_manifest
+from .data.splits import load_exclusions
 from .utils.config import DataConfig, load_config, load_named
+from .utils.paths import get_paths
 
 
 def _json_default(value: Any) -> Any:
@@ -90,6 +93,13 @@ def _parser() -> argparse.ArgumentParser:
     spot.add_argument("--out", default="data/raw", help="Carpeta del crudo")
     spot.add_argument("--pause", type=float, default=0.1, help="Segundos entre descargas")
 
+    build = commands.add_parser(
+        "build-dataset", help="Construye markets, prices_raw y spot_1m desde el crudo"
+    )
+    build.add_argument("--config", default="configs/data.yaml", help="Config del dataset")
+    build.add_argument("--raw", help="Carpeta del crudo (por defecto, la de .env)")
+    build.add_argument("--out", help="Carpeta de salida (por defecto, processed/<dataset_id>)")
+
     config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
     config.add_argument("path", help="Por ejemplo configs/data.yaml")
 
@@ -137,11 +147,25 @@ def _capture_spot(args: argparse.Namespace) -> Any:
     return {"klines": summaries, "files": manifest["n_files"]}
 
 
+def _build_dataset(args: argparse.Namespace) -> Any:
+    config = load_config(args.config, DataConfig)
+    paths = get_paths()
+    exclusions = config.test_exclusions
+    if not exclusions.is_absolute():
+        exclusions = paths.root / exclusions
+    raw = RawStore(args.raw or paths.raw)
+    out = args.out or paths.processed / config.dataset_id
+    manifest = build_dataset(config, raw, load_exclusions(exclusions), out)
+    return {key: manifest[key] for key in ("markets_per_split", "discarded_by_reason", "files")}
+
+
 def _run(args: argparse.Namespace) -> Any:
     if args.command == "capture":
         return _capture(args)
     if args.command == "capture-spot":
         return _capture_spot(args)
+    if args.command == "build-dataset":
+        return _build_dataset(args)
     if args.command == "config":
         return load_named(args.path).model_dump(mode="json")
     if args.command == "manifest":
