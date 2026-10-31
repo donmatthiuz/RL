@@ -21,10 +21,9 @@ jobs:
         with:
           enable-cache: true
           python-version: "3.12"
-      - run: uv sync --all-extras --locked
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
-      - run: uv run mypy src/polym4v
+      # Los mismos targets del Makefile que se usan en local.
+      - run: make install
+      - run: make lint typecheck
 
   test:
     needs: lint
@@ -38,9 +37,9 @@ jobs:
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
-      - run: uv sync --all-extras --locked
+      - run: make install
       - name: Tests con cobertura (sin slow ni network)
-        run: uv run pytest --cov --cov-report=term --cov-report=xml
+        run: make coverage
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-py${{ matrix.python-version }}

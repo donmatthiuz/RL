@@ -226,3 +226,10 @@ graphify-out
 # Claves locales (cada integrante crea las suyas; nunca se versionan)
 keys/*
 !keys/.gitkeep
+
+# Fuentes enlazadas para generar los PDF de entregas (make entregable)
+.fonts-entregable/
+
+# Logs de TensorBoard y datasets offline (docs/06_flujo_trabajo.md)
+/runs/
+*.h5
