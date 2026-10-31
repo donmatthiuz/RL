@@ -42,7 +42,8 @@ válido si está bien medido. Si ningún agente gana, se reporta igual (D4).
 
 - **Unidad:** el mercado (un episodio). El saldo se reinicia en cada mercado.
 - **Métrica principal:** retorno por mercado sobre el monto apostado, `R_i = PnL_i / stake`.
-  - `stake` es fijo (`stake_fraction × initial_cash`, en `docs/02`), no el monto que se operó.
+  - `stake` es fijo (`stake_fraction × initial_cash`: 20 USDC según S4b), no el monto que se
+    operó.
   - El PnL incluye spread, comisión y liquidación.
   - Un mercado en el que no se opera tiene `R_i = 0`.
 - **Comparación principal:** la diferencia pareada por mercado
@@ -116,6 +117,11 @@ potencia depende de los mercados con `D_i ≠ 0`.
 - No se cambia a Wilcoxon ni a la prueba del signo: descartan los ceros y cambian lo que se mide.
 - Con menos de unos 30 mercados con `D_i ≠ 0`, el informe dice que el IC no es confiable.
 
+**Modo estricto (obligatorio, ADR-017):** la evaluación se repite contando como no ejecutadas las
+ejecuciones que ningún trade real respalda: un taker del mismo lado, a ese precio o mejor, por al
+menos 20 USDC, dentro de la ventana de S4. Si la clasificación de un agente cambia entre el modo
+normal y el estricto, su resultado depende de liquidez no verificable y se reporta así.
+
 **Comparación secundaria:** cada agente contra `NoTrade` (¿gana dinero en absoluto?). Se reporta,
 pero no define la clasificación.
 
@@ -152,6 +158,7 @@ Se reportan para entender el resultado. No cambian la clasificación.
 | Costos | Spread y comisión pagados |
 | Acciones inválidas | Porcentaje de acciones pedidas que se ejecutaron como `WAIT` (S6) |
 | Órdenes no ejecutadas | Porcentaje de órdenes sin precio dentro de la tolerancia (S4) |
+| Ejecuciones verificables | Porcentaje de ejecuciones respaldadas por un trade real (S4, EVA-11) |
 
 **Sensibilidad (exploratoria):**
 
@@ -176,7 +183,7 @@ Se reportan para entender el resultado. No cambian la clasificación.
 
 | # | Pregunta clave | Opciones | Recomendación |
 | --- | --- | --- | --- |
-| E1 | ¿Desde qué diferencia por mercado una mejora importa? (`Δ_min`, la pide D3) | 0,5 %, 1 % o 2 % del stake por mercado, promediado sobre todos los mercados de test (también los que no opera) | **1 %.** Con `stake_fraction = 0,10`, son unos +175 % del saldo inicial sumados sobre los 1 752 mercados: una ventaja grande y sostenida. La MDE probablemente sea mayor (sección 7), así que lo más probable es un resultado "inconcluso" o "equivalente", y se dirá |
+| E1 | ¿Desde qué diferencia por mercado una mejora importa? (`Δ_min`, la pide D3) | 0,5 %, 1 % o 2 % del stake por mercado, promediado sobre todos los mercados de test (también los que no opera) | **1 %.** Con órdenes de 20 USDC (`stake_fraction = 0,02`), son unos +35 % del saldo inicial sumados sobre los 1 752 mercados: una ventaja clara y sostenida. La MDE probablemente sea mayor (sección 7), así que lo más probable es un resultado "inconcluso" o "equivalente", y se dirá |
 | E2 | ¿Quién es el baseline de referencia? | `NoTrade` salvo que una heurística le gane en val; la heurística con mayor media en val | **`NoTrade` salvo que una heurística le gane en val.** Si ninguna heurística es rentable, la de mayor media en val sería una que casi no opera y ganó por azar |
 
 ## 11. Revisión estadística del primer borrador
