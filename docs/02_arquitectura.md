@@ -161,7 +161,7 @@ src/polym4v/env/
 | Una posición a la vez | `BUY_*` con una posición ya abierta es una **acción inválida**: se trata como `WAIT` y se aplica una pequeña penalización. |
 | Tamaño fijo | Cada compra usa `stake_fraction` del saldo inicial (por ejemplo, 10 %). |
 | `SELL` sin posición | Acción inválida, se trata como `WAIT` y se penaliza. |
-| Costos | `buy_price = p + spread/2 + slippage`, `sell_price = p - spread/2 - slippage`, más la comisión taker `acciones × fee_rate × (precio × (1 - precio))^fee_exponent` (ADR-009). |
+| Costos | `buy_price = p + half_spread`, `sell_price = p - half_spread`, dentro de `[tick, 1 - tick]`, más la comisión taker `acciones × fee_rate × (precio × (1 - precio))^fee_exponent` redondeada, pagada en USDC (S5, ADR-009 y `src/polym4v/env/execution.py`). El slippage queda dentro de `half_spread`. Valores en `configs/costs.yaml`. |
 | Fin del episodio | Al llegar a `w1` (fin de la vela), la posición abierta **se liquida** a `1` o `0` según `outcome`, sin comisión. |
 | Precio de NO | `p_no = 1 - p_yes` (aproximación documentada en el ADR-003). |
 
