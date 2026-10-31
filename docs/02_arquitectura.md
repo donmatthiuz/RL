@@ -201,14 +201,22 @@ un test.
 
 ### 2.5 `agents/` — Agentes y baselines (Rol 4)
 
-Todos implementan la misma interfaz:
+Todos implementan la misma interfaz, definida en `src/polym4v/agents/base.py` (INF-06):
 
 ```python
+class Action(IntEnum):
+    WAIT = 0
+    BUY_YES = 1
+    BUY_NO = 2
+    SELL = 3
+
+
+@runtime_checkable
 class Policy(Protocol):
     name: str
 
-    def act(self, obs: np.ndarray, info: dict | None = None) -> int: ...
-    def reset(self) -> None: ...  # para políticas con estado interno
+    def act(self, obs: np.ndarray, info: Mapping[str, Any] | None = None) -> int: ...
+    def reset(self) -> None: ...  # al empezar cada episodio; limpia el estado interno
 ```
 
 | Agente | Implementación | Notas |
