@@ -463,10 +463,10 @@ Ninguna cita es inventada. Lo que la respuesta marcó como "no confirmado" no se
   escala fija (por ejemplo, sobre el monto) antes que normalizar la recompensa con `VecNormalize`.
   Las observaciones ya se normalizan con el z-score de train (DAT-07).
 
-### Lista revisada para ENV-05 y ENV-08 (propuesta)
+### Lista revisada para ENV-05 y ENV-08
 
-Reemplaza la tabla de variantes candidatas. Se compara en dos etapas para no multiplicar las
-corridas:
+R1 la aprobó el 01/11/2026 y está implementada en el PR #23. Reemplaza la tabla de variantes
+candidatas. Se compara en dos etapas para no multiplicar las corridas:
 
 | Etapa | Variante | Recompensa | Qué prueba |
 | --- | --- | --- | --- |
@@ -489,7 +489,7 @@ corridas:
 
 ## Cómo se usa
 
-- La lista revisada define qué variantes se implementan en `reward.py` (ENV-05) y la ablación de
-  ENV-08, cuando R1 la apruebe.
+- La lista revisada define las variantes de `reward.py` (ENV-05, PR #23) y la ablación de ENV-08,
+  que espera a que se abra val.
 - Hasta entonces, `configs/env.yaml` usa `pnl` como recompensa provisional.
 - R1 decide la recompensa principal con el resultado de la ablación en val, y queda como ADR.

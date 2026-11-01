@@ -188,8 +188,8 @@ Code. El equipo lo revisa y completa.
   - Con la teoría de shaping por potencial de Ng et al., `pnl` resulta casi equivalente a la
     recompensa terminal. La ablación compara entonces la velocidad de aprendizaje y no la política
     óptima.
-  - Salió una lista revisada de seis variantes en dos etapas, con 5 semillas, pendiente de
-    aprobación de R1.
+  - Salió una lista revisada de seis variantes en dos etapas, con 5 semillas. R1 la aprobó el
+    01/11/2026 y está implementada en el PR #23.
 
 ## Plantilla
 
