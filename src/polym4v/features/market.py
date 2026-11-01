@@ -93,8 +93,12 @@ def fit_zscore(train: pd.DataFrame) -> dict[str, dict[str, float]]:
 
 
 def apply_zscore(steps: pd.DataFrame, stats: dict[str, dict[str, float]]) -> pd.DataFrame:
-    """Copia de `steps` con las features de `stats` normalizadas."""
+    """Copia de `steps` con las features de `stats` normalizadas.
+
+    Una feature constante en train tiene desviación 0: solo se centra, para no dividir por 0.
+    """
     out = steps.copy()
     for name, s in stats.items():
-        out[name] = (out[name] - s["mean"]) / s["std"]
+        scale = s["std"] if s["std"] > 0 else 1.0
+        out[name] = (out[name] - s["mean"]) / scale
     return out
