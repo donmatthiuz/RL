@@ -57,6 +57,9 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         self.data, self.config, self.reward_config = data, config, reward_config
         self.costs = config.costs
         self.stake = config.initial_cash * config.stake_fraction
+        # La comisión se redondea hacia arriba: una compra puede costar una fracción del último
+        # decimal más que el monto, y abrir exige ese margen en la caja.
+        self.open_cash = self.stake + 10.0**-config.costs.fee_decimals
         self.last_open_k = data.n_steps - config.no_open_last_minutes * 60 // data.step_s
         n_features = data.episodes[0].features.shape[1] + len(AGENT_FEATURES)
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, (n_features,), np.float32)
@@ -123,7 +126,7 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
     def action_masks(self) -> np.ndarray:
         """Acciones válidas en el paso actual (S6), para MaskablePPO y para el backtest."""
         flat = self.portfolio.side == FLAT
-        can_open = flat and self.k < self.last_open_k and self.portfolio.cash >= self.stake
+        can_open = flat and self.k < self.last_open_k and self.portfolio.cash >= self.open_cash
         return np.array([True, can_open, can_open, not flat])
 
     def _execution_price(self, t: int) -> tuple[int, float] | None:
