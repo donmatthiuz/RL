@@ -85,6 +85,13 @@ def test_prices_cross_the_spread_without_leaving_the_tick_range():
     assert bid(0.005, COSTS) == pytest.approx(0.001)
 
 
+def test_without_spread_prices_stay_inside_the_tick_range():
+    """Ablación sin costos: un precio de 0 o de 1 no da una compra gratis ni divide por 0."""
+    free = COSTS.model_copy(update={"half_spread": 0.0, "fee_rate": 0.0})
+    assert ask(0.0, free) == pytest.approx(0.001) and bid(1.0, free) == pytest.approx(0.999)
+    assert buy(20.0, 0.0, free).shares == pytest.approx(20_000)
+
+
 def test_buy_spends_the_stake_including_the_fee():
     fill = buy(100.0, 0.5, COSTS)
 
