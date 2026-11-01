@@ -239,6 +239,13 @@ def test_same_seed_gives_the_same_markets(data):
     assert first == second and len(set(first)) > 1
 
 
+def test_cannot_open_without_cash_for_the_rounded_fee(data):
+    """Con toda la caja como monto, el redondeo de la comisión no alcanza: no se puede abrir."""
+    env = make_env(data, ENV.model_copy(update={"stake_fraction": 1.0}))
+    env.reset(options={"market_id": data.market_ids[0]})
+    assert env.action_masks().tolist() == [True, False, False, False]
+
+
 def test_tolerance_cannot_exceed_the_step(data):
     with pytest.raises(ValueError, match="paso de la grilla"):
         make_env(data, ENV.model_copy(update={"tolerance_s": 61}))
