@@ -134,3 +134,10 @@ def test_apply_zscore():
     steps = pd.DataFrame({"x": [1.0, 3.0], "p_yes": [0.2, 0.4]})
     out = apply_zscore(steps, {"x": {"mean": 2.0, "std": 1.0}})
     assert out["x"].tolist() == [-1.0, 1.0] and out["p_yes"].tolist() == [0.2, 0.4]
+
+
+def test_constant_feature_is_only_centered():
+    """Con desviación 0 en train no se divide por 0: la feature queda centrada, sin NaN."""
+    steps = pd.DataFrame({"dp_1": [0.0, 0.0, 0.1]})
+    out = apply_zscore(steps, {"dp_1": {"mean": 0.0, "std": 0.0}})
+    assert out["dp_1"].tolist() == [0.0, 0.0, 0.1]
