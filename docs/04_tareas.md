@@ -45,6 +45,7 @@ flowchart LR
     PR17 --> PR19["#19 AGT-04/05/06 entrenamiento<br/>sin revisor (R4)"]
     PR18 -.-> PR19
     PR19 --> PR20["#20 AGT-07/08 offline: CQL y BC<br/>sin revisor (R4)"]
+    PR20 --> PR21["#21 INF-07 integración y evaluate<br/>cualquiera"]
 ```
 
 | Orden | PR | Tarea | Base | También necesita | Revisa |
@@ -69,6 +70,7 @@ flowchart LR
 | 11 | #17 | ENV-07: `render()` en modo texto | #16 | — | R3 |
 | 12 | #19 | AGT-04, AGT-05 y AGT-06: entrenamiento de PPO y DQN y prueba de cordura | #17 | #18 | Sin asignar (R4) |
 | 13 | #20 | AGT-07 y AGT-08: dataset offline y entrenamiento de CQL y BC | #19 | — | Sin asignar (R4) |
+| 14 | #21 | INF-07: pipeline completo por la CLI y comando `evaluate` | #20 | — | Cualquier integrante |
 
 **Decisiones del simulador:** todas tomadas el 31/10/2026 (ADR-016 y ADR-017), con sus preguntas y
 opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
@@ -88,7 +90,6 @@ solo se corrieron sobre train.
 
 **Sin bloqueos, para empezar:**
 
-- INF-07: prueba de integración de todo el pipeline sobre un mini-dataset.
 - EVA-07: demo en Streamlit con las trayectorias del backtest.
 - EVA-04: `stats.py` con la prueba del protocolo, cuando el equipo responda E1 y E2 en #8.
 - ENV-08: la ablación de la recompensa, cuando esté la respuesta de Perplexity y se elijan las
@@ -145,7 +146,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | INF-04 | **Hecha el 31/10/2026 (ADR-015):** el tablero es la sección "Tablero" de este documento, sin GitHub Projects ni issues | F0 | P0 | — | Cada tarea tiene su estado en su fila y la sección "Tablero" muestra lo que está en PR, bloqueado o sin empezar |
 | INF-05 | **Hecha el 31/10/2026.** `utils/`: `config.py` (pydantic), `seeding.py`, `logging.py`, `paths.py` | F1 | P0 | INF-01 | Tests unitarios. La misma semilla da resultados idénticos. |
 | INF-06 | **En PR #1, #4 y #11 (`info`).** Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
-| INF-07 | CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
+| INF-07 | **En PR #21** (con `argparse`). CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
 | INF-08 | Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
 | INF-09 | `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
 | INF-10 | Revisión de reproducibilidad: un integrante que no participó clona el repo y reproduce un resultado siguiendo el README | F4 | P0 | H3 | El resultado coincide dentro de la tolerancia (± IC) |
