@@ -8,6 +8,10 @@ UV ?= uv
 # Configuración a validar: make config CONFIG=configs/data.yaml
 CONFIG ?= configs/data.yaml
 
+# Entrenamiento: make train AGENT=ppo SEED=0
+AGENT ?= ppo
+SEED ?=
+
 # Backtest de un baseline: make backtest POLICY=fair_value SPLIT=train
 POLICY ?= no_trade
 SPLIT ?= train
@@ -31,7 +35,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset backtest manifest entregable
+	pre-commit config capture capture-spot capture-trades dataset backtest train manifest entregable
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -101,6 +105,9 @@ dataset: ## Construye markets, prices_raw y spot_1m desde el crudo (CONFIG, RAW_
 
 backtest: ## Corre un baseline sobre un split y guarda sus trayectorias (POLICY, SPLIT)
 	$(UV) run polym4v backtest --policy $(POLICY) --split $(SPLIT)
+
+train: ## Entrena un agente con todas las semillas de su config (AGENT=ppo|dqn, SEED)
+	$(UV) run polym4v train --config configs/$(AGENT).yaml $(if $(SEED),--seed $(SEED))
 
 manifest: ## Recalcula el manifest con el hash de cada archivo crudo (RAW_DIR)
 	$(UV) run polym4v manifest --out $(RAW_DIR)
