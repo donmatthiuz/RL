@@ -21,7 +21,7 @@ import pandas as pd
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
-from .backtest import episode_results
+from .backtest import STEP_KEYS, episode_results
 from .metrics import capital_curve, summarize
 
 STRICT_SUFFIX = "_estricto"
@@ -74,7 +74,14 @@ def load_trajectories(folder: Path, split: str) -> list[Trajectories]:
         parsed = parse_name(path, split)
         if parsed is not None:
             label, strict = parsed
-            found.append(Trajectories(label, strict, pd.read_parquet(path)))
+            frame = pd.read_parquet(path)
+            missing = [key for key in STEP_KEYS if key not in frame.columns]
+            if missing:
+                raise ValueError(
+                    f"{path.name} no tiene {', '.join(missing)}: es de una versión anterior del "
+                    "backtest; vuelve a correr backtest o evaluate"
+                )
+            found.append(Trajectories(label, strict, frame))
     found.sort(key=lambda t: (t.label, t.strict))
     return found
 

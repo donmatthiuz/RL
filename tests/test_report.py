@@ -138,6 +138,12 @@ def test_policies_must_cover_the_same_markets(tmp_path, folder, frames):
         build_report("train", folder, tmp_path / "models", tmp_path / "out", 1000.0, 20.0)
 
 
+def test_old_trajectories_without_every_info_key_are_rejected(tmp_path, folder, frames):
+    frames["random"].drop(columns="exec_verified").to_parquet(folder / "random_train.parquet")
+    with pytest.raises(ValueError, match="random_train.parquet no tiene exec_verified"):
+        build_report("train", folder, tmp_path / "models", tmp_path / "out", 1000.0, 20.0)
+
+
 def test_report_without_trajectories_fails(tmp_path, folder):
     with pytest.raises(FileNotFoundError, match="backtest o evaluate"):
         build_report("val", folder / "vacia", tmp_path / "models", tmp_path / "out", 1000.0, 20.0)
