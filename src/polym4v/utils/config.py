@@ -110,13 +110,15 @@ class SimulatorConfig(StrictModel):
 
 
 class AgentConfig(StrictModel):
-    """Algoritmo e hiperparámetros de un agente de stable-baselines3 (AGT-04 y AGT-05).
+    """Algoritmo e hiperparámetros de un agente (AGT-04, AGT-05 y AGT-08).
 
     `params` pasa tal cual al constructor del algoritmo los hiperparámetros propios de cada uno
-    (por ejemplo `n_steps` en PPO o `buffer_size` en DQN); SB3 los valida.
+    (por ejemplo `n_steps` en PPO, `buffer_size` en DQN o `alpha` en CQL); la librería los valida.
+    En CQL y BC, `total_timesteps` son pasos de gradiente sobre el dataset offline y `n_envs` no
+    se usa.
     """
 
-    algo: Literal["ppo", "dqn"]
+    algo: Literal["ppo", "dqn", "cql", "bc"]
     policy: str = "MlpPolicy"
     net_arch: list[int] = Field(default_factory=lambda: [64, 64])
     learning_rate: float = Field(gt=0)
@@ -125,6 +127,14 @@ class AgentConfig(StrictModel):
     n_envs: int = Field(default=1, gt=0)
     checkpoints: int = Field(default=10, gt=0)
     params: dict[str, Any] = Field(default_factory=dict)
+
+
+class OfflineDataConfig(StrictModel):
+    """Cómo se recolecta el dataset offline (AGT-07): baselines con ε-greedy sobre train."""
+
+    policies: list[str] = Field(min_length=1)
+    epsilon: float = Field(ge=0, le=1)
+    seed: int = 0
 
 
 class ExperimentConfig(StrictModel):
@@ -140,6 +150,13 @@ class ExperimentConfig(StrictModel):
     agent: AgentConfig
     seeds: list[int] = Field(min_length=1)
     eval_split: Literal["train", "val"] = "val"
+    offline: OfflineDataConfig | None = None
+
+    @model_validator(mode="after")
+    def _offline_needs_data(self) -> Self:
+        if self.agent.algo in ("cql", "bc") and self.offline is None:
+            raise ValueError("CQL y BC necesitan la sección offline con el dataset a recolectar")
+        return self
 
 
 # Cada archivo configs/<nombre>.yaml se valida con el modelo de su nombre.
@@ -149,6 +166,8 @@ CONFIG_MODELS: dict[str, type[BaseModel]] = {
     "env": SimulatorConfig,
     "ppo": ExperimentConfig,
     "dqn": ExperimentConfig,
+    "cql": ExperimentConfig,
+    "bc": ExperimentConfig,
 }
 
 

@@ -161,6 +161,13 @@ def _parser() -> argparse.ArgumentParser:
     train.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
     train.add_argument("--out", help="Carpeta de modelos (por defecto, la de .env)")
 
+    offline = commands.add_parser(
+        "collect-offline", help="Recolecta el dataset offline de CQL y BC con los baselines"
+    )
+    offline.add_argument("--config", default="configs/cql.yaml", help="Config del experimento")
+    offline.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    offline.add_argument("--out", help="Carpeta del dataset offline (por defecto, data/offline)")
+
     config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
     config.add_argument("path", help="Por ejemplo configs/data.yaml")
 
@@ -250,6 +257,7 @@ def _backtest(args: argparse.Namespace) -> Any:
 
 
 def _train(args: argparse.Namespace) -> Any:
+    from .agents.offline import offline_path, train_offline
     from .agents.train_sb3 import run_id, train
 
     config = load_config(args.config, ExperimentConfig)
@@ -264,12 +272,38 @@ def _train(args: argparse.Namespace) -> Any:
     train_data = MarketData.load(dataset, split="train", normalize=normalize)
     eval_data = MarketData.load(dataset, split=config.eval_split, normalize=normalize)
     folder = Path(args.out) if args.out else paths.models
+    offline_file = None
+    if config.offline is not None and config.agent.algo in ("cql", "bc"):
+        offline_file = offline_path(paths.offline, config.dataset_id, config.offline)
+        if not offline_file.exists():
+            raise ConfigurationError(
+                f"No existe {offline_file}: corre antes collect-offline con esta config"
+            )
     runs = []
     for seed in args.seed or config.seeds:
         out = folder / config.agent.algo / run_id(config, seed)
-        metrics = train(config, seed, train_data, eval_data, out)
+        if offline_file is not None:
+            metrics = train_offline(config, seed, offline_file, eval_data, out)
+        else:
+            metrics = train(config, seed, train_data, eval_data, out)
         runs.append({"run": str(out), "seed": seed, "best": metrics["best"]})
     return {"eval_split": config.eval_split, "runs": runs}
+
+
+def _collect_offline(args: argparse.Namespace) -> Any:
+    from .agents.offline import build_offline_dataset, offline_path
+
+    config = load_config(args.config, ExperimentConfig)
+    if config.offline is None:
+        raise ConfigurationError("La config no tiene sección offline")
+    paths = get_paths()
+    dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
+    data = MarketData.load(dataset, split="train", normalize=config.env.normalize)
+    folder = Path(args.out) if args.out else paths.offline
+    out = offline_path(folder, config.dataset_id, config.offline)
+    manifest = build_offline_dataset(config, data, out)
+    keys = ("transitions", "episodes", "invalid_share", "actions")
+    return {"file": str(out), **{key: manifest[key] for key in keys}}
 
 
 def _capture_trades(args: argparse.Namespace) -> Any:
@@ -321,6 +355,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _backtest(args)
     if args.command == "train":
         return _train(args)
+    if args.command == "collect-offline":
+        return _collect_offline(args)
     if args.command == "config":
         return load_named(args.path).model_dump(mode="json")
     if args.command == "manifest":

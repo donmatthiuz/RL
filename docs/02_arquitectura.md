@@ -266,7 +266,7 @@ src/polym4v/agents/
 ├── adapters.py     # SB3Policy (PPO, DQN) y D3rlpyPolicy (CQL, BC) → Policy
 ├── baselines.py    # Políticas heurísticas
 ├── train_sb3.py    # Entrenamiento PPO/DQN: 10 checkpoints evaluados con la métrica de EVA-01
-├── offline.py      # Recolección del dataset offline + entrenamiento CQL/BC
+├── offline.py      # Dataset offline (baselines ε-greedy, acción ejecutada) y CQL/BC con checkpoints
 └── registry.py     # nombre → constructor, para cargar desde config
 ```
 
@@ -429,6 +429,10 @@ eval_split: val
 ```
 
 - `make train AGENT=ppo` entrena todas las semillas; `SEED=0` entrena una sola.
+- CQL y BC usan `configs/cql.yaml` y `configs/bc.yaml`, con una sección `offline` (baselines, `ε` y
+  semilla). Primero `make collect-offline AGENT=cql` recolecta el dataset en `data/offline/`, con
+  su manifest; su nombre cambia si cambian los baselines, `ε` o la semilla. En CQL y BC,
+  `total_timesteps` son pasos de gradiente.
 
 ---
 
