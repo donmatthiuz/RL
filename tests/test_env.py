@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from gymnasium.utils.env_checker import check_env
+from pydantic import ValidationError
 
 from polym4v.agents.base import Action
 from polym4v.data.steps import align
@@ -102,34 +103,151 @@ def test_portfolio_rejects_impossible_operations():
 # --- Recompensa (ENV-05) ---
 
 
-@pytest.mark.parametrize("seed", range(5))
-def test_pnl_rewards_add_up_to_the_final_pnl(data, seed):
-    """Criterio de ENV-05: con pnl, la suma del episodio es el PnL final sobre V_0."""
-    env = make_env(data)
+VARIANTS = [
+    RewardConfig(name="pnl"),
+    RewardConfig(name="pnl_mid"),
+    RewardConfig(name="terminal"),
+    RewardConfig(name="pnl_risk", lambda_dd=0.5),
+    RewardConfig(name="pnl_risk", base="pnl_mid", lambda_dd=0.5),
+    RewardConfig(name="pnl_hold", lambda_hold=0.001),
+    RewardConfig(name="pnl_hold", base="terminal", lambda_hold=0.001),
+    RewardConfig(name="utility", utility_a=2.0),
+    RewardConfig(name="pnl", scale="stake", lambda_invalid=0.01),
+]
+
+
+def step_reward(config, state, v_prev, v_now, **kwargs):
+    """`reward` con el valor a precio medio igual al de liquidación, salvo que se indique."""
+    args = {"mid_prev": v_prev, "mid_now": v_now, "holding": False, "invalid": False, "done": False}
+    return reward(config, state, v_prev=v_prev, v_now=v_now, **(args | kwargs))
+
+
+def random_episode(env, seed):
     env.reset(seed=seed)
-    rng, total, done = np.random.default_rng(seed), 0.0, False
+    rng, rewards, infos, done = np.random.default_rng(seed), [], [], False
     while not done:
         _, r, done, _, info = env.step(rng.integers(4))
-        total += r
-    assert total == pytest.approx((info["portfolio_value"] - 1000.0) / 1000.0)
-    assert info["portfolio_value"] == pytest.approx(info["cash"])
+        rewards.append(r)
+        infos.append(info)
+    return rewards, infos
+
+
+@pytest.mark.parametrize("name", ["pnl", "pnl_mid"])
+@pytest.mark.parametrize("scale", ["v0", "stake"])
+@pytest.mark.parametrize("seed", range(5))
+def test_dense_rewards_add_up_to_the_final_pnl(data, name, scale, seed):
+    """Criterio de ENV-05: la suma del episodio es el PnL final, sobre V_0 o sobre el monto."""
+    env = make_env(data, reward_config=RewardConfig(name=name, scale=scale))
+    rewards, infos = random_episode(env, seed)
+    unit = 1000.0 if scale == "v0" else 20.0
+    assert sum(rewards) == pytest.approx((infos[-1]["portfolio_value"] - 1000.0) / unit)
+    assert infos[-1]["portfolio_value"] == pytest.approx(infos[-1]["cash"])
+
+
+@pytest.mark.parametrize("config", VARIANTS, ids=lambda c: f"{c.name}-{c.base}-{c.scale}")
+def test_reward_is_the_sum_of_its_components(data, config):
+    rewards, infos = random_episode(make_env(data, reward_config=config), seed=4)
+    for r, info in zip(rewards, infos, strict=True):
+        assert r == pytest.approx(sum(info["reward_components"].values()))
+
+
+def test_terminal_pays_the_final_pnl_only_at_the_end(data):
+    env = make_env(data, reward_config=RewardConfig(name="terminal"))
+    rewards, infos = random_episode(env, seed=1)
+    assert all(r == 0.0 for r in rewards[:-1])
+    assert rewards[-1] == pytest.approx((infos[-1]["portfolio_value"] - 1000.0) / 1000.0)
+
+
+def test_mid_valuation_charges_only_the_entry_cost(data):
+    """Al comprar, `pnl` adelanta el costo de salir y `pnl_mid` no."""
+    episode = data.episodes[0]
+    first = {}
+    for name in ("pnl", "pnl_mid"):
+        env = make_env(data, reward_config=RewardConfig(name=name))
+        infos, rewards = run(env, [Action.BUY_YES], episode.market_id)
+        assert infos[0]["order_status"] == "ejecutada"
+        first[name] = rewards[0]
+    assert first["pnl"] < first["pnl_mid"] < 0
+    # La diferencia es lo que costaría vender: medio spread y la comisión de venta.
+    shares, p = infos[0]["fill_shares"], float(episode.p_yes[1])
+    exit_cost = shares * 0.01 + sell(shares, p, COSTS).fee
+    assert first["pnl_mid"] - first["pnl"] == pytest.approx(exit_cost / 1000.0, rel=1e-6)
+    assert sum(rewards) == pytest.approx((infos[-1]["portfolio_value"] - 1000.0) / 1000.0)
+
+
+def test_hold_penalty_counts_every_step_with_a_position(data):
+    config = RewardConfig(name="pnl_hold", lambda_hold=0.001)
+    episode = data.episodes[0]
+    infos, _ = run(
+        make_env(data, reward_config=config),
+        [Action.WAIT] * 5 + [Action.BUY_YES],
+        episode.market_id,
+    )
+    assert infos[5]["order_status"] == "ejecutada"
+    held = [info["reward_components"]["hold"] for info in infos]
+    assert held[:5] == [0.0] * 5 and held[5:] == [-0.001] * (len(infos) - 5)
 
 
 def test_drawdown_is_penalized_only_when_it_grows():
     config = RewardConfig(name="pnl_risk", lambda_dd=0.5)
-    state = RewardState(v0=100.0, peak=100.0)
-    r1, c1 = reward(config, state, v_prev=100.0, v_now=90.0, invalid=False, done=False)
-    r2, c2 = reward(config, state, v_prev=90.0, v_now=95.0, invalid=False, done=False)
+    state = RewardState(v0=100.0, peak=100.0, stake=10.0)
+    r1, c1 = step_reward(config, state, 100.0, 90.0)
+    r2, c2 = step_reward(config, state, 90.0, 95.0)
     assert c1["drawdown"] == pytest.approx(-0.05) and r1 == pytest.approx(-0.15)
     assert c2["drawdown"] == 0.0 and r2 == pytest.approx(0.05)
 
 
+def test_risk_penalty_can_sit_on_top_of_the_terminal_reward():
+    config = RewardConfig(name="pnl_risk", base="terminal", lambda_dd=0.5)
+    state = RewardState(v0=100.0, peak=100.0, stake=10.0)
+    r1, c1 = step_reward(config, state, 100.0, 90.0)
+    r2, c2 = step_reward(config, state, 90.0, 110.0, done=True)
+    assert c1["pnl"] == 0.0 and r1 == pytest.approx(-0.05)
+    assert c2["terminal"] == pytest.approx(0.1) and r2 == pytest.approx(0.1)
+
+
 def test_terminal_reward_only_at_the_end_and_invalid_penalty():
     config = RewardConfig(name="terminal", lambda_invalid=0.01)
-    state = RewardState(v0=100.0, peak=100.0)
-    r1, _ = reward(config, state, v_prev=100.0, v_now=90.0, invalid=True, done=False)
-    r2, _ = reward(config, state, v_prev=90.0, v_now=110.0, invalid=False, done=True)
+    state = RewardState(v0=100.0, peak=100.0, stake=10.0)
+    r1, _ = step_reward(config, state, 100.0, 90.0, invalid=True)
+    r2, _ = step_reward(config, state, 90.0, 110.0, done=True)
     assert r1 == pytest.approx(-0.01) and r2 == pytest.approx(0.1)
+
+
+def test_utility_is_concave_in_the_pnl_on_stake():
+    config = RewardConfig(name="utility", utility_a=2.0)
+    state = RewardState(v0=1000.0, peak=1000.0, stake=20.0)
+
+    def final(v):
+        state.peak = 1000.0
+        return step_reward(config, state, 1000.0, v, done=True)[0]
+
+    assert final(1000.0) == 0.0
+    assert final(1010.0) == pytest.approx((1 - np.exp(-2 * 0.5)) / 2 * 20 / 1000)
+    # Ganar 10 vale menos de lo que cuesta perder 10.
+    assert final(1010.0) < -final(990.0)
+    assert step_reward(config, state, 1000.0, 1010.0)[0] == 0.0
+
+
+def test_small_risk_aversion_approaches_the_terminal_reward():
+    state = RewardState(v0=1000.0, peak=1000.0, stake=20.0)
+    config = RewardConfig(name="utility", utility_a=1e-6)
+    r, _ = step_reward(config, state, 1000.0, 1010.0, done=True)
+    assert r == pytest.approx(10.0 / 1000.0, rel=1e-5)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"name": "pnl", "lambda_dd": 0.5},
+        {"name": "terminal", "lambda_hold": 0.001},
+        {"name": "pnl", "base": "pnl_mid"},
+        {"name": "utility", "utility_a": 0.0},
+    ],
+)
+def test_reward_config_rejects_parameters_the_variant_does_not_use(kwargs):
+    with pytest.raises(ValidationError):
+        RewardConfig(**kwargs)
 
 
 # --- Entorno (ENV-04) ---

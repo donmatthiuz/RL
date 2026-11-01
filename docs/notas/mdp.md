@@ -85,11 +85,30 @@ sequenceDiagram
 `V_t = cash_t + valor de liquidación de la posición en t` (S9): lo que se recibiría al vender ya,
 `p - half_spread`, menos la comisión de venta. En `w1` la posición vale 1 o 0 por acción.
 
-- **`pnl`:** `r_t = (V_t+1 - V_t) / V_0`. La suma del episodio es `(V_final - V_0) / V_0`, así que
-  los costos cuentan una sola vez (test de ENV-05).
-- **`pnl_risk`:** `pnl` menos `λ_dd` por el aumento del drawdown dentro del episodio.
-- **`terminal`:** cero en cada paso y `(V_final - V_0) / V_0` al final.
+Las variantes son las de la ablación de ENV-08, aprobadas por R1 el 01/11/2026
+([investigación](../ia/investigaciones/recompensas_rl_trading.md)). `M_t` es el mismo valor con la
+posición a precio medio, `p`, sin costos de salida.
+
+| Variante | Recompensa | Etapa de la ablación |
+| --- | --- | --- |
+| `pnl` | `(V_t+1 - V_t) / V_0`. La suma del episodio es `(V_final - V_0) / V_0`, así que los costos cuentan una sola vez | A |
+| `pnl_mid` | `(M_t+1 - M_t) / V_0`. Suma lo mismo, pero al comprar solo resta el costo de entrar | A |
+| `terminal` | Cero en cada paso y `(V_final - V_0) / V_0` al final | A |
+| `pnl_risk` | `base` menos `λ_dd` por el aumento del drawdown de `V` | B |
+| `pnl_hold` | `base` menos `λ_hold` por cada paso con posición | B |
+| `utility` | Cero en cada paso y, al final, `(1 - exp(-a·x)) / a` con `x = (V_final - V_0) / monto` | B |
+
+- **`base`:** la ganadora de la etapa A (`pnl`, `pnl_mid` o `terminal`), sobre la que `pnl_risk` y
+  `pnl_hold` suman su penalización.
+- **`scale`:** divide por `V_0` (por defecto) o por el monto apostado.
 - **`λ_invalid`:** se resta en las acciones inválidas; vale 0 (S6).
+- **Componentes:** la recompensa del paso es la suma de `pnl`, `drawdown`, `hold`, `invalid` y
+  `terminal`, que van en `info["reward_components"]`.
+
+`pnl` y `pnl_mid` son la recompensa terminal más un shaping por potencial (Ng, Harada y Russell,
+1999) con `Φ = (V - V_0) / V_0` o `(M - V_0) / V_0`, escrito sin `γ`. Con `γ = 0,999` la diferencia
+con el shaping exacto es `(1 - γ)·(V_t+1 - V_0) / V_0` por paso: las tres variantes de la etapa A
+buscan casi la misma política óptima, y la ablación mide cuál aprende mejor.
 
 Al comprar, `V` cae lo que costaría salir, y la recompensa del paso es negativa aunque la compra sea
 buena. Para que el agente juzgue la compra por su resultado, `γ` tiene que quedar cerca de 1 (S9):
@@ -108,6 +127,8 @@ con `γ = 0,99`, un resultado 60 pasos después pesa 0,55.
 | --- | --- |
 | Cumple la API de Gymnasium | `check_env` (ENV-04), en `tests/test_env.py` |
 | La suma de recompensas `pnl` es el PnL final sobre `V_0` | `tests/test_env.py` (ENV-05) |
+| `pnl_mid` suma lo mismo y al comprar solo resta el costo de entrar | `tests/test_env.py` (ENV-05) |
+| La recompensa del paso es la suma de sus componentes, en todas las variantes | `tests/test_env.py` (ENV-05) |
 | En el mercado nulo ninguna política gana de forma significativa | `tests/test_no_leak.py` (ENV-10) |
 | El mismo test detecta un retraso real de 2 minutos | `tests/test_no_leak.py`, control positivo |
 | Alterar datos posteriores a `t` no cambia las observaciones hasta `t` | `tests/test_no_leak.py` (ENV-10) |
