@@ -20,7 +20,7 @@ Documentación oficial de las fuentes: [Polymarket](https://docs.polymarket.com)
 | Precio spot | Klines de Binance `BTCUSDT`: 1m para features y 1h para verificar el resultado | Misma fuente que la resolución |
 | Costos | Spread de 0,02 más la **comisión taker** de Polymarket, `0,07 × p × (1 - p)` por acción | Esquema vigente desde 2026 (ADR-009) |
 | Split | Temporal por mercado, 70/15/15 | Sin cambios (ADR-002) |
-| Ejecución | Propuesta: la acción decidida en `t` se ejecuta al precio de `t + 1 min` | La ventaja que se busca es un retraso, y ejecutar en `t` la sobreestima (ADR-011, propuesta) |
+| Ejecución | La orden decidida en `t` se ejecuta al primer precio posterior a `t + 2 s`, como mucho a `t + 60 s` | Ejecutar en `t` regala la ventaja del atraso del precio (S4, ADR-017) |
 
 ## 2. Flujo ETL
 
@@ -80,20 +80,21 @@ en el manifest.
 - `spot(t_k)` es el `close` de la última kline de 1 minuto **ya cerrada**, la que abre en
   `t_k - 60`. La kline que abre en `t_k` cierra en `t_k + 59,999 s`, así que usarla filtra
   información del futuro.
-- **Pendiente de la decisión D6:** el precio de `t_k` puede tener hasta 60 s de atraso respecto
-  del spot, y el mercado real ya habría incorporado ese movimiento. La propuesta es tomar el spot
-  en el mismo instante que el último punto de precio (klines de 1 s) y ejecutar en el punto
-  siguiente. Ver la sección 2.3 de
-  [decisiones_previas_al_diseno.md](notas/decisiones_previas_al_diseno.md).
+- **Decidido en S3 (ADR-016):** cada fuente aporta su último dato disponible, aunque el precio
+  tenga hasta un minuto de atraso respecto del spot. `p_stale_s` le dice al agente cuánto atraso
+  tiene, y la ejecución al precio siguiente (S4) evita que ese atraso se convierta en una ganancia
+  falsa. Todo se toma con un *as-of* hacia atrás sobre `ts_available`
+  (`src/polym4v/data/steps.py`).
 - `spot_open` es el `open` de la vela 1h que empieza en `w0`. Es el precio de referencia de la
   resolución y se conoce desde `w0`.
 - Se descarta todo dato con `ts >= w1`. Hay precios y trades posteriores a la resolución.
 
-**Construcción.** `make dataset` (DAT-05) lee solo `data/raw/` y escribe `markets`, `prices_raw` y
-`spot_1m` en `data/processed/<dataset_id>/`, validados con los contratos de la sección 2.3. Cada
-mercado descartado queda en el manifest con su motivo. Se toman los mercados cuya ventana empieza
-entre `date_from` y `date_to` (fecha UTC de `w0`). Los puntos de precio se guardan desde
-`w0 - context_minutes` hasta antes de `w1`. La grilla (`steps`) espera a S3 y S4.
+**Construcción.** `make dataset` (DAT-05) lee solo `data/raw/` y escribe `markets`, `prices_raw`,
+`spot_1m` y `steps` en `data/processed/<dataset_id>/`, validados con los contratos de la sección
+2.3. Cada mercado descartado queda en el manifest con su motivo. Se toman los mercados cuya ventana
+empieza entre `date_from` y `date_to` (fecha UTC de `w0`). Los puntos de precio se guardan desde
+`w0 - context_minutes` hasta antes de `w1`. `steps` se calcula solo con `prices_raw` y `spot_1m`,
+así que se puede rehacer desde el dataset sin el crudo.
 
 **Filtros de calidad** (configurables):
 
@@ -101,6 +102,8 @@ entre `date_from` y `date_to` (fecha UTC de `w0`). Los puntos de precio se guard
 - Un hueco de más de 600 s dentro de la ventana: el mayor tiempo sin un punto nuevo, contando
   desde `w0` hasta el primer punto y desde el último hasta `w1`.
 - Un precio fuera de `[0, 1]` o un token sin historial.
+- Algún instante de la grilla sin un precio anterior para las features (en el dataset completo,
+  un solo mercado).
 - No coincide el resultado con Binance, o no se pudo leer la ventana del título.
 
 ### 2.3 Carga: contrato de salida
@@ -149,21 +152,24 @@ calcular la volatilidad sin volver a Binance:
 | `open`, `high`, `low`, `close` | float | Precios; `open` y `close` dentro de `[low, high]` |
 | `volume` | float | Volumen negociado |
 
-`steps.parquet`, una fila por mercado y minuto. **Todavía no está en el contrato:** su contenido
-depende de qué ve el agente (S3) y de cuándo se ejecuta (S4), que siguen pendientes. La propuesta
-actual es:
+`steps.parquet`, una fila por mercado y minuto (S2 y S3). Cada columna se calcula solo con datos
+con `ts_available <= ts`, así que toda la fila se conoce en `ts`. No guarda el precio de ejecución:
+el entorno lo busca en `prices_raw` con la latencia y la tolerancia de su config (S4), para poder
+medir la sensibilidad a la latencia sin reconstruir el dataset.
 
 | Columna | Tipo | Descripción |
 | --------- | ------ | ------------- |
 | `market_id` | str | FK a `markets` |
 | `k` | int | Minuto de la ventana, de 0 a 59 |
-| `ts` | int | `t_k` |
-| `p_yes` | float | Último precio YES conocido en `t_k` |
+| `ts` | int | `t_k = w0 + 60·k` |
 | `p_stale_s` | int | Segundos desde el último punto de precio |
 | `spot` | float | Close de la última kline de 1m cerrada |
+| `p_yes` a `edge_tp` | float | Las 13 features de mercado de la sección 4.1, sin normalizar |
 
-`manifest.json` guarda la configuración, la fecha de construcción, los mercados descartados con su
-motivo, el número de mercados por split y el hash de cada Parquet.
+`normalization.json` guarda la media y la desviación de las features con z-score, calculadas solo
+con las filas de train. `manifest.json` guarda la configuración, la fecha de construcción, los
+mercados descartados con su motivo, el número de mercados por split, la lista de features y el hash
+de cada archivo.
 
 Configuración propuesta, `configs/data.yaml`:
 
@@ -204,7 +210,8 @@ algo que aprender:
 
 ### 4.1 Observación
 
-Vector de 15 valores por paso. Solo usa información con `ts <= t`.
+Vector de 16 valores por paso. Solo usa información con `ts <= t`. Las features de mercado se
+calculan en `src/polym4v/features/market.py` y se guardan en `steps.parquet`.
 
 | # | Feature | Definición | Escala |
 | --- | --------- | ------------ | -------- |
@@ -218,15 +225,23 @@ Vector de 15 valores por paso. Solo usa información con `ts <= t`.
 | 10 | `z` | `x / (sigma · sqrt(minutos restantes))` | Recorte a [-5, 5] |
 | 11 | `p_fair` | `Φ(z)`: probabilidad de UP si el spot sigue un paseo aleatorio | Ya está en [0, 1] |
 | 12 | `edge` | `p_fair - p_yes` | Ya está en [-1, 1] |
-| 13–15 | `pos_side`, `entry_price`, `upnl` | Estado del agente: lado (-1, 0 o 1), precio de entrada (0 sin posición) y PnL no realizado sobre el monto apostado | Acotados |
+| 13 | `edge_tp` | `p_fair` calculado en el instante `t_p` del último precio, menos `p_yes`. `t_p` no baja de `w0`: antes de la vela no hay referencia y el valor justo es 0,5 (S3b, ADR-016) | Ya está en [-1, 1] |
+| 14–16 | `pos_side`, `entry_price`, `upnl` | Estado del agente: lado (-1, 0 o 1), precio de entrada (0 sin posición) y PnL no realizado sobre el monto apostado | Acotados |
 
 Notas:
 
-- Los z-score se ajustan **solo con train** y se guardan junto al dataset.
+- Los z-score se ajustan **solo con train** y se guardan junto al dataset, en
+  `normalization.json`. Los aplica el entorno.
+- `sigma` es la desviación muestral de los últimos 60 retornos de 1 minuto ya cerrados; se calcula
+  desde 30 retornos.
+- `edge` mezcla el spot al día con un precio que puede tener un minuto de atraso, así que mide
+  sobre todo ese atraso (EDA). `edge_tp` mide solo el desacuerdo real entre el precio y el valor
+  justo: en train, su desviación es 0,043 contra 0,070 de `edge`. El agente ve las dos, y el
+  baseline `FairValue` usa `edge_tp` (S3b).
 - `p_fair` es una feature hecha a mano: el valor de una opción digital sin deriva. Se agrega porque
-  el agente tiene pocos episodios para descubrirla solo. Una ablación **sin** las features 10 a 12
+  el agente tiene pocos episodios para descubrirla solo. Una ablación **sin** las features 10 a 13
   muestra cuánto aprende el agente por su cuenta.
-- Son 12 valores de mercado y 3 del agente. No se incluye `cash / initial_cash` porque
+- Son 13 valores de mercado y 3 del agente. No se incluye `cash / initial_cash` porque
   cada episodio empieza con el mismo capital y solo hay una posición a la vez.
 
 ### 4.2 Simulación y costos
@@ -280,7 +295,7 @@ reporta así (riesgo R4).
 | `p` del historial es el punto medio | **Abierto** | La API no lo documenta | Tratarlo como el punto medio y cobrar medio spread; contrastarlo con trades si da el tiempo |
 | Price-taker sin impacto | **Aceptado** | Tamaño mínimo de orden de 5 acciones; el monto simulado es chico | Documentarlo como limitación |
 | El mercado tiene ineficiencias explotables | **Abierto** | Bastante calibrado en la muestra del spike | La EDA lo mide; un resultado negativo es válido |
-| Ejecutar al precio del mismo instante | **Riesgoso** | Sobreestima la ventaja de reaccionar a un retraso | Ejecutar en `t + 1` por defecto (ADR-011, propuesta) |
+| Ejecutar al precio del mismo instante | **Falso** | En la EDA regala de 0,03 a 0,16 USDC por acción | Ejecutar al primer precio posterior a `t + 2 s` (S4, ADR-017) |
 
 ## 6. Estructura del código y pasos siguientes
 
