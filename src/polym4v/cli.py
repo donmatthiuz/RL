@@ -163,6 +163,20 @@ def _parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--strict", action="store_true", help="Modo estricto (EVA-11)")
     evaluate.add_argument("--raw", help="Carpeta del crudo con los trades")
 
+    report = commands.add_parser(
+        "report", help="Tabla y figuras de un split con las trayectorias ya calculadas"
+    )
+    report.add_argument("--split", choices=("train", "val", "test"), default="val")
+    report.add_argument("--config", default="configs/env.yaml", help="Config del simulador")
+    report.add_argument(
+        "--trajectories", help="Carpeta de trayectorias (por defecto, reports/trajectories)"
+    )
+    report.add_argument("--models", help="Carpeta de modelos (por defecto, la de .env)")
+    report.add_argument("--out", help="Carpeta del reporte (por defecto, reports/<split>)")
+    report.add_argument(
+        "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
+    )
+
     train = commands.add_parser("train", help="Entrena PPO o DQN y elige el mejor checkpoint")
     train.add_argument("--config", default="configs/ppo.yaml", help="Config del experimento")
     train.add_argument(
@@ -291,6 +305,28 @@ def _evaluate(args: argparse.Namespace) -> Any:
     return {"run": run.name, **_run_policy(policy, run.name, config, args)}
 
 
+def _report(args: argparse.Namespace) -> Any:
+    from .evaluation.report import build_report
+
+    if args.split == "test" and not args.allow_test:
+        raise ConfigurationError(
+            "test se evalúa una sola vez, con todo congelado (EVA-01); usa --allow-test"
+        )
+    config = load_config(args.config, SimulatorConfig)
+    paths = get_paths()
+    try:
+        return build_report(
+            args.split,
+            Path(args.trajectories or paths.reports / "trajectories"),
+            Path(args.models or paths.models),
+            Path(args.out or paths.reports / args.split),
+            config.env.initial_cash,
+            config.env.initial_cash * config.env.stake_fraction,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise ConfigurationError(str(exc)) from exc
+
+
 def _train(args: argparse.Namespace) -> Any:
     from .agents.offline import offline_path, train_offline
     from .agents.train_sb3 import run_id, train
@@ -392,6 +428,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _train(args)
     if args.command == "evaluate":
         return _evaluate(args)
+    if args.command == "report":
+        return _report(args)
     if args.command == "collect-offline":
         return _collect_offline(args)
     if args.command == "config":
