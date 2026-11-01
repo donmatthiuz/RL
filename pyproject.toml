@@ -9,6 +9,7 @@ description = "PolyRL: aprendizaje por refuerzo sobre mercados históricos de Po
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "d3rlpy==2.8.1",
     "gymnasium==1.0.0",
     "numpy>=2",
     "pandas>=3.1",
@@ -18,6 +19,8 @@ dependencies = [
     "pydantic>=2.13",
     "python-dotenv>=1.0,<2",
     "pyyaml>=6",
+    "stable-baselines3==2.9.2",
+    "torch>=2.15.0",
 ]
 
 [project.scripts]
@@ -66,3 +69,13 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.17.3",
 ]
+
+# torch solo para CPU en todas las plataformas: PPO y DQN con redes MLP corren mejor en CPU
+# (documentación de stable-baselines3) y así la CI y cada integrante instalan lo mismo.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
