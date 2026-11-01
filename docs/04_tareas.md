@@ -15,6 +15,54 @@ y un criterio de aceptación verificable.
 
 ---
 
+## Tablero
+
+El seguimiento del proyecto se lleva **solo en este documento** (ADR-015): no hay tablero en GitHub
+Projects ni issues. R1 actualiza esta sección en `proyecto` cada vez que se abre o se mezcla un PR,
+y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha el 31/10/2026**).
+
+**En revisión.** Los PR forman una pila: cada uno se mezcla después del que tiene como base
+(ver "Pilas de PR" en [06_flujo_trabajo.md](06_flujo_trabajo.md)).
+
+```mermaid
+flowchart LR
+    P["proyecto"] --> PR1["#1 INF-06 datos<br/>revisan R2 y R3"]
+    PR1 --> PR2["#2 DAT-03 klines<br/>revisa R2"] --> PR3["#3 DAT-06 split<br/>revisa R2"] --> PR5["#5 DAT-04/05 dataset<br/>revisa R2"]
+    PR1 --> PR4["#4 INF-06 Policy<br/>sin revisor (R4)"]
+    P --> PR6["#6 ENV-03 costos<br/>revisa R3"]
+    PR5 --> PR7["#7 DAT-08 EDA<br/>revisa R2"]
+    P --> PR8["#8 EVA-01 protocolo<br/>sin revisor (R5)"]
+```
+
+| Orden | PR | Tarea | Base | Revisa |
+| --- | --- | --- | --- | --- |
+| 1 | #1 | INF-06: contratos de datos | `proyecto` | R2 y R3 |
+| 2 | #2 | DAT-03: klines de Binance | #1 | R2 |
+| 3 | #3 | DAT-06: split con exclusiones de S11 | #2 | R2 |
+| 4 | #5 | DAT-04 y DAT-05: `markets`, `prices_raw` y `spot_1m` | #3 | R2 |
+| 5 | #7 | DAT-08: EDA sobre train | #5 | R2 |
+| Independiente; antes de ver resultados en val | #8 | EVA-01: protocolo de evaluación, revisado por el agente estadístico | `proyecto` | Sin asignar (R5) |
+| 2 (en paralelo) | #4 | INF-06: `Policy` y `Action` | #1 | Sin asignar (R4) |
+| Independiente | #6 | ENV-03: costos, verificados con la investigación de [comisiones](ia/investigaciones/comisiones_polymarket.md). Falta quitarle el borrador en GitHub | `proyecto` | R3 |
+
+**Decisiones del simulador:** todas tomadas el 31/10/2026 (ADR-016 y ADR-017), con sus preguntas y
+opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
+provisional hasta validarla con trades reales (DAT-11 y EVA-11).
+
+**Sin bloqueos, para empezar:**
+
+- `steps.parquet` (resto de DAT-04 y DAT-05) y features (DAT-07), desbloqueados por S3.
+- El entorno: `Portfolio` (ENV-02), ejecución (ENV-04), recompensa (ENV-05) y tests de no-fuga (ENV-10).
+- Claves de `info` (resto de INF-06) y baselines (AGT-03).
+- DAT-11: trades de val y test, y EVA-11: validación de ejecuciones.
+- DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
+
+Las decisiones previas al diseño (D1 a D9) están en
+[decisiones_previas_al_diseno.md](notas/decisiones_previas_al_diseno.md) y las ya tomadas, como
+ADR, en [07_riesgos_y_decisiones.md](07_riesgos_y_decisiones.md).
+
+---
+
 ## 1. Fases e hitos
 
 | Fase | Objetivo | Hito de cierre |
@@ -53,7 +101,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | INF-01 | **Hecha el 30/10/2026.** Crear la estructura del repo, `pyproject.toml` con `uv`, el paquete `polym4v` instalable y `src/` layout | F0 | P0 | — | `uv sync && uv run python -c "import polym4v"` funciona en una máquina limpia |
 | INF-02 | **Hecha el 30/10/2026.** Configurar `ruff`, `mypy` (permisivo) y `pre-commit` | F0 | P0 | INF-01 | `pre-commit run --all-files` pasa |
 | INF-03 | **Hecha el 30/10/2026.** Workflow `ci.yml`: lint, tests y cobertura en cada push a `proyecto` | F0 | P0 | INF-02 | La CI corre en un push de prueba y marca en rojo el commit si falla |
-| INF-04 | Tablero en GitHub Projects con todas las tareas de este documento | F0 | P0 | — | Cada tarea es un issue con su rol, fase y prioridad |
+| INF-04 | **Hecha el 31/10/2026 (ADR-015):** el tablero es la sección "Tablero" de este documento, sin GitHub Projects ni issues | F0 | P0 | — | Cada tarea tiene su estado en su fila y la sección "Tablero" muestra lo que está en PR, bloqueado o sin empezar |
 | INF-05 | **Hecha el 31/10/2026.** `utils/`: `config.py` (pydantic), `seeding.py`, `logging.py`, `paths.py` | F1 | P0 | INF-01 | Tests unitarios. La misma semilla da resultados idénticos. |
 | INF-06 | **Parte de datos en revisión en un PR desde el 31/10/2026** (`steps` espera a S3 y S4). Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
 | INF-07 | CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
@@ -74,7 +122,8 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | DAT-07 | `features/`: features de la sección 2.2 de la arquitectura y normalización ajustada solo con train | F2 | P0 | DAT-05 | Test de no-*lookahead*: truncar la serie en `t` no cambia las features en `≤ t` |
 | DAT-08 | **En PR desde el 31/10/2026:** `notebooks/eda/01_eda_btc_horario.ipynb` y hallazgos en la sección 3 de `docs/08`. Notebook de EDA y una sección breve con sus hallazgos | F2 | P1 | DAT-05 | Notebook ejecutado y versionado, con ≥ 5 gráficos comentados |
 | DAT-09 | Extensión a ETH y/o a la segunda familia de mercados | F3 | P2 | DAT-07 | Dataset `eth_*` construido y evaluación de transferencia BTC → ETH |
-| DAT-10 | **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
+| DAT-10 | **Hecha el 31/10/2026:** BTC con 12 471 mercados y ETH con 12 149, sin errores ([11_descarga_de_datos.md](11_descarga_de_datos.md)). **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
+| DAT-11 | **Captura de trades (S4b, ADR-017):** trades taker públicos de los mercados de val y test, con el mismo esquema de crudo, caché y manifest que DAT-10 | F1 | P0 | DAT-10 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
 
 ### R3 — Ingeniero del entorno y la recompensa
 
@@ -120,19 +169,29 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-08 | Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
 | EVA-09 | (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
+| EVA-11 | **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 
-### Informe y presentación (todos)
+### Documento, slides y video (todos)
+
+Alineadas con lo que pide el curso ([10_entrega_final.md](10_entrega_final.md)). Cada sección del
+documento vive en `entregas/final/informe/`.
 
 | ID | Tarea | Responsable | Fase | Depende de |
 | ---- | ------- | ------------- | ------ | ------------ |
-| DOC-01 | Plantilla del informe (LaTeX/Overleaf o Markdown) y estructura de secciones | R5 | F3 | — |
-| DOC-02 | Introducción, motivación y trabajo relacionado | R4 + R5 | F4 | DOC-01 |
-| DOC-03 | Datos y EDA | R2 | F4 | DAT-08 |
-| DOC-04 | Formulación como MDP y función de recompensa, incluida la ablación | R3 | F4 | ENV-08 |
-| DOC-05 | Algoritmos, entrenamiento e hiperparámetros | R4 | F4 | AGT-10 |
-| DOC-06 | Metodología de evaluación, reproducibilidad e ingeniería (CI/CD) | R1 | F4 | INF-10 |
-| DOC-07 | Resultados, discusión, limitaciones y trabajo futuro | R5 (con todos) | F4 | EVA-06 |
-| DOC-08 | Diapositivas y ensayo de la presentación con la demo en vivo | Todos | F4 | DOC-07, EVA-08 |
+| DOC-01 | **Hecha el 31/10/2026.** Requisitos seleccionados en `docs/10_entrega_final.md` y estructura del documento con las secciones exigidas | R1 | F1 | — |
+| DOC-02 | Descripción del problema | R1 + R5 | F4 | DOC-01 |
+| DOC-03 | Análisis: datos, EDA, supuestos y riesgos | R2 | F4 | DAT-08 |
+| DOC-04 | Propuesta de solución: por qué RL, MDP y recompensa | R3 + R4 | F4 | ENV-08 |
+| DOC-05 | Descripción de la solución: datos, entorno, agentes, evaluación, ingeniería y proceso iterativo | Todos | F4 | AGT-10, INF-10 |
+| DOC-06 | Herramientas aplicadas: las no vistas en clase en detalle, los prompts de IA y la evolución de la idea | R1 | F4 | DOC-12 |
+| DOC-07 | Resultados (métricas) contra los baselines | R5 (con todos) | F4 | EVA-06 |
+| DOC-08 | Conclusión | R5 (con todos) | F4 | DOC-07 |
+| DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
+| DOC-10 | Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
+| DOC-11 | Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
+| DOC-12 | Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
+| DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 
 ---
 
