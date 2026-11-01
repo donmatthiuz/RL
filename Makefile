@@ -34,7 +34,7 @@ DEJAVU_DIR ?= /usr/share/fonts/truetype/dejavu
 KEYS := context7
 
 .DEFAULT_GOAL := help
-.PHONY: help setup install hooks keys-init lint format typecheck test coverage smoke nightly check \
+.PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
 	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train manifest entregable
 
 help: ## Lista los comandos disponibles
@@ -81,6 +81,7 @@ test: ## Corre los tests rápidos (sin slow, network ni smoke)
 coverage: ## Corre los tests con cobertura (mínimo 70 %)
 	$(UV) run pytest --cov --cov-report=term-missing --cov-report=xml
 
+.PHONY: smoke nightly
 smoke: ## Entrena unos 2 000 pasos con cada config real de agente (job smoke-train de la CI)
 	$(UV) run pytest -m smoke
 
