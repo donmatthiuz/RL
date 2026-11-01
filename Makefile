@@ -34,7 +34,7 @@ DEJAVU_DIR ?= /usr/share/fonts/truetype/dejavu
 KEYS := context7
 
 .DEFAULT_GOAL := help
-.PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
+.PHONY: help setup install hooks keys-init lint format typecheck test coverage smoke nightly check \
 	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train manifest entregable
 
 help: ## Lista los comandos disponibles
@@ -75,13 +75,19 @@ format: ## Corrige estilo y formato
 typecheck: ## Revisa tipos con mypy
 	$(UV) run mypy src/polym4v
 
-test: ## Corre los tests rápidos (sin slow ni network)
+test: ## Corre los tests rápidos (sin slow, network ni smoke)
 	$(UV) run pytest
 
 coverage: ## Corre los tests con cobertura (mínimo 70 %)
 	$(UV) run pytest --cov --cov-report=term-missing --cov-report=xml
 
-check: lint typecheck coverage ## Lo mismo que corre la CI
+smoke: ## Entrena unos 2 000 pasos con cada config real de agente (job smoke-train de la CI)
+	$(UV) run pytest -m smoke
+
+nightly: ## Tests lentos y de las APIs reales (workflow nightly)
+	$(UV) run pytest -m "slow or network"
+
+check: lint typecheck coverage smoke ## Lo mismo que corre la CI
 
 pre-commit: ## Corre todos los hooks sobre todo el repositorio
 	$(UV) run pre-commit run --all-files

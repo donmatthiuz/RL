@@ -336,8 +336,8 @@ RL/
 ├── .pre-commit-config.yaml
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml              # lint, mypy y tests con cobertura en cada push y PR a proyecto
-│       ├── nightly.yml         # tests lentos y backtest corto (INF-08, previsto)
+│       ├── ci.yml              # lint, mypy, tests con cobertura y smoke-train en cada push y PR
+│       ├── nightly.yml         # tests slow y network todos los días (INF-08), desde main
 │       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09, previsto)
 ├── configs/
 │   ├── data.yaml
