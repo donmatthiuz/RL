@@ -64,6 +64,9 @@ python_version = "3.11"
 ignore_missing_imports = true
 
 [dependency-groups]
+demo = [
+    "streamlit>=1.66.1",
+]
 dev = [
     "mypy>=2.4.1",
     "pre-commit>=4.7.0",
@@ -71,6 +74,11 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.17.3",
 ]
+
+# `uv sync` instala también la demo (EVA-07), para que la CI corra sus tests; no es una dependencia
+# del paquete.
+[tool.uv]
+default-groups = ["dev", "demo"]
 
 # torch solo para CPU en todas las plataformas: PPO y DQN con redes MLP corren mejor en CPU
 # (documentación de stable-baselines3) y así la CI y cada integrante instalan lo mismo.
