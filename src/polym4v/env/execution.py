@@ -22,13 +22,13 @@ class Fill:
 
 
 def ask(p: float, costs: CostConfig) -> float:
-    """Precio de compra, sin pasar del último tick antes de 1."""
-    return min(p + costs.half_spread, 1 - costs.tick)
+    """Precio de compra, dentro de `[tick, 1 - tick]` aunque el medio spread sea 0."""
+    return min(max(p + costs.half_spread, costs.tick), 1 - costs.tick)
 
 
 def bid(p: float, costs: CostConfig) -> float:
-    """Precio de venta, sin bajar del primer tick después de 0."""
-    return max(p - costs.half_spread, costs.tick)
+    """Precio de venta, dentro de `[tick, 1 - tick]` aunque el medio spread sea 0."""
+    return max(min(p - costs.half_spread, 1 - costs.tick), costs.tick)
 
 
 def _fee_per_share(price: float, costs: CostConfig) -> float:
