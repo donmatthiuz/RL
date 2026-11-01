@@ -6,10 +6,14 @@ Documentación oficial: [Claude Code, subagentes](https://docs.anthropic.com/en/
 El proyecto usa asistentes de IA, pero cada uso tiene que poder explicarse: **con qué herramienta,
 para qué tarea, por qué esa y quién verifica el resultado**. Este documento es ese registro.
 
+También están aquí el [historial de prompts](historial_prompts.md) con su evaluación y las
+[investigaciones](investigaciones/) hechas con Perplexity, que pide el curso para el documento final
+([10_entrega_final.md](../10_entrega_final.md)).
+
 ## 1. Reglas
 
 - La IA propone y una persona decide. Toda decisión queda en un ADR o en
-  [decisiones_previas_al_diseno.md](decisiones_previas_al_diseno.md) con su responsable humano.
+  [decisiones_previas_al_diseno.md](../notas/decisiones_previas_al_diseno.md) con su responsable humano.
 - Ningún número entra al informe sin un script o test que lo reproduzca. La IA no es fuente de
   datos ni de resultados.
 - Las referencias que sugiera la IA se verifican abriendo la fuente original.
@@ -53,7 +57,7 @@ Son copias **sin modificar** de agentes existentes. No se escriben agentes ni sk
 | `specialized-model-qa` | Auditar fuga de información, separación temporal, calibración y reproducibilidad | Ya apareció un artefacto temporal que regalaba ganancias (D6) | R1, R3 |
 | `engineering-data-engineer` | Revisar el ETL: crudo inmutable, idempotencia, esquemas, validaciones | Base del pipeline. Ignorar lo de Spark, nube y Kafka: el dataset es chico | R2 |
 | `specialized-master-plan-architect` | Criticar un plan antes de implementarlo: modos de falla y supuestos | Obliga a escribir riesgos y validación por paso | R1 |
-| `research-synthesist` | Marco teórico y trabajo relacionado del informe (DOC-02) | Califica fuentes y separa lo establecido de lo disputado | R4, R5 |
+| `research-synthesist` | Marco teórico y bibliografía del documento (DOC-02 y DOC-09) | Califica fuentes y separa lo establecido de lo disputado | R4, R5 |
 | `project-management-meeting-notes-specialist` | Minutas con decisiones, tareas y preguntas abiertas | Deja trazables las decisiones del equipo | R1 |
 
 ### 3.2 Diseño: demo, reporte final y artefactos
