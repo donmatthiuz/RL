@@ -55,7 +55,7 @@ Verifier = Callable[..., bool | None]
 
 
 class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
-    metadata: dict[str, Any] = {"render_modes": []}
+    metadata: dict[str, Any] = {"render_modes": ["ansi"]}
 
     def __init__(
         self,
@@ -65,13 +65,19 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         *,
         verifier: Verifier | None = None,
         strict: bool = False,
+        render_mode: str | None = None,
     ) -> None:
+        if render_mode not in (None, *self.metadata["render_modes"]):
+            raise ValueError(f"render_mode inválido: {render_mode}")
         if config.tolerance_s > data.step_s:
             raise ValueError("tolerance_s no puede superar el paso de la grilla (docs/09, S4)")
         if strict and verifier is None:
             raise ValueError("el modo estricto necesita un verifier con trades reales (EVA-11)")
         self.data, self.config, self.reward_config = data, config, reward_config
         self.verifier, self.strict = verifier, strict
+        self.render_mode = render_mode
+        self.last_info: dict[str, Any] = {}
+        self.last_reward = 0.0
         self.costs = config.costs
         self.stake = config.initial_cash * config.stake_fraction
         # La comisión se redondea hacia arriba: una compra puede costar una fracción del último
@@ -102,7 +108,9 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         self.portfolio = Portfolio(cash=cash)
         self.reward_state = RewardState(v0=cash, peak=cash)
         self.value = cash
-        return self._observation(), self._info(None, None, None, "ninguna", None, None, None, None)
+        self.last_info = self._info(None, None, None, "ninguna", None, None, None, None)
+        self.last_reward = 0.0
+        return self._observation(), self.last_info
 
     def step(self, action: Any) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         requested = Action(int(action))
@@ -146,7 +154,25 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         info = self._info(
             requested, executed, valid, status, execution, verified, fill, components, t=t
         )
+        self.last_info, self.last_reward = info, total
         return self._observation(), total, done, False, info
+
+    def render(self) -> str | None:  # type: ignore[override]
+        """Una línea por paso con la decisión, la cartera y la recompensa (ENV-07)."""
+        if self.render_mode != "ansi":
+            return None
+        info = self.last_info
+        side = {YES: "YES", NO: "NO", FLAT: "-"}[info["position_side"]]
+        action = "reset" if info["action"] is None else Action(info["action"]).name
+        line = (
+            f"{info['market_id'][:10]} k={info['k']:02d} p_yes={info['p_yes']:.3f} "
+            f"{action:<7} {info['order_status']:<14} pos={side:<3} "
+            f"acciones={info['position_size']:8.2f} caja={info['cash']:9.2f} "
+            f"V={info['portfolio_value']:9.2f} r={self.last_reward:+.5f}"
+        )
+        if info["fill_price"] is not None:
+            line += f" a {info['fill_price']:.3f}"
+        return line
 
     def action_masks(self) -> np.ndarray:
         """Acciones válidas en el paso actual (S6), para MaskablePPO y para el backtest."""
