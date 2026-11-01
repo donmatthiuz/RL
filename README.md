@@ -24,6 +24,7 @@ que se leyó el anterior.
 | 08 | [Datos y entrada del modelo](docs/08_datos_y_entrada_modelo.md) | Extracción, ETL, EDA, observación del agente, costos y supuestos verificados |
 | 09 | [Sistema de simulación](docs/09_sistema_simulacion.md) | Modelo de tiempo, ejecución, costos y comportamiento del entorno, basado en prácticas open source |
 | 10 | [Entrega final](docs/10_entrega_final.md) | Qué pide el curso, dónde vive cada entregable y si cumplimos |
+| 11 | [Descarga de datos](docs/11_descarga_de_datos.md) | Cómo reproducir los datos desde cero, cuánto tarda y cómo verificarlo |
 
 Las notas de trabajo están en [`docs/notas/`](docs/notas/): el
 [spike de datos](docs/notas/spike_datos.md) y las

@@ -156,13 +156,13 @@ src/polym4v/env/
 
 | Regla | Detalle |
 | ------- | --------- |
-| Price-taker | El agente no mueve el precio. Ejecuta al precio de `t` más el spread y el slippage. |
-| Ejecución | La acción elegida con la observación de `t` se ejecuta al precio de `t+1` (`execute_at: next`, propuesta en el ADR-011). `current` queda como ablación. |
-| Una posición a la vez | `BUY_*` con una posición ya abierta es una **acción inválida**: se trata como `WAIT` y se aplica una pequeña penalización. |
-| Tamaño fijo | Cada compra usa `stake_fraction` del saldo inicial (por ejemplo, 10 %). |
-| `SELL` sin posición | Acción inválida, se trata como `WAIT` y se penaliza. |
+| Price-taker | El agente no mueve el precio. Compra a `p + half_spread` y vende a `p - half_spread` (S5), con órdenes de 20 USDC (S4b). |
+| Ejecución | La orden decidida en `t` se ejecuta al primer precio con fecha posterior a `t + 2 s`, como mucho a `t + 60 s`. Si no hay precio, se cancela y se reporta (S4, ADR-017). Ejecutar al precio de `t` solo se usa para mostrar la ganancia falsa. |
+| Una posición a la vez | `BUY_*` con una posición ya abierta es una **acción inválida**: se ejecuta como `WAIT`, sin penalización. Se guardan la acción pedida y la ejecutada (S6). |
+| Tamaño fijo | Cada compra usa `stake_fraction` del saldo inicial: 2 %, es decir 20 USDC con un saldo de 1 000 (S4b). |
+| `SELL` sin posición | Acción inválida, se ejecuta como `WAIT`, sin penalización (S6). |
 | Costos | `buy_price = p + half_spread`, `sell_price = p - half_spread`, dentro de `[tick, 1 - tick]`, más la comisión taker `acciones × fee_rate × (precio × (1 - precio))^fee_exponent` redondeada, pagada en USDC (S5, ADR-009 y `src/polym4v/env/execution.py`). El slippage queda dentro de `half_spread`. Valores en `configs/costs.yaml`. |
-| Fin del episodio | Al llegar a `w1` (fin de la vela), la posición abierta **se liquida** a `1` o `0` según `outcome`, sin comisión. |
+| Fin del episodio | No se abren posiciones en los últimos 2 minutos (S10). Al llegar a `w1`, la posición abierta **se liquida** a `1` o `0` según `outcome`, sin comisión; un `SELL` que no se ejecutó antes la deja hasta la liquidación. |
 | Precio de NO | `p_no = 1 - p_yes` (aproximación documentada en el ADR-003). |
 
 **Invariantes** (verificados por tests, ver [05_testing.md](05_testing.md)):
@@ -371,17 +371,18 @@ hace falta más cómputo, se puede usar Google Colab.
 ```yaml
 dataset_id: btc_updown_1h_v1
 env:
-  stake_fraction: 0.10
+  stake_fraction: 0.02    # 20 USDC por orden (S4b)
   initial_cash: 1000.0
-  spread: 0.02
-  slippage: 0.005
+  half_spread: 0.01       # S5; sensibilidad con 0.02
   fee_rate: 0.07          # comisión taker vigente (ADR-009); 0.0 para la ablación
   fee_exponent: 1
-  execute_at: next        # next | current (ADR-011)
+  latency_s: 2            # S4a
+  tolerance_s: 60         # S4a
+  no_open_last_minutes: 2 # S10
 reward:
   name: pnl_risk
   lambda_dd: 0.5
-  lambda_invalid: 0.001
+  lambda_invalid: 0.0     # S6
 agent:
   algo: ppo
   policy: MlpPolicy
