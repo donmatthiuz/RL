@@ -40,6 +40,7 @@ flowchart LR
     PR11 --> PR12["#12 AGT-03 baselines<br/>sin revisor (R4)"] --> PR13["#13 EVA-02 backtest<br/>sin revisor (R5)"] --> PR14["#14 EVA-11 validación<br/>sin revisor (R5)"] --> PR16["#16 EVA-03 métricas<br/>sin revisor (R5)"]
     PR9 -.-> PR14
     PR11 --> PR15["#15 ENV-06 invariantes<br/>R3"]
+    PR16 --> PR17["#17 ENV-07 render<br/>R3"]
 ```
 
 | Orden | PR | Tarea | Base | También necesita | Revisa |
@@ -60,6 +61,7 @@ flowchart LR
 | 8 | #13 | EVA-02: backtest | #12 | — | Sin asignar (R5) |
 | 9 | #14 | EVA-11: validación de ejecuciones y modo estricto | #13 | #9 | Sin asignar (R5) |
 | 10 | #16 | EVA-03: métricas | #14 | — | Sin asignar (R5) |
+| 11 | #17 | ENV-07: `render()` en modo texto | #16 | — | R3 |
 
 **Decisiones del simulador:** todas tomadas el 31/10/2026 (ADR-016 y ADR-017), con sus preguntas y
 opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
@@ -78,7 +80,6 @@ solo se corrieron sobre train.
   equipo responda E1 y E2 en #8.
 - AGT-01 y AGT-02: prototipo en CartPole y adaptadores de SB3 y d3rlpy, sobre `Policy` (#4) y el
   entorno (#11).
-- ENV-07: el entorno ya usa las features reales y su normalización; falta `render()` en modo texto.
 - DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
 
 Las decisiones previas al diseño (D1 a D9) están en
@@ -159,7 +160,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | ENV-04 | **En PR #11.** `PolymarketEnv` v1: `reset` (elige un mercado del split), `step` y espacios. Manejo de acciones inválidas. | F1 | P0 | ENV-02, DAT-05 (fixtures) | Pasa `gymnasium.utils.env_checker.check_env` |
 | ENV-05 | **En PR #11.** `reward.py`: variantes `pnl`, `pnl_risk` y `terminal`, elegibles por config. `reward_components` en `info`. | F1 | P0 | ENV-04 | Test: con `pnl`, la suma de recompensas del episodio = PnL final / V_0 |
 | ENV-06 | **En PR #15.** Suite de invariantes con `hypothesis`: conservación del dinero, `cash ≥ 0` y política aleatoria durante N episodios sin errores | F1 | P0 | ENV-05 | Pasa con ≥ 200 ejemplos generados |
-| ENV-07 | Integrar las features de R2 en la observación, wrapper de normalización y `render()` en modo texto | F2 | P0 | DAT-07 | El entorno con features reales pasa `check_env` y el test de no-*lookahead* |
+| ENV-07 | **En PR #10, #11 y #17.** Integrar las features de R2 en la observación, wrapper de normalización y `render()` en modo texto | F2 | P0 | DAT-07 | El entorno con features reales pasa `check_env` y el test de no-*lookahead* |
 | ENV-08 | **Ablación de la recompensa** (con R4): PPO con `pnl`, `pnl_risk` (2–3 valores de `λ_dd`) y `terminal` | F3 | P1 | AGT-04 | Tabla de ablación en `reports/` con ≥ 3 semillas por variante |
 | ENV-09 | Variante `execute_at: next` y análisis de sensibilidad a los costos (spread × 0, ×1, ×2) | F3 | P2 | ENV-07 | Gráfico de retorno frente al costo para el mejor agente |
 | ENV-10 | **En PR #11.** **Tests de no-fuga (ADR-013):** mercado nulo donde el precio es el valor justo, y alteración de datos con `ts > t` | F1 | P0 | ENV-04 | En el mercado nulo ninguna política gana de forma significativa, y alterar el futuro no cambia la observación |
