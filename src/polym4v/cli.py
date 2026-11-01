@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import pandas as pd
 from polymarket import (
     PolymarketError,
     PublicClient,
@@ -26,6 +27,7 @@ from .data.binance import capture_klines, spot_range
 from .data.build_dataset import build_dataset
 from .data.capture import RawStore, capture_series, write_manifest
 from .data.splits import load_exclusions
+from .data.trades import capture_trades
 from .env.market_data import MarketData
 from .env.market_env import PolymarketEnv
 from .evaluation.backtest import episode_results, run_backtest
@@ -97,6 +99,17 @@ def _parser() -> argparse.ArgumentParser:
     spot.add_argument("--config", default="configs/data.yaml", help="Config del dataset")
     spot.add_argument("--out", default="data/raw", help="Carpeta del crudo")
     spot.add_argument("--pause", type=float, default=0.1, help="Segundos entre descargas")
+
+    trades = commands.add_parser(
+        "capture-trades", help="Archiva los trades taker de los mercados de algunos splits"
+    )
+    trades.add_argument("--config", default="configs/data.yaml", help="Config del dataset")
+    trades.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    trades.add_argument(
+        "--split", action="append", help="Split a capturar; se repite (por defecto, val y test)"
+    )
+    trades.add_argument("--out", default="data/raw", help="Carpeta del crudo")
+    trades.add_argument("--pause", type=float, default=0.2, help="Segundos entre mercados")
 
     build = commands.add_parser(
         "build-dataset", help="Construye markets, prices_raw y spot_1m desde el crudo"
@@ -198,6 +211,30 @@ def _backtest(args: argparse.Namespace) -> Any:
     }
 
 
+def _capture_trades(args: argparse.Namespace) -> Any:
+    config = load_config(args.config, DataConfig)
+    dataset = Path(args.dataset) if args.dataset else get_paths().processed / config.dataset_id
+    splits = args.split or ["val", "test"]
+    markets = pd.read_parquet(dataset / "markets.parquet", columns=["market_id", "w0", "split"])
+    markets = markets[markets["split"].isin(splits)].sort_values("w0")
+    store = RawStore(args.out)
+
+    def progress(n: int) -> None:
+        if n % 250 == 0:
+            print(f"{n} de {len(markets)} mercados procesados", file=sys.stderr, flush=True)
+
+    with PublicClient() as client:
+        summary = capture_trades(
+            zip(markets["market_id"], markets["w0"], strict=True),
+            store,
+            client=client,
+            pause=args.pause,
+            on_market=progress,
+        )
+    manifest = write_manifest(store)
+    return {"splits": splits, **summary, "files": manifest["n_files"]}
+
+
 def _build_dataset(args: argparse.Namespace) -> Any:
     config = load_config(args.config, DataConfig)
     paths = get_paths()
@@ -215,6 +252,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _capture(args)
     if args.command == "capture-spot":
         return _capture_spot(args)
+    if args.command == "capture-trades":
+        return _capture_trades(args)
     if args.command == "build-dataset":
         return _build_dataset(args)
     if args.command == "backtest":
