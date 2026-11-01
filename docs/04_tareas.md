@@ -21,7 +21,43 @@ El seguimiento del proyecto se lleva **solo en este documento** (ADR-015): no ha
 Projects ni issues. R1 actualiza esta sección en `proyecto` cada vez que se abre o se mezcla un PR,
 y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha el 31/10/2026**).
 
-**En revisión.** Los PR forman una pila: cada uno se mezcla después del que tiene como base
+- **Hecha:** está en `proyecto`.
+- **En PR:** el código o el documento ya existe; falta que se revise y se mezcle.
+- **Falta:** todavía no se empezó.
+
+### Avance por rol
+
+Al 01/11/2026, de 66 tareas: 9 hechas, 28 en PR y 29 sin empezar. Ningún PR se mezcló todavía.
+
+| Rol | Hechas | En PR | Faltan |
+| --- | --- | --- | --- |
+| R1 Josué | INF-01 a INF-05 y DOC-01 | INF-06 (#1, #4 y #11) e INF-07 (#21) | INF-08, INF-09 e INF-10 |
+| R2 Mathew | DAT-01, DAT-02 (dentro de DAT-10) y DAT-10 | DAT-03 a DAT-08 y DAT-11 (#2, #3, #5, #7, #9 y #10) | DAT-09 (P2) |
+| R3 Gustavo | — | ENV-01 a ENV-07 y ENV-10 (#6, #10, #11, #15 y #17) | ENV-08 y ENV-09 (P2) |
+| R4 sin asignar | — | AGT-02 a AGT-08 (#4, #12, #18, #19 y #20) | AGT-01, AGT-09 y AGT-10 |
+| R5 sin asignar | — | EVA-01 a EVA-03 y EVA-11 (#8, #13, #14 y #16) | EVA-04 a EVA-10 |
+| Todos (documento) | DOC-01 | — | DOC-02 a DOC-14; DOC-12 se lleva durante todo el proyecto |
+
+Mezclar un PR no cierra todas sus tareas: AGT-04, AGT-05 y AGT-08 piden superar a `Random` o
+evaluarse en val, y EVA-11 pide el reporte de val y test. Esas quedan abiertas hasta abrir val.
+
+Lo que le falta a cada rol:
+
+- **R1:** mezclar la pila en orden. INF-08 (*smoke-train* y `nightly.yml`) no tiene bloqueos.
+  INF-09 espera la evaluación en test (EVA-06) e INF-10 espera los modelos finales (H3).
+- **R2:** revisar #1, #2, #3, #5, #7, #9 y #10. DAT-09 (ETH) es opcional.
+- **R3:** revisar #1, #6, #11, #15 y #17. Implementar las variantes de recompensa que salieron de
+  la investigación (ENV-05) y después la ablación (ENV-08), que espera abrir val. ENV-09 es
+  opcional.
+- **R4 (sin dueño):** revisar #4, #11 (el MDP), #12, #18, #19 y #20. AGT-01 (prototipo en
+  CartPole) no tiene bloqueos. AGT-09 y AGT-10 esperan abrir val.
+- **R5 (sin dueño):** revisar #8 y responder E1 y E2, y revisar #13, #14 y #16. EVA-05 (reporte) y
+  EVA-07 (demo) no tienen bloqueos. EVA-04 espera E1 y E2. EVA-06, EVA-08 y EVA-10 son de la
+  fase final. EVA-09 es opcional.
+
+### PR en revisión
+
+Los PR forman una pila: cada uno se mezcla después del que tiene como base
 (ver "Pilas de PR" en [06_flujo_trabajo.md](06_flujo_trabajo.md)). Cuatro PR necesitan además otra
 rama, incorporada con merge: lo marcan las flechas punteadas, y esa rama se mezcla antes.
 
@@ -53,12 +89,12 @@ flowchart LR
 | 1 | #1 | INF-06: contratos de datos | `proyecto` | — | R2 y R3 |
 | 2 | #2 | DAT-03: klines de Binance | #1 | — | R2 |
 | 2 | #4 | INF-06: `Policy` y `Action` | #1 | — | Sin asignar (R4) |
-| Cuando se quiera | #6 | ENV-03: costos. Falta quitarle el borrador en GitHub | `proyecto` | — | R3 |
+| Cuando se quiera | #6 | ENV-03: costos | `proyecto` | — | R3 |
 | Antes de ver resultados en val | #8 | EVA-01: protocolo de evaluación, con E1 y E2 para el equipo | `proyecto` | — | Sin asignar (R5) |
 | 3 | #3 | DAT-06: split con exclusiones de S11 | #2 | — | R2 |
 | 4 | #5 | DAT-04 y DAT-05: `markets`, `prices_raw` y `spot_1m` | #3 | — | R2 |
 | 5 | #7 | DAT-08: EDA sobre train | #5 | — | R2 |
-| 5 | #9 | DAT-11: trades de val y test. Borrador hasta terminar la captura | #5 | — | R2 |
+| 5 | #9 | DAT-11: trades de val y test, y la captura de train | #5 | — | R2 |
 | 5 | #10 | DAT-04, DAT-05 y DAT-07: `steps.parquet`, features y normalización | #5 | — | R2 |
 | 6 | #11 | ENV-01, ENV-02, ENV-04, ENV-05, ENV-10 e INF-06 (`info`): el entorno | #10 | #4 y #6 | R3; R4 el MDP |
 | 7 | #12 | AGT-03: baselines | #11 | — | Sin asignar (R4) |
@@ -72,32 +108,40 @@ flowchart LR
 | 13 | #20 | AGT-07 y AGT-08: dataset offline y entrenamiento de CQL y BC | #19 | — | Sin asignar (R4) |
 | 14 | #21 | INF-07: pipeline completo por la CLI y comando `evaluate` | #20 | — | Cualquier integrante |
 
+### Decisiones y bloqueos
+
 **Decisiones del simulador:** todas tomadas el 31/10/2026 (ADR-016 y ADR-017), con sus preguntas y
 opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
 provisional hasta validarla con trades reales (DAT-11 y EVA-11).
 
-**Recompensa principal (R1, 31/10/2026):** antes de elegir entre `pnl` y `pnl_risk` se investiga
+**Recompensa principal (R1, 31/10/2026):** antes de elegir entre `pnl` y `pnl_risk` se investigó
 cómo la diseñan otros entornos y la literatura
-([recompensas](ia/investigaciones/recompensas_rl_trading.md); falta pegar la respuesta de
-Perplexity) y se comparan las variantes con la ablación de ENV-08. Mientras tanto,
-`configs/env.yaml` usa `pnl` (PR #11).
+([recompensas](ia/investigaciones/recompensas_rl_trading.md)). La respuesta de Perplexity se pegó y
+se evaluó el 01/11/2026, y de ahí sale una lista revisada de variantes para la ablación de ENV-08,
+que falta aprobar. Mientras tanto, `configs/env.yaml` usa `pnl` (PR #11).
 
-**Trades de train (R1, 31/10/2026):** se capturan ya, en segundo plano, y el modo de entrenamiento
-se decide después comparando los dos modos en train (actualización de ADR-017).
+**Trades de train (R1, 31/10/2026):** se capturan en segundo plano (en curso el 01/11/2026), y el
+modo de entrenamiento se decide después comparando los dos modos en train (actualización de
+ADR-017).
 
-**Val sigue cerrado** hasta mezclar el protocolo (#8). Los baselines, el backtest y las métricas
-solo se corrieron sobre train.
+**Val sigue cerrado** hasta mezclar el protocolo (#8), y para eso el equipo tiene que responder E1
+y E2 en el PR. Los baselines, el backtest y las métricas solo se corrieron sobre train.
 
 **Sin bloqueos, para empezar:**
 
+- ENV-05: implementar las variantes de recompensa de la investigación, elegibles por config.
+- EVA-05: `report.py` y `polym4v report`, probados sobre train.
 - EVA-07: demo en Streamlit con las trayectorias del backtest.
-- EVA-04: `stats.py` con la prueba del protocolo, cuando el equipo responda E1 y E2 en #8.
-- ENV-08: la ablación de la recompensa, cuando esté la respuesta de Perplexity y se elijan las
-  variantes.
+- INF-08: job *smoke-train* en la CI y `nightly.yml`.
+- AGT-01: prototipo en CartPole, para quien tome R4.
 - DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
 
+**Esperan respuesta del equipo:** EVA-04 (`stats.py` con la prueba del protocolo) espera E1 y E2
+en #8.
+
 **Esperan a abrir val (#8):** entrenar con datos reales y elegir checkpoints (AGT-04 en adelante),
-la tabla de baselines en val y la validación de ejecuciones en val (EVA-11).
+la ablación de la recompensa (ENV-08), la tabla de baselines en val y la validación de ejecuciones
+en val (EVA-11).
 
 Las decisiones previas al diseño (D1 a D9) están en
 [decisiones_previas_al_diseno.md](notas/decisiones_previas_al_diseno.md) y las ya tomadas, como
@@ -156,7 +200,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | ID | Tarea | Fase | Prio | Depende de | Criterio de aceptación |
 | ---- | ------- | ------ | ------ | ------------ | ------------------------ |
 | DAT-01 | **Hecha el 30/10/2026: ver [spike](notas/spike_datos.md) y ADR-004, ADR-007 a ADR-009.** **Spike de APIs:** probar Gamma, CLOB `prices-history` y Binance. Medir la granularidad real en mercados cerrados, los límites de rate y los campos disponibles. Elegir la familia de mercados. | F0 | P0 | — | Nota en `docs/notas/spike_datos.md`, más un ADR con la familia de mercados y la granularidad elegidas |
-| DAT-02 | `GammaClient`: listar mercados cerrados filtrados por tag o texto, con paginación | F1 | P0 | DAT-01, INF-01 | Tests con respuestas grabadas (`responses`), sin red |
+| DAT-02 | **Hecha el 31/10/2026 dentro de DAT-10:** `capture_series` lista los eventos cerrados de Gamma por serie, con paginación, y sus tests usan una fuente falsa, sin red. `GammaClient`: listar mercados cerrados filtrados por tag o texto, con paginación | F1 | P0 | DAT-01, INF-01 | Tests con respuestas grabadas (`responses`), sin red |
 | DAT-03 | **En PR #2.** `ClobClient` y `BinanceClient`, con caché en disco, reintentos y rate limiting | F1 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red (test con contador) |
 | DAT-04 | **En PR #5 y #10.** Limpieza, re-muestreo a una grilla fija (solo *forward-fill*), alineación con el spot y filtros de calidad | F1 | P0 | DAT-02, DAT-03 | Test: ningún valor en `t` se deriva de datos con `ts > t` |
 | DAT-05 | **En PR #5 y #10.** `build_dataset.py`: `markets.parquet`, `steps.parquet` y `manifest.json` con hash. **Mini-dataset de fixtures** (≈ 5 mercados) para los tests. | F1 | P0 | DAT-04, INF-06 | `polym4v data build` dos veces da el mismo hash. Valida con `pandera`. |
@@ -165,7 +209,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | DAT-08 | **En PR #7.** Notebook de EDA y una sección breve con sus hallazgos | F2 | P1 | DAT-05 | Notebook ejecutado y versionado, con ≥ 5 gráficos comentados |
 | DAT-09 | Extensión a ETH y/o a la segunda familia de mercados | F3 | P2 | DAT-07 | Dataset `eth_*` construido y evaluación de transferencia BTC → ETH |
 | DAT-10 | **Hecha el 31/10/2026:** BTC con 12 471 mercados y ETH con 12 149, sin errores ([11_descarga_de_datos.md](11_descarga_de_datos.md)). **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
-| DAT-11 | **En PR #9.** **Captura de trades (S4b, ADR-017):** trades taker públicos de los mercados de val y test, con el mismo esquema de crudo, caché y manifest que DAT-10 | F1 | P0 | DAT-10 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
+| DAT-11 | **En PR #9** (val y test; train se capturó después, ver la actualización de ADR-017). **Captura de trades (S4b, ADR-017):** trades taker públicos de los mercados de val y test, con el mismo esquema de crudo, caché y manifest que DAT-10 | F1 | P0 | DAT-10 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
 
 ### R3 — Ingeniero del entorno y la recompensa
 
@@ -175,7 +219,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | ENV-02 | **En PR #11.** `Portfolio`: abrir y cerrar posiciones, mark-to-market y liquidación al resolver | F1 | P0 | ENV-01 | Tests unitarios de cada operación con valores calculados a mano |
 | ENV-03 | **En PR #6.** `execution.py`: spread, slippage y comisión configurables | F1 | P0 | ENV-02 | Test: un ciclo compra-venta inmediata sin cambio de precio pierde exactamente los costos |
 | ENV-04 | **En PR #11.** `PolymarketEnv` v1: `reset` (elige un mercado del split), `step` y espacios. Manejo de acciones inválidas. | F1 | P0 | ENV-02, DAT-05 (fixtures) | Pasa `gymnasium.utils.env_checker.check_env` |
-| ENV-05 | **En PR #11.** `reward.py`: variantes `pnl`, `pnl_risk` y `terminal`, elegibles por config. `reward_components` en `info`. | F1 | P0 | ENV-04 | Test: con `pnl`, la suma de recompensas del episodio = PnL final / V_0 |
+| ENV-05 | **En PR #11** (`pnl`, `pnl_risk` y `terminal`). Faltan las variantes que salieron de la [investigación](ia/investigaciones/recompensas_rl_trading.md). `reward.py`: variantes `pnl`, `pnl_risk` y `terminal`, elegibles por config. `reward_components` en `info`. | F1 | P0 | ENV-04 | Test: con `pnl`, la suma de recompensas del episodio = PnL final / V_0 |
 | ENV-06 | **En PR #15.** Suite de invariantes con `hypothesis`: conservación del dinero, `cash ≥ 0` y política aleatoria durante N episodios sin errores | F1 | P0 | ENV-05 | Pasa con ≥ 200 ejemplos generados |
 | ENV-07 | **En PR #10, #11 y #17.** Integrar las features de R2 en la observación, wrapper de normalización y `render()` en modo texto | F2 | P0 | DAT-07 | El entorno con features reales pasa `check_env` y el test de no-*lookahead* |
 | ENV-08 | **Ablación de la recompensa** (con R4): PPO con `pnl`, `pnl_risk` (2–3 valores de `λ_dd`) y `terminal` | F3 | P1 | AGT-04 | Tabla de ablación en `reports/` con ≥ 3 semillas por variante |
@@ -263,7 +307,7 @@ flowchart LR
 
 **H0 (cierre de F0)**
 
-- [ ] Repo con CI en verde sobre la rama `proyecto`
+- [x] Repo con CI en verde sobre la rama `proyecto`
 - [x] Spike de datos documentado y familia de mercados elegida (ADR-004)
 - [ ] MDP especificado (ENV-01) y protocolo de evaluación aprobado (EVA-01)
 - [ ] Integrantes asignados a cada rol en [03_roles.md](03_roles.md)
