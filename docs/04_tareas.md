@@ -22,7 +22,7 @@ Projects ni issues. R1 actualiza esta sección en `proyecto` cada vez que se abr
 y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha el 31/10/2026**).
 
 **En revisión.** Los PR forman una pila: cada uno se mezcla después del que tiene como base
-(ver "Pilas de PR" en [06_flujo_trabajo.md](06_flujo_trabajo.md)). Tres PR necesitan además otra
+(ver "Pilas de PR" en [06_flujo_trabajo.md](06_flujo_trabajo.md)). Cuatro PR necesitan además otra
 rama, incorporada con merge: lo marcan las flechas punteadas, y esa rama se mezcla antes.
 
 ```mermaid
@@ -41,6 +41,9 @@ flowchart LR
     PR9 -.-> PR14
     PR11 --> PR15["#15 ENV-06 invariantes<br/>R3"]
     PR16 --> PR17["#17 ENV-07 render<br/>R3"]
+    PR11 --> PR18["#18 AGT-02 adaptadores<br/>sin revisor (R4)"]
+    PR17 --> PR19["#19 AGT-04/05/06 entrenamiento<br/>sin revisor (R4)"]
+    PR18 -.-> PR19
 ```
 
 | Orden | PR | Tarea | Base | También necesita | Revisa |
@@ -58,10 +61,12 @@ flowchart LR
 | 6 | #11 | ENV-01, ENV-02, ENV-04, ENV-05, ENV-10 e INF-06 (`info`): el entorno | #10 | #4 y #6 | R3; R4 el MDP |
 | 7 | #12 | AGT-03: baselines | #11 | — | Sin asignar (R4) |
 | 7 | #15 | ENV-06: invariantes con `hypothesis` | #11 | — | R3 |
+| 7 | #18 | AGT-02: adaptadores de SB3 y d3rlpy, con torch solo CPU | #11 | — | Sin asignar (R4) |
 | 8 | #13 | EVA-02: backtest | #12 | — | Sin asignar (R5) |
 | 9 | #14 | EVA-11: validación de ejecuciones y modo estricto | #13 | #9 | Sin asignar (R5) |
 | 10 | #16 | EVA-03: métricas | #14 | — | Sin asignar (R5) |
 | 11 | #17 | ENV-07: `render()` en modo texto | #16 | — | R3 |
+| 12 | #19 | AGT-04, AGT-05 y AGT-06: entrenamiento de PPO y DQN y prueba de cordura | #17 | #18 | Sin asignar (R4) |
 
 **Decisiones del simulador:** todas tomadas el 31/10/2026 (ADR-016 y ADR-017), con sus preguntas y
 opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
@@ -81,11 +86,15 @@ solo se corrieron sobre train.
 
 **Sin bloqueos, para empezar:**
 
-- EVA-04: `stats.py` con la prueba del protocolo (bootstrap de dos niveles e IC BCa), cuando el
-  equipo responda E1 y E2 en #8.
-- AGT-01 y AGT-02: prototipo en CartPole y adaptadores de SB3 y d3rlpy, sobre `Policy` (#4) y el
-  entorno (#11).
+- AGT-07 y AGT-08: dataset offline con los baselines ε-greedy sobre train, y CQL y BC con d3rlpy
+  sobre los adaptadores (#18).
+- EVA-04: `stats.py` con la prueba del protocolo, cuando el equipo responda E1 y E2 en #8.
+- ENV-08: la ablación de la recompensa, cuando esté la respuesta de Perplexity y se elijan las
+  variantes.
 - DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
+
+**Esperan a abrir val (#8):** entrenar con datos reales y elegir checkpoints (AGT-04 en adelante),
+la tabla de baselines en val y la validación de ejecuciones en val (EVA-11).
 
 Las decisiones previas al diseño (D1 a D9) están en
 [decisiones_previas_al_diseno.md](notas/decisiones_previas_al_diseno.md) y las ya tomadas, como
@@ -175,11 +184,11 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | ID | Tarea | Fase | Prio | Depende de | Criterio de aceptación |
 | ---- | ------- | ------ | ------ | ------------ | ------------------------ |
 | AGT-01 | Revisar la teoría y las librerías (SB3 PPO/DQN, d3rlpy CQL) y hacer un prototipo en `CartPole` para dominar la API | F0 | P1 | — | Notebook o script donde PPO resuelve CartPole |
-| AGT-02 | Protocolo `Policy` y adaptadores `SB3Policy` y `D3rlpyPolicy` | F1 | P0 | INF-06 | Test: el adaptador devuelve acciones válidas para observaciones del espacio |
+| AGT-02 | **En PR #4 y #18.** Protocolo `Policy` y adaptadores `SB3Policy` y `D3rlpyPolicy` | F1 | P0 | INF-06 | Test: el adaptador devuelve acciones válidas para observaciones del espacio |
 | AGT-03 | **En PR #12.** Baselines: `Random`, `NoTrade`, `Favorite`, `Momentum` y `MeanReversion` (con R5) | F1 | P0 | AGT-02 | Tests con escenarios de precio sintéticos donde el comportamiento esperado es obvio |
-| AGT-04 | `train_sb3.py` para **PPO**: entornos vectorizados, `EvalCallback` en *val*, checkpoints, TensorBoard y guardado de la config resuelta | F2 | P0 | ENV-07, INF-05 | PPO entrena y **supera a `Random`** en val en una corrida corta |
-| AGT-05 | **DQN** con el mismo script (ε-schedule, replay buffer, target network) | F2 | P0 | AGT-04 | DQN entrena y supera a `Random` en val |
-| AGT-06 | Test de cordura: entorno sintético donde existe una estrategia óptima conocida (por ejemplo, el precio siempre converge al resultado). PPO y DQN deben aprenderla. | F2 | P0 | AGT-04 | Ambos alcanzan ≥ 90 % del retorno óptimo en el entorno sintético |
+| AGT-04 | **En PR #19.** `train_sb3.py` para **PPO**: entornos vectorizados, `EvalCallback` en *val*, checkpoints, TensorBoard y guardado de la config resuelta | F2 | P0 | ENV-07, INF-05 | PPO entrena y **supera a `Random`** en val en una corrida corta |
+| AGT-05 | **En PR #19.** **DQN** con el mismo script (ε-schedule, replay buffer, target network) | F2 | P0 | AGT-04 | DQN entrena y supera a `Random` en val |
+| AGT-06 | **En PR #19.** Test de cordura: entorno sintético donde existe una estrategia óptima conocida (por ejemplo, el precio siempre converge al resultado). PPO y DQN deben aprenderla. | F2 | P0 | AGT-04 | Ambos alcanzan ≥ 90 % del retorno óptimo en el entorno sintético |
 | AGT-07 | `collect-offline`: generar el dataset de transiciones con baselines ε-greedy sobre train | F3 | P0 | AGT-03 | Archivo `data/offline/*.h5` con ≥ 100k transiciones y su manifest |
 | AGT-08 | Entrenar **Discrete CQL** y **Discrete BC** con d3rlpy y su adaptador `Policy` | F3 | P0 | AGT-07 | Ambos evaluados en val con `run_backtest` |
 | AGT-09 | Ajuste de hiperparámetros acotado (≤ 20 configs por algoritmo, selección por val) | F3 | P1 | AGT-05, AGT-08 | Tabla de búsqueda en `reports/hparams.md` |
