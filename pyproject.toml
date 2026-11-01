@@ -9,6 +9,7 @@ description = "PolyRL: aprendizaje por refuerzo sobre mercados históricos de Po
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "numpy>=2",
     "pandas>=3.1",
     "pandera>=0.35",
     "polymarket-client==0.14.0",
