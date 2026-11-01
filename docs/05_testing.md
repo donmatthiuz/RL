@@ -13,7 +13,7 @@ sirve. Por eso el testing no es opcional: es parte del método científico del p
 2. **Los tests unitarios no usan la red.** Las APIs se simulan con respuestas grabadas
    (`tests/fixtures/api/*.json`) mediante la librería `responses`.
 3. **Los tests son deterministas.** Todo lo que tenga aleatoriedad recibe una semilla fija. Un test
-   que falla "a veces" se considera roto y se arregla o se marca `xfail` con un issue asociado.
+   que falla "a veces" se considera roto y se arregla o se marca `xfail` y se anota en el tablero.
 4. **Los tests son rápidos.** La suite por defecto (`pytest`) debe correr en **< 60 s** en una
    laptop. Lo lento se marca con `@pytest.mark.slow`.
 5. **Un bug encontrado = un test de regresión** que lo reproduce, agregado en el mismo commit que lo
@@ -253,7 +253,7 @@ jobs:
       - run: uv run pytest -m "slow or network"
 ```
 
-Si falla un test `network`, significa que la API de Polymarket cambió. R2 abre un issue.
+Si falla un test `network`, significa que la API de Polymarket cambió. R2 lo anota en el tablero.
 
 ### 5.3 Hooks locales (`pre-commit`)
 
