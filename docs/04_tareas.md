@@ -44,6 +44,7 @@ flowchart LR
     PR11 --> PR18["#18 AGT-02 adaptadores<br/>sin revisor (R4)"]
     PR17 --> PR19["#19 AGT-04/05/06 entrenamiento<br/>sin revisor (R4)"]
     PR18 -.-> PR19
+    PR19 --> PR20["#20 AGT-07/08 offline: CQL y BC<br/>sin revisor (R4)"]
 ```
 
 | Orden | PR | Tarea | Base | También necesita | Revisa |
@@ -67,6 +68,7 @@ flowchart LR
 | 10 | #16 | EVA-03: métricas | #14 | — | Sin asignar (R5) |
 | 11 | #17 | ENV-07: `render()` en modo texto | #16 | — | R3 |
 | 12 | #19 | AGT-04, AGT-05 y AGT-06: entrenamiento de PPO y DQN y prueba de cordura | #17 | #18 | Sin asignar (R4) |
+| 13 | #20 | AGT-07 y AGT-08: dataset offline y entrenamiento de CQL y BC | #19 | — | Sin asignar (R4) |
 
 **Decisiones del simulador:** todas tomadas el 31/10/2026 (ADR-016 y ADR-017), con sus preguntas y
 opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
@@ -86,8 +88,8 @@ solo se corrieron sobre train.
 
 **Sin bloqueos, para empezar:**
 
-- AGT-07 y AGT-08: dataset offline con los baselines ε-greedy sobre train, y CQL y BC con d3rlpy
-  sobre los adaptadores (#18).
+- INF-07: prueba de integración de todo el pipeline sobre un mini-dataset.
+- EVA-07: demo en Streamlit con las trayectorias del backtest.
 - EVA-04: `stats.py` con la prueba del protocolo, cuando el equipo responda E1 y E2 en #8.
 - ENV-08: la ablación de la recompensa, cuando esté la respuesta de Perplexity y se elijan las
   variantes.
@@ -189,8 +191,8 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | AGT-04 | **En PR #19.** `train_sb3.py` para **PPO**: entornos vectorizados, `EvalCallback` en *val*, checkpoints, TensorBoard y guardado de la config resuelta | F2 | P0 | ENV-07, INF-05 | PPO entrena y **supera a `Random`** en val en una corrida corta |
 | AGT-05 | **En PR #19.** **DQN** con el mismo script (ε-schedule, replay buffer, target network) | F2 | P0 | AGT-04 | DQN entrena y supera a `Random` en val |
 | AGT-06 | **En PR #19.** Test de cordura: entorno sintético donde existe una estrategia óptima conocida (por ejemplo, el precio siempre converge al resultado). PPO y DQN deben aprenderla. | F2 | P0 | AGT-04 | Ambos alcanzan ≥ 90 % del retorno óptimo en el entorno sintético |
-| AGT-07 | `collect-offline`: generar el dataset de transiciones con baselines ε-greedy sobre train | F3 | P0 | AGT-03 | Archivo `data/offline/*.h5` con ≥ 100k transiciones y su manifest |
-| AGT-08 | Entrenar **Discrete CQL** y **Discrete BC** con d3rlpy y su adaptador `Policy` | F3 | P0 | AGT-07 | Ambos evaluados en val con `run_backtest` |
+| AGT-07 | **En PR #20.** `collect-offline`: generar el dataset de transiciones con baselines ε-greedy sobre train | F3 | P0 | AGT-03 | Archivo `data/offline/*.h5` con ≥ 100k transiciones y su manifest |
+| AGT-08 | **En PR #20.** Entrenar **Discrete CQL** y **Discrete BC** con d3rlpy y su adaptador `Policy` | F3 | P0 | AGT-07 | Ambos evaluados en val con `run_backtest` |
 | AGT-09 | Ajuste de hiperparámetros acotado (≤ 20 configs por algoritmo, selección por val) | F3 | P1 | AGT-05, AGT-08 | Tabla de búsqueda en `reports/hparams.md` |
 | AGT-10 | Entrenamiento final: 5 semillas por algoritmo con la mejor config, y modelos congelados | F3 | P0 | AGT-09 | `models/final/` completo, con config, semilla y commit en cada run |
 
