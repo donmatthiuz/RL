@@ -76,7 +76,9 @@ def test_money_is_conserved_and_never_negative(config, reward_config, actions, m
                 shares, side = 0.0, FLAT
             else:
                 cash -= info["fill_shares"] * info["fill_price"] + info["fee"]
-                shares, side = info["fill_shares"], info["position_side"]
+                # El lado sale de la acción: una compra en el último paso ya se liquidó y el
+                # `info` muestra la posición cerrada.
+                shares, side = info["fill_shares"], (1 if info["action_executed"] == 1 else -1)
         if info is steps[-1][2] and side != FLAT:
             # Liquidación: 1 por acción del lado ganador, sin comisión.
             won = (env.episode.outcome == 1) == (side == 1)
