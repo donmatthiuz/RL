@@ -164,6 +164,20 @@ Code. El equipo lo revisa y completa.
   solo el 58 % de las ejecuciones simuladas está respaldado por un trade real, y de ahí salieron
   el modo estricto de evaluación, DAT-11 y EVA-11.
 
+### P13 — Recompensa del entorno
+
+- **Prompt:** completo en
+  [investigaciones/recompensas_rl_trading.md](investigaciones/recompensas_rl_trading.md). R1 pidió
+  investigar cómo diseñan la recompensa FinRL, TensorTrade, Gym-Trading-Env y la literatura sobre
+  PnL, drawdown y riesgo antes de decidir entre `pnl` y `pnl_risk`, y comparar con ablaciones.
+- **Herramienta:** Claude Code para el código de los repositorios; Perplexity para la literatura.
+- **Resultado:** parcial, falta la respuesta de Perplexity.
+- **Cómo se evaluó:** la revisión de código se hizo sobre las funciones de recompensa de cada
+  repositorio, en un commit fijo.
+- **Aporte:** ninguno de los cinco proyectos castiga el drawdown por paso y todos valoran a precio
+  de mercado. La penalización de `docs/02` es diseño propio, y castiga dos veces la entrada con la
+  valoración de S9. Salieron siete variantes candidatas para la ablación de ENV-08.
+
 ## Plantilla
 
 ```markdown

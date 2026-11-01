@@ -67,9 +67,14 @@ flowchart LR
 opciones en la sección 6 de [09_sistema_simulacion.md](09_sistema_simulacion.md). S4a es
 provisional hasta validarla con trades reales (DAT-11 y EVA-11).
 
-**Pendiente de decisión (R1):** si la recompensa principal es `pnl` o `pnl_risk`. Con la valoración
-de S9, la caída del valor al comprar también cuenta como drawdown, y `pnl_risk` castigaría la
-entrada dos veces. Mientras tanto, `configs/env.yaml` usa `pnl` (PR #11).
+**Recompensa principal (R1, 31/10/2026):** antes de elegir entre `pnl` y `pnl_risk` se investiga
+cómo la diseñan otros entornos y la literatura
+([recompensas](ia/investigaciones/recompensas_rl_trading.md); falta pegar la respuesta de
+Perplexity) y se comparan las variantes con la ablación de ENV-08. Mientras tanto,
+`configs/env.yaml` usa `pnl` (PR #11).
+
+**Trades de train (R1, 31/10/2026):** se capturan ya, en segundo plano, y el modo de entrenamiento
+se decide después comparando los dos modos en train (actualización de ADR-017).
 
 **Val sigue cerrado** hasta mezclar el protocolo (#8). Los baselines, el backtest y las métricas
 solo se corrieron sobre train.
