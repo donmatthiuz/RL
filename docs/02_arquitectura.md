@@ -184,8 +184,9 @@ están en `INFO_KEYS` de `market_env.py`:
 | --- | --- |
 | `market_id`, `k`, `ts`, `p_yes` | Mercado, paso, instante de la decisión y último precio YES visto |
 | `action`, `action_executed`, `action_valid` | Acción pedida, ejecutada y si era válida (S6). En `reset` valen `None` |
-| `order_status` | `ejecutada`, `sin_precio` (no hubo precio en la ventana de S4), `invalida` o `ninguna` |
-| `exec_ts`, `exec_p` | Fecha y precio YES del punto con que se ejecutó la orden. Con ellos, EVA-11 busca el trade que la respalda |
+| `order_status` | `ejecutada`, `sin_precio` (no hubo precio en la ventana de S4), `no_verificable` (modo estricto, EVA-11), `invalida` o `ninguna` |
+| `exec_ts`, `exec_p` | Fecha y precio YES del punto con que se ejecutó la orden |
+| `exec_verified` | Si un trade real respalda la ejecución (EVA-11): `True`, `False`, o `None` sin verificador o sin trades del mercado |
 | `fill_price`, `fill_shares`, `fee` | Precio pagado o recibido por el lado operado, acciones y comisión de la operación |
 | `position_side`, `position_size`, `cash` | Cartera después de la operación |
 | `portfolio_value`, `fees_paid` | Valor de la cartera (S9) en el instante siguiente y comisiones acumuladas del episodio |
