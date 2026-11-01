@@ -171,12 +171,25 @@ Code. El equipo lo revisa y completa.
   investigar cómo diseñan la recompensa FinRL, TensorTrade, Gym-Trading-Env y la literatura sobre
   PnL, drawdown y riesgo antes de decidir entre `pnl` y `pnl_risk`, y comparar con ablaciones.
 - **Herramienta:** Claude Code para el código de los repositorios; Perplexity para la literatura.
-- **Resultado:** parcial, falta la respuesta de Perplexity.
-- **Cómo se evaluó:** la revisión de código se hizo sobre las funciones de recompensa de cada
-  repositorio, en un commit fijo.
-- **Aporte:** ninguno de los cinco proyectos castiga el drawdown por paso y todos valoran a precio
-  de mercado. La penalización de `docs/02` es diseño propio, y castiga dos veces la entrada con la
-  valoración de S9. Salieron siete variantes candidatas para la ablación de ENV-08.
+- **Resultado:** satisfactorio con reservas.
+- **Por qué:** las 8 citas de arXiv existen, y casi todo lo que se les atribuye está en ellas. La
+  respuesta interpretó mal nuestra recompensa: dijo que el costo de salida castiga la entrada en
+  cada paso, y en `pnl` se descuenta una sola vez. Tuvo errores menores en autores, en una fórmula
+  y en el alcance de dos artículos.
+- **Cómo se evaluó:** se leyó el resumen y el PDF de cada artículo citado, y el DOI de Moody y
+  Saffell se comprobó en Crossref. Los argumentos sobre nuestro caso se contrastaron con el código
+  de `reward.py` y su test.
+- **Corrección:** ninguna en el código. Para próximos prompts, conviene incluir la fórmula exacta
+  de la recompensa actual, no solo describirla.
+- **Aporte:**
+  - Ninguno de los cinco proyectos revisados castiga el drawdown en cada paso, y todos valoran a
+    precio de mercado. La penalización de `docs/02` es diseño propio, y con la valoración de S9
+    castiga dos veces la entrada.
+  - Con la teoría de shaping por potencial de Ng et al., `pnl` resulta casi equivalente a la
+    recompensa terminal. La ablación compara entonces la velocidad de aprendizaje y no la política
+    óptima.
+  - Salió una lista revisada de seis variantes en dos etapas, con 5 semillas, pendiente de
+    aprobación de R1.
 
 ## Plantilla
 
