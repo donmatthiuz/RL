@@ -55,7 +55,8 @@ Verifier = Callable[..., bool | None]
 
 
 class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
-    metadata: dict[str, Any] = {"render_modes": ["ansi"]}
+    # Con `ansi` no se usa, pero `check_env` lo pide cuando hay modos de render.
+    metadata: dict[str, Any] = {"render_modes": ["ansi"], "render_fps": 1}
 
     def __init__(
         self,

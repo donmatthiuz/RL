@@ -1,4 +1,5 @@
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -137,7 +138,10 @@ def test_terminal_reward_only_at_the_end_and_invalid_penalty():
 
 def test_passes_the_gymnasium_checker(data):
     check_env(make_env(data), skip_render_check=True)
-    check_env(PolymarketEnv(data, ENV, PNL, render_mode="ansi"))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        check_env(PolymarketEnv(data, ENV, PNL, render_mode="ansi"))
+    assert not [w for w in caught if "render fps" in str(w.message)]
 
 
 def test_order_fills_at_first_price_after_latency(data):
