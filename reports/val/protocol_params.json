@@ -1,0 +1,15 @@
+{
+  "baseline": "no_trade",
+  "mean_block": {
+    "bc_pnl_risk": 1.0,
+    "cql_pnl_risk": 1.0,
+    "dqn_pnl_risk": 1.6338295207460758,
+    "ppo_pnl_risk": 1.0
+  },
+  "mde": {
+    "bc_pnl_risk": 0.012902489068450339,
+    "cql_pnl_risk": 0.07373746965735847,
+    "dqn_pnl_risk": 0.006094459717642738,
+    "ppo_pnl_risk": 0.0020880801345365203
+  }
+}
