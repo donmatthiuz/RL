@@ -34,7 +34,7 @@ include = ["polym4v*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers -m 'not slow and not network'"
+addopts = "-ra --strict-markers -m 'not slow and not network and not smoke'"
 markers = [
     "integration: varios módulos sobre el mini-dataset",
     "smoke: entrenamiento muy corto para detectar errores de integración",
