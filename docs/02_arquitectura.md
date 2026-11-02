@@ -137,18 +137,23 @@ La lista concreta para la serie horaria, con la volatilidad del spot, el valor j
 
 ```
 src/polym4v/env/
-├── market_env.py   # PolymarketEnv: reset/step/render
-├── portfolio.py    # Portfolio: cash, posición, ejecución de órdenes, mark-to-market
-├── execution.py    # Modelo de costos: spread, slippage, comisión
-├── reward.py       # Funciones de recompensa intercambiables (registry)
-└── wrappers.py     # Normalización de observaciones, frame-stacking si se usa
+├── market_env.py   # PolymarketEnv: reset/step, ejecución (S4), acciones inválidas (S6) y fin (S10)
+├── market_data.py  # Episodios desde steps y prices_raw, con la normalización de train
+├── portfolio.py    # Portfolio: caja, posición, valor de liquidación (S9) y liquidación 0/1
+├── execution.py    # Modelo de costos: medio spread y comisión taker (S5)
+├── reward.py       # Recompensas pnl, pnl_risk y terminal, elegibles por config
+└── synthetic.py    # Mercados sintéticos: mercado nulo (ENV-10) y control positivo (AGT-06)
 ```
 
-**Espacio de observación** — `Box(shape=(n_features + 4,))`:
+La especificación del MDP, con el origen de cada regla, está en [mdp.md](notas/mdp.md). La config
+es `configs/env.yaml` (`SimulatorConfig`).
 
-- Las features de mercado del paso `t` (sección 2.2).
-- El estado del agente: `position_side ∈ {-1: NO, 0: nada, 1: YES}`, `position_size` normalizado,
-  `unrealized_pnl` normalizado y `cash / initial_cash`.
+**Espacio de observación** — `Box(shape=(16,))`:
+
+- Las 13 features de mercado del paso `t`, de `steps.parquet` (sección 4.1 de
+  [08_datos_y_entrada_modelo.md](08_datos_y_entrada_modelo.md)), con el z-score de train.
+- El estado del agente: `pos_side ∈ {-1: NO, 0: nada, 1: YES}`, `entry_price` (0 sin posición) y
+  `upnl`, el PnL no realizado sobre el monto apostado con la posición valorada a liquidación (S9).
 
 **Espacio de acción** — `Discrete(4)`: `0 = WAIT`, `1 = BUY_YES`, `2 = BUY_NO`, `3 = SELL`.
 
@@ -161,7 +166,7 @@ src/polym4v/env/
 | Una posición a la vez | `BUY_*` con una posición ya abierta es una **acción inválida**: se ejecuta como `WAIT`, sin penalización. Se guardan la acción pedida y la ejecutada (S6). |
 | Tamaño fijo | Cada compra usa `stake_fraction` del saldo inicial: 2 %, es decir 20 USDC con un saldo de 1 000 (S4b). |
 | `SELL` sin posición | Acción inválida, se ejecuta como `WAIT`, sin penalización (S6). |
-| Costos | `buy_price = p + half_spread`, `sell_price = p - half_spread`, dentro de `[tick, 1 - tick]`, más la comisión taker `acciones × fee_rate × (precio × (1 - precio))^fee_exponent` redondeada, pagada en USDC (S5, ADR-009 y `src/polym4v/env/execution.py`). El slippage queda dentro de `half_spread`. Valores en `configs/costs.yaml`. |
+| Costos | `buy_price = p + half_spread`, `sell_price = p - half_spread`, dentro de `[tick, 1 - tick]`, más la comisión taker `acciones × fee_rate × (precio × (1 - precio))^fee_exponent` redondeada, pagada en USDC (S5, ADR-009 y `src/polym4v/env/execution.py`). El slippage queda dentro de `half_spread`. Valores en `env.costs` de `configs/env.yaml`. |
 | Fin del episodio | No se abren posiciones en los últimos 2 minutos (S10). Al llegar a `w1`, la posición abierta **se liquida** a `1` o `0` según `outcome`, sin comisión; un `SELL` que no se ejecutó antes la deja hasta la liquidación. |
 | Precio de NO | `p_no = 1 - p_yes` (aproximación documentada en el ADR-003). |
 
@@ -171,8 +176,20 @@ src/polym4v/env/
 - `cash ≥ 0` siempre. No hay apalancamiento.
 - La observación en `t` no depende de ningún dato con `ts > t`.
 
-**`info` de cada paso** (lo usan el backtest y la demo): `ts`, `p_yes`, `action`, `action_valid`,
-`position_side`, `position_size`, `cash`, `portfolio_value`, `fees_paid` y `reward_components`.
+**`info` de cada paso** (INF-06; lo usan el backtest, la validación de ejecuciones y la demo).
+Describe la decisión tomada en `ts` y el estado de la cartera en el instante siguiente. Las claves
+están en `INFO_KEYS` de `market_env.py`:
+
+| Clave | Contenido |
+| --- | --- |
+| `market_id`, `k`, `ts`, `p_yes` | Mercado, paso, instante de la decisión y último precio YES visto |
+| `action`, `action_executed`, `action_valid` | Acción pedida, ejecutada y si era válida (S6). En `reset` valen `None` |
+| `order_status` | `ejecutada`, `sin_precio` (no hubo precio en la ventana de S4), `invalida` o `ninguna` |
+| `exec_ts`, `exec_p` | Fecha y precio YES del punto con que se ejecutó la orden. Con ellos, EVA-11 busca el trade que la respalda |
+| `fill_price`, `fill_shares`, `fee` | Precio pagado o recibido por el lado operado, acciones y comisión de la operación |
+| `position_side`, `position_size`, `cash` | Cartera después de la operación |
+| `portfolio_value`, `fees_paid` | Valor de la cartera (S9) en el instante siguiente y comisiones acumuladas del episodio |
+| `reward_components` | `pnl`, `drawdown`, `invalid` y `terminal` del paso |
 
 ### 2.4 Función de recompensa (Rol 3, en colaboración con Rol 4)
 
@@ -190,14 +207,22 @@ donde `V_t = cash_t + valor_mark_to_market_t` y `DD_t = max_{τ≤t} V_τ - V_t`
 
 | Variante (`reward.name`) | Descripción | Uso |
 | -------------------------- | ------------- | ----- |
-| `pnl` | Solo `ΔV_t / V_0` | Línea base de la recompensa |
-| `pnl_risk` | `pnl` más la penalización de drawdown | **Recompensa principal** |
+| `pnl` | Solo `ΔV_t / V_0` | Línea base de la recompensa; la de `configs/env.yaml` hasta decidir R1 (ver la nota) |
+| `pnl_risk` | `pnl` más la penalización de drawdown | Propuesta como principal; ver la nota |
 | `terminal` | Solo el PnL final del episodio (recompensa escasa) | Ablación |
 | `sharpe_like` | `ΔV_t` dividido por una volatilidad móvil | Ablación opcional |
 
 Con mark-to-market, la suma de las recompensas `pnl` del episodio es igual al PnL total, así que la
 recompensa densa no cambia el objetivo final: solo da más señal en cada paso. Esto se verifica con
 un test.
+
+`V_t` valora la posición a liquidación (S9, ADR-016). Están implementados `pnl`, `pnl_risk`,
+`terminal` y `λ_inv`; `λ_cost`, `λ_hold` y `sharpe_like` no, porque ninguna config los usa.
+
+**Nota (pendiente de R1):** con la valoración a liquidación, al comprar `V` cae lo que costaría
+salir (spread y comisiones), y esa caída también cuenta como drawdown. Con `pnl_risk`, la entrada se
+paga `1 + λ_dd` veces, que es justo lo que S9 quería evitar. Hasta que R1 decida si `pnl_risk` sigue
+como principal, `configs/env.yaml` usa `pnl`.
 
 ### 2.5 `agents/` — Agentes y baselines (Rol 4)
 

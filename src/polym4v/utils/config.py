@@ -7,7 +7,7 @@ un experimento, para que el mismo YAML produzca siempre la misma corrida.
 
 from datetime import date
 from pathlib import Path
-from typing import Self, TypeVar
+from typing import Literal, Self, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -75,8 +75,46 @@ class CostConfig(StrictModel):
     tick: float = Field(gt=0, lt=0.5)
 
 
+class EnvConfig(StrictModel):
+    """Reglas del simulador (docs/09: S4 y S10 en ADR-017, S5 y S6 en ADR-013)."""
+
+    initial_cash: float = Field(gt=0)
+    stake_fraction: float = Field(gt=0, le=1)
+    latency_s: int = Field(ge=0)
+    tolerance_s: int = Field(gt=0)
+    no_open_last_minutes: int = Field(ge=0)
+    normalize: bool = True
+    costs: CostConfig
+
+    @model_validator(mode="after")
+    def _execution_window(self) -> Self:
+        if self.latency_s >= self.tolerance_s:
+            raise ValueError("latency_s debe ser menor que tolerance_s")
+        return self
+
+
+class RewardConfig(StrictModel):
+    """Recompensa del entorno (docs/02, sección 2.4, y S9 en ADR-016)."""
+
+    name: Literal["pnl", "pnl_risk", "terminal"]
+    lambda_dd: float = Field(default=0.0, ge=0)
+    lambda_invalid: float = Field(default=0.0, ge=0)
+
+
+class SimulatorConfig(StrictModel):
+    """`configs/env.yaml`: el dataset, las reglas del entorno y la recompensa."""
+
+    dataset_id: str
+    env: EnvConfig
+    reward: RewardConfig
+
+
 # Cada archivo configs/<nombre>.yaml se valida con el modelo de su nombre.
-CONFIG_MODELS: dict[str, type[BaseModel]] = {"data": DataConfig, "costs": CostConfig}
+CONFIG_MODELS: dict[str, type[BaseModel]] = {
+    "data": DataConfig,
+    "costs": CostConfig,
+    "env": SimulatorConfig,
+}
 
 
 def load_config(path: str | Path, model: type[M]) -> M:
