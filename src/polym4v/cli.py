@@ -137,6 +137,9 @@ def _parser() -> argparse.ArgumentParser:
     backtest.add_argument("--out", help="Parquet de trayectorias (por defecto, en reports/)")
     backtest.add_argument("--seed", type=int, default=0, help="Semilla de random")
     backtest.add_argument(
+        "--params", help="baselines_params.json con los umbrales ajustados en val (tune-baselines)"
+    )
+    backtest.add_argument(
         "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
     )
     backtest.add_argument(
@@ -162,6 +165,13 @@ def _parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--verify", action="store_true", help="Marca cada ejecución (EVA-11)")
     evaluate.add_argument("--strict", action="store_true", help="Modo estricto (EVA-11)")
     evaluate.add_argument("--raw", help="Carpeta del crudo con los trades")
+
+    tune = commands.add_parser(
+        "tune-baselines", help="Ajusta en val los umbrales de los baselines (protocolo, sección 4)"
+    )
+    tune.add_argument("--config", default="configs/env.yaml", help="Config del simulador")
+    tune.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    tune.add_argument("--out", help="Carpeta del reporte (por defecto, reports/val)")
 
     report = commands.add_parser(
         "report", help="Tabla y figuras de un split con las trayectorias ya calculadas"
@@ -306,7 +316,8 @@ def _run_policy(policy: Any, label: str, config: Any, args: argparse.Namespace) 
 
 def _backtest(args: argparse.Namespace) -> Any:
     config = load_config(args.config, SimulatorConfig)
-    makers = baselines(config.env.costs, seed=args.seed)
+    params = json.loads(Path(args.params).read_text(encoding="utf-8")) if args.params else None
+    makers = baselines(config.env.costs, seed=args.seed, params=params)
     if args.policy not in makers:
         raise ConfigurationError(f"Baseline desconocido. Disponibles: {', '.join(makers)}.")
     return _run_policy(makers[args.policy](), args.policy, config, args)
@@ -450,6 +461,16 @@ def _run(args: argparse.Namespace) -> Any:
         return _evaluate(args)
     if args.command == "report":
         return _report(args)
+    if args.command == "tune-baselines":
+        from .evaluation.tuning import tune, write_tuning
+
+        config = load_config(args.config, SimulatorConfig)
+        paths = get_paths()
+        dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
+        data = MarketData.load(dataset, split="val", normalize=config.env.normalize)
+        table, chosen = tune(PolymarketEnv(data, config.env, config.reward))
+        out = Path(args.out) if args.out else paths.reports / "val"
+        return {"chosen": chosen, "files": write_tuning(table, chosen, out)}
     if args.command == "ablation":
         from .evaluation.ablation import build_ablation
 

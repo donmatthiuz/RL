@@ -148,13 +148,32 @@ class FairValuePolicy:
         pass
 
 
-def baselines(costs: CostConfig, seed: int = 0) -> dict[str, Callable[[], Policy]]:
-    """Constructores de cada baseline por nombre, para el backtest y la config."""
+# Búsqueda pequeña y fija de umbrales, en val (sección 4 del protocolo de EVA-01). Random y
+# NoTrade no tienen parámetros.
+SEARCH: dict[str, dict[str, list[Any]]] = {
+    "favorite": {"entry_k": [10, 20, 30, 40, 50]},
+    "momentum": {"threshold": [0.5, 1.0, 2.0], "take_profit": [0.1, 0.2]},
+    "mean_reversion": {"threshold": [0.5, 1.0, 2.0], "take_profit": [0.1, 0.2]},
+    "fair_value": {"margin": [0.0, 0.02, 0.05, 0.1]},
+}
+# En la búsqueda, el stop loss acompaña al take profit (salida simétrica).
+TIED = {"take_profit": "stop_loss"}
+
+
+def baselines(
+    costs: CostConfig, seed: int = 0, params: Mapping[str, Mapping[str, Any]] | None = None
+) -> dict[str, Callable[[], Policy]]:
+    """Constructores de cada baseline por nombre; `params` trae los umbrales ajustados en val."""
+    chosen = params or {}
+
+    def kw(name: str) -> dict[str, Any]:
+        return dict(chosen.get(name, {}))
+
     return {
         "no_trade": NoTradePolicy,
         "random": lambda: RandomPolicy(seed),
-        "favorite": FavoritePolicy,
-        "momentum": MomentumPolicy,
-        "mean_reversion": MeanReversionPolicy,
-        "fair_value": lambda: FairValuePolicy(costs),
+        "favorite": lambda: FavoritePolicy(**kw("favorite")),
+        "momentum": lambda: MomentumPolicy(**kw("momentum")),
+        "mean_reversion": lambda: MeanReversionPolicy(**kw("mean_reversion")),
+        "fair_value": lambda: FairValuePolicy(costs, **kw("fair_value")),
     }

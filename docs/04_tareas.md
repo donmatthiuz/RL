@@ -28,15 +28,15 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 02/11/2026, de 66 tareas: 37 hechas, 6 en curso, 1 omitida y 22 sin empezar, casi todas del
-documento y de la fase final. Todos los PR (#1 a #29) están mezclados en `proyecto`.
+Al 02/11/2026, de 66 tareas: 38 hechas, 6 en curso, 1 omitida y 21 sin empezar, casi todas del
+documento y de la fase final. Todos los PR (#1 a #31) están mezclados en `proyecto`.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
 | R1 Josué | INF-01 a INF-08 y DOC-01 | — | INF-09 e INF-10 |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
-| R3 Gustavo | ENV-01 a ENV-07 y ENV-10 | ENV-08 (etapa A entrenando) | ENV-09 (P2) |
-| R4 (lo asume R1) | AGT-02, AGT-03, AGT-06 y AGT-07 | AGT-04, AGT-05 y AGT-08 | AGT-09 y AGT-10 |
+| R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
+| R4 (lo asume R1) | AGT-02, AGT-03, AGT-06 y AGT-07 | AGT-04, AGT-05, AGT-08 y AGT-09 (búsqueda entrenando) | AGT-10 |
 | R5 Carlos | EVA-01 a EVA-05 y EVA-07 | EVA-08 y EVA-11 | EVA-06, EVA-09 (P2) y EVA-10 |
 | Todos (documento) | DOC-01 | DOC-12, durante todo el proyecto | DOC-02 a DOC-11, DOC-13 y DOC-14 |
 
@@ -56,14 +56,14 @@ flowchart LR
     T --> D["EVA-08 demo, DOC-07 y DOC-08,<br/>slides, video, INF-09 e INF-10"]
 ```
 
-1. **ENV-08, etapa A (en curso):** PPO con `pnl`, `pnl_mid` y `terminal`, 5 semillas cada una
-   (`configs/ablation/`). La tabla sale con `polym4v ablation --models models/ablacion`.
-2. **ENV-08, etapa B:** `pnl_risk` con 2 valores de `λ_dd`, `pnl_hold` y `utility` sobre la
-   ganadora de A. Los valores se fijan al ver A.
-3. **Baselines en val:** los seis, en modo normal y estricto, con la búsqueda pequeña de umbrales
-   del protocolo (sección 4).
-4. **AGT-09 y AGT-10:** como mucho 20 configs por algoritmo en val y, con la mejor, 5 semillas por
-   algoritmo en `models/final/`.
+1. **ENV-08 (hecha, #30):** gana `pnl_risk` con base `pnl_mid` y `λ_dd = 1`, que pasa a todas las
+   configs ([ablación](../reports/val/ablation.md) y `docs/02`, sección 2.4).
+2. **Baselines en val (hecho, #31):** umbrales ajustados con `polym4v tune-baselines`
+   ([búsqueda](../reports/val/baselines_search.md)). Ninguna heurística se acerca a cero; el
+   baseline de referencia sigue siendo `NoTrade`.
+3. **AGT-09 (en curso):** 25 configs × 2 semillas en val (`configs/hparams/`, rama
+   `feat/agt-09-hparams`). La tabla sale con `polym4v hparams --models models/hparams`.
+4. **AGT-10:** con la mejor config de cada algoritmo, 5 semillas en `models/final/`.
 5. **Reporte de val (EVA-05 y EVA-04):** fija el baseline de referencia, el largo de bloque y la
    MDE antes de abrir test.
 6. **EVA-06:** test una sola vez, en modo normal y estricto.
@@ -92,6 +92,12 @@ flowchart LR
   | DQN, entrenar (pasos/s) | 2 585 | 680 |
   | CQL, pasos de gradiente/s (batch 256) | 337 | 110 |
 
+- **Etapa B de la ablación:** `λ_dd` en 0,5 y 1, `λ_hold` = 2,5e-5 por paso (30 minutos con
+  posición cuestan lo mismo que entrar) y `a` = 1. `λ_dd = 1` ganó en el borde de lo probado, y no
+  se prueba más: subirlo empuja a no operar nunca, y probar más en val infla lo elegido.
+- **AGT-09:** PPO lr {1e-4, 3e-4} × `ent_coef` {0; 0,01} × red {64×64, 128×128}; DQN lr × exploración
+  {0,1; 0,3} × `target_update_interval` {2000, 10000}; CQL `alpha` {0,5; 1; 4} × lr {3e-5, 1e-4};
+  BC lr {3e-4, 1e-3, 3e-3}. Dos semillas por punto; se elige en val.
 - **Demo:** `streamlit` queda en el grupo `demo` instalado por defecto, así sus tests corren en la
   CI (#24).
 
@@ -172,7 +178,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | ENV-05 | **Hecha el 02/11/2026 (#11 y #23)**, con las seis variantes de la [investigación](ia/investigaciones/recompensas_rl_trading.md) aprobadas el 01/11/2026. `reward.py`: variantes `pnl`, `pnl_risk` y `terminal`, elegibles por config. `reward_components` en `info`. | F1 | P0 | ENV-04 | Test: con `pnl`, la suma de recompensas del episodio = PnL final / V_0 |
 | ENV-06 | **Hecha el 02/11/2026 (#15 y #23).** Suite de invariantes con `hypothesis`: conservación del dinero, `cash ≥ 0` y política aleatoria durante N episodios sin errores | F1 | P0 | ENV-05 | Pasa con ≥ 200 ejemplos generados |
 | ENV-07 | **Hecha el 02/11/2026 (#10, #11 y #17).** Integrar las features de R2 en la observación, wrapper de normalización y `render()` en modo texto | F2 | P0 | DAT-07 | El entorno con features reales pasa `check_env` y el test de no-*lookahead* |
-| ENV-08 | **En curso desde el 02/11/2026:** la etapa A entrena con 5 semillas (rama `feat/env-08-ablacion`). **Ablación de la recompensa** (con R4): PPO con la lista aprobada el 01/11/2026, en dos etapas: `pnl`, `pnl_mid` y `terminal`; después `pnl_risk` (2 valores de `λ_dd`), `pnl_hold` y `utility` sobre la ganadora | F3 | P1 | AGT-04, ENV-05 | Tabla de ablación en `reports/` con 5 semillas por variante (3 si el tiempo no alcanza, y se dice en el reporte) |
+| ENV-08 | **Hecha el 02/11/2026 (#30):** gana `pnl_risk` con base `pnl_mid` y `λ_dd = 1` ([tabla](../reports/val/ablation.md)). **Ablación de la recompensa** (con R4): PPO con la lista aprobada el 01/11/2026, en dos etapas: `pnl`, `pnl_mid` y `terminal`; después `pnl_risk` (2 valores de `λ_dd`), `pnl_hold` y `utility` sobre la ganadora | F3 | P1 | AGT-04, ENV-05 | Tabla de ablación en `reports/` con 5 semillas por variante (3 si el tiempo no alcanza, y se dice en el reporte) |
 | ENV-09 | Variante `execute_at: next` y análisis de sensibilidad a los costos (spread × 0, ×1, ×2) | F3 | P2 | ENV-07 | Gráfico de retorno frente al costo para el mejor agente |
 | ENV-10 | **Hecha el 02/11/2026 (#11).** **Tests de no-fuga (ADR-013):** mercado nulo donde el precio es el valor justo, y alteración de datos con `ts > t` | F1 | P0 | ENV-04 | En el mercado nulo ninguna política gana de forma significativa, y alterar el futuro no cambia la observación |
 
@@ -188,7 +194,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | AGT-06 | **Hecha el 02/11/2026 (#19).** Test de cordura: entorno sintético donde existe una estrategia óptima conocida (por ejemplo, el precio siempre converge al resultado). PPO y DQN deben aprenderla. | F2 | P0 | AGT-04 | Ambos alcanzan ≥ 90 % del retorno óptimo en el entorno sintético |
 | AGT-07 | **Hecha el 02/11/2026 (#20).** `collect-offline`: generar el dataset de transiciones con baselines ε-greedy sobre train | F3 | P0 | AGT-03 | Archivo `data/offline/*.h5` con ≥ 100k transiciones y su manifest |
 | AGT-08 | **Código mezclado el 02/11/2026 (#20); falta evaluarlos en val.** Entrenar **Discrete CQL** y **Discrete BC** con d3rlpy y su adaptador `Policy` | F3 | P0 | AGT-07 | Ambos evaluados en val con `run_backtest` |
-| AGT-09 | Ajuste de hiperparámetros acotado (≤ 20 configs por algoritmo, selección por val) | F3 | P1 | AGT-05, AGT-08 | Tabla de búsqueda en `reports/hparams.md` |
+| AGT-09 | **En curso desde el 02/11/2026:** 25 configs × 2 semillas (rama `feat/agt-09-hparams`). Ajuste de hiperparámetros acotado (≤ 20 configs por algoritmo, selección por val) | F3 | P1 | AGT-05, AGT-08 | Tabla de búsqueda en `reports/hparams.md` |
 | AGT-10 | Entrenamiento final: 5 semillas por algoritmo con la mejor config, y modelos congelados | F3 | P0 | AGT-09 | `models/final/` completo, con config, semilla y commit en cada run |
 
 ### R5 — Evaluación, backtesting y demo
@@ -278,7 +284,7 @@ flowchart LR
 **H3 (cierre de F3)**
 
 - [ ] CQL y BC entrenados
-- [ ] Ablación de la recompensa terminada
+- [x] Ablación de la recompensa terminada
 - [ ] Modelos finales congelados con 5 semillas (`models/final/`)
 - [x] Demo v1 funcionando
 
