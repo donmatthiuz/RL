@@ -236,3 +236,6 @@ keys/*
 # Logs de TensorBoard y datasets offline (docs/06_flujo_trabajo.md)
 /runs/
 *.h5
+
+# Trayectorias del backtest: se regeneran con make backtest
+/reports/trajectories/

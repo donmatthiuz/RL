@@ -8,6 +8,10 @@ UV ?= uv
 # Configuración a validar: make config CONFIG=configs/data.yaml
 CONFIG ?= configs/data.yaml
 
+# Backtest de un baseline: make backtest POLICY=fair_value SPLIT=train
+POLICY ?= no_trade
+SPLIT ?= train
+
 # Captura del crudo: make capture SERIES=10114 (BTC horario) o SERIES=10117 (ETH horario)
 SERIES ?= 10114
 RAW_DIR ?= data/raw
@@ -27,7 +31,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset eda manifest entregable
+	pre-commit config capture capture-spot capture-trades dataset backtest eda manifest entregable
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -94,6 +98,9 @@ capture-trades: ## Archiva los trades taker de val y test del dataset (CONFIG, R
 
 dataset: ## Construye markets, prices_raw y spot_1m desde el crudo (CONFIG, RAW_DIR)
 	$(UV) run polym4v build-dataset --config $(CONFIG) --raw $(RAW_DIR)
+
+backtest: ## Corre un baseline sobre un split y guarda sus trayectorias (POLICY, SPLIT)
+	$(UV) run polym4v backtest --policy $(POLICY) --split $(SPLIT)
 
 eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make dataset)
 	$(UV) run --group notebooks jupyter execute --inplace notebooks/eda/01_eda_btc_horario.ipynb

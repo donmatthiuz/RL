@@ -20,6 +20,7 @@ from polymarket import (
 )
 from pydantic import BaseModel, ValidationError
 
+from .agents.baselines import baselines
 from .client import PolymarketClient
 from .config import ConfigurationError, PolymarketSettings
 from .data.binance import capture_klines, spot_range
@@ -27,7 +28,10 @@ from .data.build_dataset import build_dataset
 from .data.capture import RawStore, capture_series, write_manifest
 from .data.splits import load_exclusions
 from .data.trades import capture_trades
-from .utils.config import DataConfig, load_config, load_named
+from .env.market_data import MarketData
+from .env.market_env import PolymarketEnv
+from .evaluation.backtest import episode_results, run_backtest
+from .utils.config import DataConfig, SimulatorConfig, load_config, load_named
 from .utils.paths import get_paths
 
 
@@ -114,6 +118,19 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--raw", help="Carpeta del crudo (por defecto, la de .env)")
     build.add_argument("--out", help="Carpeta de salida (por defecto, processed/<dataset_id>)")
 
+    backtest = commands.add_parser(
+        "backtest", help="Corre un baseline sobre un split y guarda sus trayectorias"
+    )
+    backtest.add_argument("--policy", required=True, help="Nombre del baseline (AGT-03)")
+    backtest.add_argument("--split", choices=("train", "val", "test"), default="train")
+    backtest.add_argument("--config", default="configs/env.yaml", help="Config del simulador")
+    backtest.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    backtest.add_argument("--out", help="Parquet de trayectorias (por defecto, en reports/)")
+    backtest.add_argument("--seed", type=int, default=0, help="Semilla de random")
+    backtest.add_argument(
+        "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
+    )
+
     config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
     config.add_argument("path", help="Por ejemplo configs/data.yaml")
 
@@ -161,6 +178,39 @@ def _capture_spot(args: argparse.Namespace) -> Any:
     return {"klines": summaries, "files": manifest["n_files"]}
 
 
+def _backtest(args: argparse.Namespace) -> Any:
+    if args.split == "test" and not args.allow_test:
+        raise ConfigurationError(
+            "test se evalúa una sola vez, con todo congelado (EVA-01); usa --allow-test"
+        )
+    config = load_config(args.config, SimulatorConfig)
+    makers = baselines(config.env.costs, seed=args.seed)
+    if args.policy not in makers:
+        raise ConfigurationError(f"Baseline desconocido. Disponibles: {', '.join(makers)}.")
+    paths = get_paths()
+    dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
+    data = MarketData.load(dataset, split=args.split, normalize=config.env.normalize)
+    env = PolymarketEnv(data, config.env, config.reward)
+    trajectories = run_backtest(makers[args.policy](), env)
+    out = Path(args.out or paths.reports / "trajectories" / f"{args.policy}_{args.split}.parquet")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    trajectories.to_parquet(out, index=False)
+    stake = config.env.initial_cash * config.env.stake_fraction
+    results = episode_results(trajectories, config.env.initial_cash, stake)
+    ret = results["return_on_stake"]
+    return {
+        "policy": args.policy,
+        "split": args.split,
+        "markets": len(results),
+        "return_on_stake_mean": float(ret.mean()),
+        "return_on_stake_ci95": float(1.96 * ret.std(ddof=1) / len(ret) ** 0.5),
+        "executed_per_market": float(results["executed"].mean()),
+        "no_price_per_market": float(results["no_price"].mean()),
+        "invalid_per_market": float(results["invalid"].mean()),
+        "trajectories": str(out),
+    }
+
+
 def _capture_trades(args: argparse.Namespace) -> Any:
     config = load_config(args.config, DataConfig)
     dataset = Path(args.dataset) if args.dataset else get_paths().processed / config.dataset_id
@@ -206,6 +256,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _capture_trades(args)
     if args.command == "build-dataset":
         return _build_dataset(args)
+    if args.command == "backtest":
+        return _backtest(args)
     if args.command == "config":
         return load_named(args.path).model_dump(mode="json")
     if args.command == "manifest":
