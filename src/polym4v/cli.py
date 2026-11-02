@@ -177,6 +177,13 @@ def _parser() -> argparse.ArgumentParser:
         "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
     )
 
+    ablation = commands.add_parser(
+        "ablation", help="Tabla de la ablación de la recompensa con las corridas entrenadas"
+    )
+    ablation.add_argument("--models", required=True, help="Carpeta con las corridas de la ablación")
+    ablation.add_argument("--split", choices=("train", "val"), default="val")
+    ablation.add_argument("--out", help="Carpeta del reporte (por defecto, reports/<split>)")
+
     train = commands.add_parser("train", help="Entrena PPO o DQN y elige el mejor checkpoint")
     train.add_argument("--config", default="configs/ppo.yaml", help="Config del experimento")
     train.add_argument(
@@ -430,6 +437,11 @@ def _run(args: argparse.Namespace) -> Any:
         return _evaluate(args)
     if args.command == "report":
         return _report(args)
+    if args.command == "ablation":
+        from .evaluation.ablation import build_ablation
+
+        out = Path(args.out) if args.out else get_paths().reports / args.split
+        return build_ablation(Path(args.models), args.split, out)
     if args.command == "collect-offline":
         return _collect_offline(args)
     if args.command == "config":
