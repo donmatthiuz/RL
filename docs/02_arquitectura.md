@@ -325,14 +325,23 @@ EVA-04 (`stats.py`).
 
 ### 2.7 `app/` — Demo (Rol 5)
 
-Streamlit (`app/demo.py`):
+Streamlit (`app/demo.py`, `make demo`). Lee trayectorias ya calculadas en
+`reports/trajectories/*.parquet`, así que no necesita GPU ni red. Streamlit está en el grupo de
+dependencias `demo`, que `uv sync` instala por defecto pero no es una dependencia del paquete.
 
-- Se elige un mercado de test y un agente (o varios para compararlos).
-- Un reproductor paso a paso (*play/pause* y *slider* de tiempo).
-- Gráfico de `p_yes` con marcas de compra y venta, curva de capital del agente frente a los
-  baselines, y un panel con la acción, la posición, el saldo y la recompensa del paso actual.
-- Lee trayectorias ya calculadas en `reports/trajectories/*.parquet`, así que no necesita GPU ni
-  red.
+**v1 (EVA-07), funcional y sin diseño visual:**
+
+- Se elige un archivo de trayectorias (baseline o corrida, split y modo) y un mercado.
+- Un reproductor paso a paso: *slider* de tiempo, botones de paso anterior y siguiente, y
+  *Reproducir*, que avanza un paso cada 0,4 s.
+- Gráfico de `p_yes` con las compras YES y NO, las ventas y las órdenes que no se ejecutaron,
+  más el valor de la cartera, con el paso actual marcado.
+- Un panel con la caja, la posición, el valor y la recompensa del paso, la acción pedida y la
+  ejecutada, el estado de la orden (con el precio, las acciones y la comisión si se ejecutó) y los
+  componentes de la recompensa.
+
+**v2 (EVA-08):** varios agentes en el mismo mercado de test y la curva de capital del agente frente
+a los baselines.
 
 ### 2.8 `utils/` y CLI (Rol 1)
 

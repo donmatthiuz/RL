@@ -1,13 +1,16 @@
 """Pipeline completo por la CLI sobre un mini-dataset (INF-07).
 
 Del crudo al dataset, el backtest de un baseline, el entrenamiento de PPO y CQL, la evaluación de
-sus mejores checkpoints y el reporte, con los mismos comandos que se usan con los datos reales.
+sus mejores checkpoints, el reporte y la demo, con los mismos comandos que se usan con los datos
+reales.
 """
 
 import json
+from pathlib import Path
 
 import pytest
 import yaml
+from streamlit.testing.v1 import AppTest
 from test_build_dataset import CONFIG, write_raw
 
 from polym4v import cli
@@ -79,4 +82,11 @@ def test_pipeline_from_raw_data_to_evaluated_agents(tmp_path, capsys, monkeypatc
     report = run(capsys, "report", "--split", "train", "--config", str(sim_path))
     assert len(report["policies"]) == 3 and len(report["runs"]) == 2
     assert "learning.png" in report["files"]
+
+    # 6. La demo abre las trayectorias del mini-dataset (criterio de EVA-07).
+    demo = AppTest.from_file(str(Path(__file__).parents[1] / "app" / "demo.py"), default_timeout=30)
+    demo.run()
+    assert not demo.exception
+    assert len(demo.sidebar.selectbox[0].options) == 3
+    assert len(demo.sidebar.selectbox[1].options) == 7
     assert dataset.exists()
