@@ -60,6 +60,7 @@ ignore_missing_imports = true
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6",
     "mypy>=2.4.1",
     "pre-commit>=4.7.0",
     "pytest>=8,<10",
