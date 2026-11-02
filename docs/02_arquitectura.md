@@ -321,7 +321,7 @@ src/polym4v/utils/
 ├── seeding.py      # set_global_seed(seed): random, numpy, torch, gym
 ├── logging.py      # logging estándar + TensorBoard
 └── paths.py        # Rutas centralizadas (data/, models/, reports/)
-src/polym4v/cli.py   # Typer: polym4v data build | train | evaluate | collect-offline | report
+src/polym4v/cli.py   # argparse: build-dataset | backtest | collect-offline | train | evaluate (y las capturas)
 ```
 
 ---

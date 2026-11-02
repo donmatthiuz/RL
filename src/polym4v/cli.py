@@ -149,6 +149,20 @@ def _parser() -> argparse.ArgumentParser:
         "--raw", help="Carpeta del crudo con los trades (por defecto, la de .env)"
     )
 
+    evaluate = commands.add_parser(
+        "evaluate", help="Evalúa el mejor checkpoint de una corrida en un split"
+    )
+    evaluate.add_argument("--run", required=True, help="Carpeta de la corrida, en models/<algo>/")
+    evaluate.add_argument("--split", choices=("train", "val", "test"), default="val")
+    evaluate.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    evaluate.add_argument("--out", help="Parquet de trayectorias (por defecto, en reports/)")
+    evaluate.add_argument(
+        "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
+    )
+    evaluate.add_argument("--verify", action="store_true", help="Marca cada ejecución (EVA-11)")
+    evaluate.add_argument("--strict", action="store_true", help="Modo estricto (EVA-11)")
+    evaluate.add_argument("--raw", help="Carpeta del crudo con los trades")
+
     train = commands.add_parser("train", help="Entrena PPO o DQN y elige el mejor checkpoint")
     train.add_argument("--config", default="configs/ppo.yaml", help="Config del experimento")
     train.add_argument(
@@ -215,15 +229,15 @@ def _capture_spot(args: argparse.Namespace) -> Any:
     return {"klines": summaries, "files": manifest["n_files"]}
 
 
-def _backtest(args: argparse.Namespace) -> Any:
+def _run_policy(policy: Any, label: str, config: Any, args: argparse.Namespace) -> Any:
+    """Corre una política en un split con las reglas de `config` y resume sus métricas.
+
+    Lo usan `backtest` (baselines) y `evaluate` (agentes entrenados): todos se evalúan igual.
+    """
     if args.split == "test" and not args.allow_test:
         raise ConfigurationError(
             "test se evalúa una sola vez, con todo congelado (EVA-01); usa --allow-test"
         )
-    config = load_config(args.config, SimulatorConfig)
-    makers = baselines(config.env.costs, seed=args.seed)
-    if args.policy not in makers:
-        raise ConfigurationError(f"Baseline desconocido. Disponibles: {', '.join(makers)}.")
     paths = get_paths()
     dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
     data = MarketData.load(dataset, split=args.split, normalize=config.env.normalize)
@@ -238,9 +252,9 @@ def _backtest(args: argparse.Namespace) -> Any:
             min_usdc=stake,
         )
     env = PolymarketEnv(data, config.env, config.reward, verifier=verifier, strict=args.strict)
-    trajectories = run_backtest(makers[args.policy](), env)
+    trajectories = run_backtest(policy, env)
     mode = "_estricto" if args.strict else ""
-    name = f"{args.policy}_{args.split}{mode}.parquet"
+    name = f"{label}_{args.split}{mode}.parquet"
     out = Path(args.out or paths.reports / "trajectories" / name)
     out.parent.mkdir(parents=True, exist_ok=True)
     trajectories.to_parquet(out, index=False)
@@ -254,6 +268,27 @@ def _backtest(args: argparse.Namespace) -> Any:
         **metrics,
         "trajectories": str(out),
     }
+
+
+def _backtest(args: argparse.Namespace) -> Any:
+    config = load_config(args.config, SimulatorConfig)
+    makers = baselines(config.env.costs, seed=args.seed)
+    if args.policy not in makers:
+        raise ConfigurationError(f"Baseline desconocido. Disponibles: {', '.join(makers)}.")
+    return _run_policy(makers[args.policy](), args.policy, config, args)
+
+
+def _evaluate(args: argparse.Namespace) -> Any:
+    from .agents.adapters import D3rlpyPolicy, SB3Policy
+
+    run = Path(args.run)
+    config = load_config(run / "config.yaml", ExperimentConfig)
+    algo = config.agent.algo
+    if algo in ("cql", "bc"):
+        policy: Any = D3rlpyPolicy.load(run / "best.d3", algo)
+    else:
+        policy = SB3Policy.load(run / "best.zip", algo)
+    return {"run": run.name, **_run_policy(policy, run.name, config, args)}
 
 
 def _train(args: argparse.Namespace) -> Any:
@@ -355,6 +390,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _backtest(args)
     if args.command == "train":
         return _train(args)
+    if args.command == "evaluate":
+        return _evaluate(args)
     if args.command == "collect-offline":
         return _collect_offline(args)
     if args.command == "config":
