@@ -147,6 +147,29 @@ def test_agente_que_no_estaba_en_val_es_un_error() -> None:
         comparison.compare_agents(frames, params, CASH, STAKE)
 
 
+def _params(mde: float) -> dict:
+    return {
+        "baseline": comparison.NO_TRADE,
+        "mean_block": {"ppo_pnl": 1.0},
+        "mde": {"ppo_pnl": mde},
+    }
+
+
+def test_avisa_si_la_mde_es_mayor_que_delta_min() -> None:
+    frames = {**agents(0.2), (comparison.NO_TRADE, False): frame(ZEROS)}
+    table = comparison.compare_agents(frames, _params(0.03), CASH, STAKE)
+    assert table["mde"].tolist() == [0.03]
+    text = comparison.comparison_markdown(table, "val")
+    assert text.count("no puede detectar") == 1
+    assert "ppo_pnl: la MDE (0.0300)" in text
+
+
+def test_no_avisa_si_la_mde_es_menor_que_delta_min() -> None:
+    frames = {**agents(0.2), (comparison.NO_TRADE, False): frame(ZEROS)}
+    table = comparison.compare_agents(frames, _params(0.005), CASH, STAKE)
+    assert "no puede detectar" not in comparison.comparison_markdown(table, "val")
+
+
 def _write(folder, split: str, frames: dict) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     for (label, strict), data in frames.items():

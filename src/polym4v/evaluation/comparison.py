@@ -39,6 +39,7 @@ COLUMNS = {
     "trade_share": "P(D ≠ 0)",
     "mean_when_trading": "E[D | D ≠ 0]",
     "reliable": "IC confiable",
+    "mde": "MDE",
     "depends_on_liquidity": "Depende de liquidez",
 }
 
@@ -180,6 +181,8 @@ def compare_agents(
     principal = table[table["role"] == "principal"]
     classes = principal.groupby("group")["classification"].nunique()
     table["depends_on_liquidity"] = table["group"].map(classes.gt(1)).fillna(False).astype(bool)
+    # Sección 7: la MDE se fija en val, antes de abrir test, y se reporta con cada comparación.
+    table["mde"] = table["group"].map(params["mde"])
     return table
 
 
@@ -201,6 +204,15 @@ def comparison_markdown(table: pd.DataFrame, split: str) -> str:
     ]
     for _, row in table.iterrows():
         lines.append("| " + " | ".join(_cell(row[c]) for c in COLUMNS) + " |")
+    undetectable = table[table["mde"] > stats.DELTA_MIN]
+    for group, mde in undetectable.drop_duplicates("group")[["group", "mde"]].itertuples(
+        index=False
+    ):
+        lines += [
+            "",
+            f"{group}: la MDE ({mde:.4f}) es mayor que Δ_min ({stats.DELTA_MIN:.4f}), así que test "
+            "no puede detectar diferencias de ese tamaño.",
+        ]
     if not table["reliable"].all():
         lines += [
             "",
