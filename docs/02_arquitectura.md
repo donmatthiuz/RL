@@ -265,7 +265,7 @@ src/polym4v/agents/
 ├── base.py         # Policy Protocol y Action
 ├── adapters.py     # SB3Policy (PPO, DQN) y D3rlpyPolicy (CQL, BC) → Policy
 ├── baselines.py    # Políticas heurísticas
-├── train_sb3.py    # Entrenamiento PPO/DQN (callbacks, checkpoints, early stopping por val)
+├── train_sb3.py    # Entrenamiento PPO/DQN: 10 checkpoints evaluados con la métrica de EVA-01
 ├── offline.py      # Recolección del dataset offline + entrenamiento CQL/BC
 └── registry.py     # nombre → constructor, para cargar desde config
 ```
@@ -399,38 +399,36 @@ hace falta más cómputo, se puede usar Google Colab.
   nunca cambia parámetros de un experimento. `make config CONFIG=configs/data.yaml` valida un
   archivo y lo muestra resuelto.
 - Cada run guarda en `models/<agente>/<run_id>/` el `config.yaml` **resuelto**, el `dataset_id`, el
-  `git commit`, la semilla, el checkpoint y `metrics.json`.
+  `git commit`, la semilla, los checkpoints, `best.zip`, `metrics.json` y los registros de
+  TensorBoard (`src/polym4v/agents/train_sb3.py`).
 - `run_id = <fecha>_<agente>_<reward>_s<seed>`.
 - `dataset_id` = los primeros 8 caracteres del hash del `manifest.json`.
-- Ejemplo de `configs/ppo.yaml`:
+- Las configs de los agentes son `configs/ppo.yaml` y `configs/dqn.yaml` (`ExperimentConfig`). Sus
+  bloques `env` y `reward` tienen que ser iguales a `configs/env.yaml`, con el que corren los
+  baselines; lo comprueba un test. Resumen de `configs/ppo.yaml`:
 
 ```yaml
 dataset_id: btc_updown_1h_v1
-env:
-  stake_fraction: 0.02    # 20 USDC por orden (S4b)
-  initial_cash: 1000.0
-  half_spread: 0.01       # S5; sensibilidad con 0.02
-  fee_rate: 0.07          # comisión taker vigente (ADR-009); 0.0 para la ablación
-  fee_exponent: 1
-  latency_s: 2            # S4a
-  tolerance_s: 60         # S4a
-  no_open_last_minutes: 2 # S10
-reward:
-  name: pnl_risk
-  lambda_dd: 0.5
-  lambda_invalid: 0.0     # S6
+env: ...                    # igual que configs/env.yaml
+reward: ...                 # igual que configs/env.yaml
 agent:
   algo: ppo
   policy: MlpPolicy
   net_arch: [64, 64]
   learning_rate: 3.0e-4
-  n_steps: 2048
-  batch_size: 64
-  gamma: 0.99
+  gamma: 0.999              # S9: cerca de 1
   total_timesteps: 500000
   n_envs: 4
+  checkpoints: 10           # protocolo de EVA-01, sección 5
+  params:                   # propios de PPO; SB3 los valida
+    n_steps: 512
+    batch_size: 256
+    ent_coef: 0.01
 seeds: [0, 1, 2, 3, 4]
+eval_split: val
 ```
+
+- `make train AGENT=ppo` entrena todas las semillas; `SEED=0` entrena una sola.
 
 ---
 

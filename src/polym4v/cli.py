@@ -34,7 +34,13 @@ from .env.market_env import PolymarketEnv
 from .evaluation.backtest import run_backtest
 from .evaluation.metrics import summarize
 from .evaluation.verification import TradeVerifier
-from .utils.config import DataConfig, SimulatorConfig, load_config, load_named
+from .utils.config import (
+    DataConfig,
+    ExperimentConfig,
+    SimulatorConfig,
+    load_config,
+    load_named,
+)
 from .utils.paths import get_paths
 
 
@@ -143,6 +149,18 @@ def _parser() -> argparse.ArgumentParser:
         "--raw", help="Carpeta del crudo con los trades (por defecto, la de .env)"
     )
 
+    train = commands.add_parser("train", help="Entrena PPO o DQN y elige el mejor checkpoint")
+    train.add_argument("--config", default="configs/ppo.yaml", help="Config del experimento")
+    train.add_argument(
+        "--seed", type=int, action="append", help="Semilla; por defecto, las de la config"
+    )
+    train.add_argument("--timesteps", type=int, help="Reemplaza total_timesteps (corridas cortas)")
+    train.add_argument(
+        "--eval-split", choices=("train", "val"), help="Reemplaza eval_split de la config"
+    )
+    train.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    train.add_argument("--out", help="Carpeta de modelos (por defecto, la de .env)")
+
     config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
     config.add_argument("path", help="Por ejemplo configs/data.yaml")
 
@@ -231,6 +249,29 @@ def _backtest(args: argparse.Namespace) -> Any:
     }
 
 
+def _train(args: argparse.Namespace) -> Any:
+    from .agents.train_sb3 import run_id, train
+
+    config = load_config(args.config, ExperimentConfig)
+    if args.timesteps:
+        agent = config.agent.model_copy(update={"total_timesteps": args.timesteps})
+        config = config.model_copy(update={"agent": agent})
+    if args.eval_split:
+        config = config.model_copy(update={"eval_split": args.eval_split})
+    paths = get_paths()
+    dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
+    normalize = config.env.normalize
+    train_data = MarketData.load(dataset, split="train", normalize=normalize)
+    eval_data = MarketData.load(dataset, split=config.eval_split, normalize=normalize)
+    folder = Path(args.out) if args.out else paths.models
+    runs = []
+    for seed in args.seed or config.seeds:
+        out = folder / config.agent.algo / run_id(config, seed)
+        metrics = train(config, seed, train_data, eval_data, out)
+        runs.append({"run": str(out), "seed": seed, "best": metrics["best"]})
+    return {"eval_split": config.eval_split, "runs": runs}
+
+
 def _capture_trades(args: argparse.Namespace) -> Any:
     config = load_config(args.config, DataConfig)
     dataset = Path(args.dataset) if args.dataset else get_paths().processed / config.dataset_id
@@ -278,6 +319,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _build_dataset(args)
     if args.command == "backtest":
         return _backtest(args)
+    if args.command == "train":
+        return _train(args)
     if args.command == "config":
         return load_named(args.path).model_dump(mode="json")
     if args.command == "manifest":

@@ -7,7 +7,7 @@ un experimento, para que el mismo YAML produzca siempre la misma corrida.
 
 from datetime import date
 from pathlib import Path
-from typing import Literal, Self, TypeVar
+from typing import Any, Literal, Self, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -109,11 +109,46 @@ class SimulatorConfig(StrictModel):
     reward: RewardConfig
 
 
+class AgentConfig(StrictModel):
+    """Algoritmo e hiperparámetros de un agente de stable-baselines3 (AGT-04 y AGT-05).
+
+    `params` pasa tal cual al constructor del algoritmo los hiperparámetros propios de cada uno
+    (por ejemplo `n_steps` en PPO o `buffer_size` en DQN); SB3 los valida.
+    """
+
+    algo: Literal["ppo", "dqn"]
+    policy: str = "MlpPolicy"
+    net_arch: list[int] = Field(default_factory=lambda: [64, 64])
+    learning_rate: float = Field(gt=0)
+    gamma: float = Field(gt=0, le=1)
+    total_timesteps: int = Field(gt=0)
+    n_envs: int = Field(default=1, gt=0)
+    checkpoints: int = Field(default=10, gt=0)
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
+class ExperimentConfig(StrictModel):
+    """`configs/ppo.yaml` y `configs/dqn.yaml`: dataset, simulador, agente y semillas (docs/02).
+
+    Los checkpoints se evalúan en `eval_split` con la métrica principal de EVA-01; según el
+    protocolo es val, que solo se abre después de aprobarlo.
+    """
+
+    dataset_id: str
+    env: EnvConfig
+    reward: RewardConfig
+    agent: AgentConfig
+    seeds: list[int] = Field(min_length=1)
+    eval_split: Literal["train", "val"] = "val"
+
+
 # Cada archivo configs/<nombre>.yaml se valida con el modelo de su nombre.
 CONFIG_MODELS: dict[str, type[BaseModel]] = {
     "data": DataConfig,
     "costs": CostConfig,
     "env": SimulatorConfig,
+    "ppo": ExperimentConfig,
+    "dqn": ExperimentConfig,
 }
 
 
