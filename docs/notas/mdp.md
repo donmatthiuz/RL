@@ -72,6 +72,9 @@ sequenceDiagram
 ```
 
 - El precio del lado NO es `1 - p_yes` (ADR-003).
+- **Modo estricto (EVA-11, ADR-017):** solo en la evaluación de val y test. Si ningún trade real
+  del mismo lado, a ese precio o mejor y por al menos el monto de la orden respalda la ejecución
+  dentro de la misma ventana, la orden no se ejecuta (`order_status = no_verificable`).
 - La ejecución termina antes del instante de decisión siguiente, así que la observación de `t_k+1`
   ya incluye ese precio y nunca uno posterior (ENV-10).
 - El mercado de cada `reset` se elige al azar del split con el generador del entorno; el backtest

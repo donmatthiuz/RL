@@ -31,7 +31,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset backtest eda manifest entregable
+	pre-commit config capture capture-spot capture-trades dataset backtest manifest entregable eda
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'

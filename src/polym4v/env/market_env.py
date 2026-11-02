@@ -7,8 +7,11 @@
 - **Acciones inválidas (S6):** se ejecutan como `WAIT`; `info` guarda la pedida y la ejecutada.
 - **Fin (S10):** no se abren posiciones en los últimos minutos y en `w1` la posición se liquida a
   1 o 0, sin comisión.
+- **Validación (EVA-11):** con un `verifier`, cada ejecución se marca como respaldada o no por
+  trades reales; en modo estricto, las no respaldadas no se ejecutan (ADR-017).
 """
 
+from collections.abc import Callable
 from typing import Any
 
 import gymnasium as gym
@@ -35,6 +38,7 @@ INFO_KEYS = (
     "order_status",
     "exec_ts",
     "exec_p",
+    "exec_verified",
     "fill_price",
     "fill_shares",
     "fee",
@@ -45,16 +49,29 @@ INFO_KEYS = (
     "fees_paid",
     "reward_components",
 )
-ORDER_STATUS = ("ejecutada", "sin_precio", "invalida", "ninguna")
+ORDER_STATUS = ("ejecutada", "sin_precio", "no_verificable", "invalida", "ninguna")
+# (market_id, t, buy=compra en equivalente YES, yes_price=precio YES) -> respaldada, o None.
+Verifier = Callable[..., bool | None]
 
 
 class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
     metadata: dict[str, Any] = {"render_modes": []}
 
-    def __init__(self, data: MarketData, config: EnvConfig, reward_config: RewardConfig) -> None:
+    def __init__(
+        self,
+        data: MarketData,
+        config: EnvConfig,
+        reward_config: RewardConfig,
+        *,
+        verifier: Verifier | None = None,
+        strict: bool = False,
+    ) -> None:
         if config.tolerance_s > data.step_s:
             raise ValueError("tolerance_s no puede superar el paso de la grilla (docs/09, S4)")
+        if strict and verifier is None:
+            raise ValueError("el modo estricto necesita un verifier con trades reales (EVA-11)")
         self.data, self.config, self.reward_config = data, config, reward_config
+        self.verifier, self.strict = verifier, strict
         self.costs = config.costs
         self.stake = config.initial_cash * config.stake_fraction
         # La comisión se redondea hacia arriba: una compra puede costar una fracción del último
@@ -85,7 +102,7 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         self.portfolio = Portfolio(cash=cash)
         self.reward_state = RewardState(v0=cash, peak=cash)
         self.value = cash
-        return self._observation(), self._info(None, None, None, "ninguna", None, None, None)
+        return self._observation(), self._info(None, None, None, "ninguna", None, None, None, None)
 
     def step(self, action: Any) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         if self.k == self.data.n_steps:
@@ -96,6 +113,7 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         executed, status = Action.WAIT, "ninguna"
         execution: tuple[int, float] | None = None
         fill: Fill | None = None
+        verified: bool | None = None
         if requested != Action.WAIT and not valid:
             status = "invalida"
         elif requested != Action.WAIT:
@@ -103,8 +121,13 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
             if execution is None:
                 status = "sin_precio"
             else:
-                fill = self._trade(requested, execution[1])
-                executed, status = requested, "ejecutada"
+                side, fill = self._fill(requested, execution[1])
+                verified = self._verify(t, requested, side, fill)
+                if self.strict and verified is not True:
+                    status, fill = "no_verificable", None
+                else:
+                    self._apply(requested, side, fill)
+                    executed, status = requested, "ejecutada"
 
         self.k += 1
         done = self.k == self.data.n_steps
@@ -122,7 +145,9 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
             done=done,
         )
         self.value = value
-        info = self._info(requested, executed, valid, status, execution, fill, components, t=t)
+        info = self._info(
+            requested, executed, valid, status, execution, verified, fill, components, t=t
+        )
         return self._observation(), total, done, False, info
 
     def action_masks(self) -> np.ndarray:
@@ -139,15 +164,29 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
             return int(ep.price_ts[i]), float(ep.price_p[i])
         return None
 
-    def _trade(self, action: Action, p_yes: float) -> Fill:
+    def _fill(self, action: Action, p_yes: float) -> tuple[int, Fill]:
+        """Lado operado y operación calculada, sin aplicarla todavía a la cartera."""
         if action == Action.SELL:
-            fill = sell(self.portfolio.shares, side_price(p_yes, self.portfolio.side), self.costs)
-            self.portfolio.close(fill)
-            return fill
+            side = self.portfolio.side
+            return side, sell(self.portfolio.shares, side_price(p_yes, side), self.costs)
         side = YES if action == Action.BUY_YES else NO
-        fill = buy(self.stake, side_price(p_yes, side), self.costs)
-        self.portfolio.open(side, fill)
-        return fill
+        return side, buy(self.stake, side_price(p_yes, side), self.costs)
+
+    def _apply(self, action: Action, side: int, fill: Fill) -> None:
+        if action == Action.SELL:
+            self.portfolio.close(fill)
+        else:
+            self.portfolio.open(side, fill)
+
+    def _verify(self, t: int, action: Action, side: int, fill: Fill) -> bool | None:
+        """Comprar YES o vender NO es comprar en equivalente YES; lo demás es vender."""
+        if self.verifier is None:
+            return None
+        buying = action != Action.SELL
+        yes_price = fill.price if side == YES else 1.0 - fill.price
+        return self.verifier(
+            self.episode.market_id, t, buy=buying == (side == YES), yes_price=yes_price
+        )
 
     def _observation(self) -> np.ndarray:
         k = min(self.k, self.data.n_steps - 1)
@@ -166,6 +205,7 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         valid: bool | None,
         status: str,
         execution: tuple[int, float] | None,
+        verified: bool | None,
         fill: Fill | None,
         components: dict[str, float] | None,
         *,
@@ -183,6 +223,7 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
             "order_status": status,
             "exec_ts": None if execution is None else execution[0],
             "exec_p": None if execution is None else execution[1],
+            "exec_verified": verified,
             "fill_price": None if fill is None else fill.price,
             "fill_shares": None if fill is None else fill.shares,
             "fee": 0.0 if fill is None else fill.fee,

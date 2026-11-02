@@ -31,6 +31,7 @@ from .data.trades import capture_trades
 from .env.market_data import MarketData
 from .env.market_env import PolymarketEnv
 from .evaluation.backtest import episode_results, run_backtest
+from .evaluation.verification import TradeVerifier
 from .utils.config import DataConfig, SimulatorConfig, load_config, load_named
 from .utils.paths import get_paths
 
@@ -130,6 +131,15 @@ def _parser() -> argparse.ArgumentParser:
     backtest.add_argument(
         "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
     )
+    backtest.add_argument(
+        "--verify", action="store_true", help="Marca cada ejecución con los trades reales (EVA-11)"
+    )
+    backtest.add_argument(
+        "--strict", action="store_true", help="Solo ejecuta lo que respaldan trades reales"
+    )
+    backtest.add_argument(
+        "--raw", help="Carpeta del crudo con los trades (por defecto, la de .env)"
+    )
 
     config = commands.add_parser("config", help="Valida un YAML y lo muestra resuelto")
     config.add_argument("path", help="Por ejemplo configs/data.yaml")
@@ -190,22 +200,40 @@ def _backtest(args: argparse.Namespace) -> Any:
     paths = get_paths()
     dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
     data = MarketData.load(dataset, split=args.split, normalize=config.env.normalize)
-    env = PolymarketEnv(data, config.env, config.reward)
+    stake = config.env.initial_cash * config.env.stake_fraction
+    verifier = None
+    if args.verify or args.strict:
+        verifier = TradeVerifier.load(
+            RawStore(args.raw or paths.raw),
+            data.market_ids,
+            latency_s=config.env.latency_s,
+            tolerance_s=config.env.tolerance_s,
+            min_usdc=stake,
+        )
+    env = PolymarketEnv(data, config.env, config.reward, verifier=verifier, strict=args.strict)
     trajectories = run_backtest(makers[args.policy](), env)
-    out = Path(args.out or paths.reports / "trajectories" / f"{args.policy}_{args.split}.parquet")
+    mode = "_estricto" if args.strict else ""
+    name = f"{args.policy}_{args.split}{mode}.parquet"
+    out = Path(args.out or paths.reports / "trajectories" / name)
     out.parent.mkdir(parents=True, exist_ok=True)
     trajectories.to_parquet(out, index=False)
-    stake = config.env.initial_cash * config.env.stake_fraction
     results = episode_results(trajectories, config.env.initial_cash, stake)
     ret = results["return_on_stake"]
+    executed = int(results["executed"].sum())
     return {
         "policy": args.policy,
         "split": args.split,
+        "strict": args.strict,
+        "markets_with_trades": None if verifier is None else len(verifier.trades),
+        "verified_share": (
+            float(results["verified"].sum() / executed) if verifier and executed else None
+        ),
         "markets": len(results),
         "return_on_stake_mean": float(ret.mean()),
         "return_on_stake_ci95": float(1.96 * ret.std(ddof=1) / len(ret) ** 0.5),
         "executed_per_market": float(results["executed"].mean()),
         "no_price_per_market": float(results["no_price"].mean()),
+        "unverifiable_per_market": float(results["unverifiable"].mean()),
         "invalid_per_market": float(results["invalid"].mean()),
         "trajectories": str(out),
     }

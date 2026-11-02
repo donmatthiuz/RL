@@ -36,12 +36,19 @@ def run_backtest(
 
 
 def episode_results(trajectories: pd.DataFrame, initial_cash: float, stake: float) -> pd.DataFrame:
-    """Una fila por mercado: valor final, retorno sobre el monto apostado y órdenes por estado."""
+    """Una fila por mercado: valor final, retorno sobre el monto apostado y órdenes por estado.
+
+    `verified` cuenta las ejecuciones respaldadas por trades reales (EVA-11); sin un verificador,
+    vale 0.
+    """
     status = pd.crosstab(trajectories["market_id"], trajectories["order_status"])
     last = trajectories[trajectories["done"]].set_index("market_id")
     status = status.reindex(
-        index=last.index, columns=["ejecutada", "sin_precio", "invalida"], fill_value=0
+        index=last.index,
+        columns=["ejecutada", "sin_precio", "no_verificable", "invalida"],
+        fill_value=0,
     )
+    verified = trajectories["exec_verified"].eq(True) & trajectories["order_status"].eq("ejecutada")
     return pd.DataFrame(
         {
             "policy": last["policy"],
@@ -49,7 +56,9 @@ def episode_results(trajectories: pd.DataFrame, initial_cash: float, stake: floa
             "return_on_stake": (last["portfolio_value"] - initial_cash) / stake,
             "fees_paid": last["fees_paid"],
             "executed": status["ejecutada"],
+            "verified": verified.groupby(trajectories["market_id"]).sum().reindex(last.index),
             "no_price": status["sin_precio"],
+            "unverifiable": status["no_verificable"],
             "invalid": status["invalida"],
         }
     )
