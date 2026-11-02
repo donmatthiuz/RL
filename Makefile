@@ -35,7 +35,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset backtest train manifest entregable
+	pre-commit config capture capture-spot capture-trades dataset backtest train manifest entregable eda
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -108,6 +108,9 @@ backtest: ## Corre un baseline sobre un split y guarda sus trayectorias (POLICY,
 
 train: ## Entrena un agente con todas las semillas de su config (AGENT=ppo|dqn, SEED)
 	$(UV) run polym4v train --config configs/$(AGENT).yaml $(if $(SEED),--seed $(SEED))
+
+eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make dataset)
+	$(UV) run --group notebooks jupyter execute --inplace notebooks/eda/01_eda_btc_horario.ipynb
 
 manifest: ## Recalcula el manifest con el hash de cada archivo crudo (RAW_DIR)
 	$(UV) run polym4v manifest --out $(RAW_DIR)
