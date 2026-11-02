@@ -27,13 +27,14 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 01/11/2026, de 66 tareas: 9 hechas, 31 en PR y 26 sin empezar. Ningún PR se mezcló todavía.
+Al 01/11/2026, de 66 tareas: 10 hechas, 30 en PR y 26 sin empezar. El primer PR mezclado es #6
+(ENV-03).
 
 | Rol | Hechas | En PR | Faltan |
 | --- | --- | --- | --- |
 | R1 Josué | INF-01 a INF-05 y DOC-01 | INF-06 (#1, #4 y #11), INF-07 (#21) e INF-08 (#25) | INF-09 e INF-10 |
 | R2 Mathew | DAT-01, DAT-02 (dentro de DAT-10) y DAT-10 | DAT-03 a DAT-08 y DAT-11 (#2, #3, #5, #7, #9 y #10) | DAT-09 (P2) |
-| R3 Gustavo | — | ENV-01 a ENV-07 y ENV-10 (#6, #10, #11, #15, #17 y #23) | ENV-08 y ENV-09 (P2) |
+| R3 Gustavo | ENV-03 (#6) | ENV-01, ENV-02, ENV-04 a ENV-07 y ENV-10 (#10, #11, #15, #17 y #23) | ENV-08 y ENV-09 (P2) |
 | R4 sin asignar | — | AGT-02 a AGT-08 (#4, #12, #18, #19 y #20) | AGT-01, AGT-09 y AGT-10 |
 | R5 sin asignar | — | EVA-01 a EVA-03, EVA-05, EVA-07 y EVA-11 (#8, #13, #14, #16, #22 y #24) | EVA-04, EVA-06 y EVA-08 a EVA-10 |
 | Todos (documento) | DOC-01 | — | DOC-02 a DOC-14; DOC-12 se lleva durante todo el proyecto |
@@ -46,14 +47,17 @@ Lo que le falta a cada rol:
 - **R1:** mezclar la pila en orden y revisar #21 y #25. El nightly de INF-08 solo corre cuando
   el workflow está en `main` (regla de GitHub), así que empieza cuando `proyecto` llegue a `main`.
   INF-09 espera la evaluación en test (EVA-06) e INF-10 espera los modelos finales (H3).
-- **R2:** revisar #1, #2, #3, #5, #7, #9 y #10. DAT-09 (ETH) es opcional.
-- **R3:** revisar #1, #6, #11, #15, #17 y #23 (las variantes de recompensa). La ablación
-  (ENV-08) espera abrir val. ENV-09 es opcional.
+- **R2:** revisar #1 (R3 ya lo aprobó), #2, #3, #5, #7, #9 y #10. Es lo que destraba la pila:
+  #11, #15, #17 y #23 ya están aprobados y esperan a que se mezclen los PR de abajo. DAT-09 (ETH)
+  es opcional.
+- **R3:** aprobó #1, #6, #11, #15, #17 y #23 el 01/11/2026 y respondió E1 y E2 en #8. En #23
+  corrigió un hueco de la config, y los dos detalles menores que dejó en #11 ya están corregidos
+  en #11 y #17. La ablación (ENV-08) espera abrir val. ENV-09 es opcional.
 - **R4 (sin dueño):** revisar #4, #11 (el MDP), #12, #18, #19 y #20. AGT-01 (prototipo en
   CartPole) no tiene bloqueos. AGT-09 y AGT-10 esperan abrir val.
-- **R5 (sin dueño):** revisar #8 y responder E1 y E2, y revisar #13, #14, #16, #22 (reporte) y
-  #24 (demo). EVA-04 espera E1 y E2. EVA-06, EVA-08 y EVA-10 son de la fase final. EVA-09 es
-  opcional.
+- **R5 (sin dueño):** aprobar #8 (E1 y E2 ya están decididas) y revisar #13, #14, #16, #22
+  (reporte) y #24 (demo). EVA-04 ya no tiene bloqueos. EVA-06, EVA-08 y EVA-10 son de la fase
+  final. EVA-09 es opcional.
 
 ### PR en revisión
 
@@ -64,56 +68,53 @@ rama, incorporada con merge: lo marcan las flechas punteadas, y esa rama se mezc
 
 ```mermaid
 flowchart LR
-    P["proyecto"] --> PR1["#1 INF-06 datos<br/>R2 y R3"]
+    P["proyecto"] --> PR1["#1 INF-06 datos<br/>aprobado por R3, falta R2"]
     PR1 --> PR2["#2 DAT-03 klines<br/>R2"] --> PR3["#3 DAT-06 split<br/>R2"] --> PR5["#5 DAT-04/05 dataset<br/>R2"]
     PR1 --> PR4["#4 INF-06 Policy<br/>sin revisor (R4)"]
-    P --> PR6["#6 ENV-03 costos<br/>R3"]
-    P --> PR8["#8 EVA-01 protocolo<br/>sin revisor (R5)"]
+    P --> PR8["#8 EVA-01 protocolo<br/>falta una aprobación"]
     PR5 --> PR7["#7 DAT-08 EDA<br/>R2"]
     PR5 --> PR9["#9 DAT-11 trades<br/>R2"]
-    PR5 --> PR10["#10 DAT-07 steps y features<br/>R2"] --> PR11["#11 ENV-04 entorno<br/>R3 y R4"]
+    PR5 --> PR10["#10 DAT-07 steps y features<br/>R2"] --> PR11["#11 ENV-04 entorno<br/>aprobado por R3; R4 el MDP"]
     PR4 -.-> PR11
-    PR6 -.-> PR11
     PR11 --> PR12["#12 AGT-03 baselines<br/>sin revisor (R4)"] --> PR13["#13 EVA-02 backtest<br/>sin revisor (R5)"] --> PR14["#14 EVA-11 validación<br/>sin revisor (R5)"] --> PR16["#16 EVA-03 métricas<br/>sin revisor (R5)"]
     PR9 -.-> PR14
-    PR11 --> PR15["#15 ENV-06 invariantes<br/>R3"]
-    PR16 --> PR17["#17 ENV-07 render<br/>R3"]
+    PR11 --> PR15["#15 ENV-06 invariantes<br/>aprobado por R3"]
+    PR16 --> PR17["#17 ENV-07 render<br/>aprobado por R3"]
     PR11 --> PR18["#18 AGT-02 adaptadores<br/>sin revisor (R4)"]
     PR17 --> PR19["#19 AGT-04/05/06 entrenamiento<br/>sin revisor (R4)"]
     PR18 -.-> PR19
     PR19 --> PR20["#20 AGT-07/08 offline: CQL y BC<br/>sin revisor (R4)"]
     PR20 --> PR21["#21 INF-07 integración y evaluate<br/>cualquiera"]
     PR21 --> PR22["#22 EVA-05 reporte<br/>sin revisor (R5)"] --> PR24["#24 EVA-07 demo<br/>sin revisor (R5)"]
-    PR21 --> PR23["#23 ENV-05 variantes de recompensa<br/>R3"]
+    PR21 --> PR23["#23 ENV-05 variantes de recompensa<br/>aprobado por R3"]
     PR15 -.-> PR23
     PR21 --> PR25["#25 INF-08 smoke y nightly<br/>cualquiera"]
 ```
 
 | Orden | PR | Tarea | Base | También necesita | Revisa |
 | --- | --- | --- | --- | --- | --- |
-| 1 | #1 | INF-06: contratos de datos | `proyecto` | — | R2 y R3 |
+| 1 | #1 | INF-06: contratos de datos | `proyecto` | — | R2 y R3 (R3 aprobó) |
 | 2 | #2 | DAT-03: klines de Binance | #1 | — | R2 |
 | 2 | #4 | INF-06: `Policy` y `Action` | #1 | — | Sin asignar (R4) |
-| Cuando se quiera | #6 | ENV-03: costos | `proyecto` | — | R3 |
-| Antes de ver resultados en val | #8 | EVA-01: protocolo de evaluación, con E1 y E2 para el equipo | `proyecto` | — | Sin asignar (R5) |
+| Antes de ver resultados en val | #8 | EVA-01: protocolo de evaluación, con E1 y E2 decididas | `proyecto` | — | Cualquier integrante menos el autor |
 | 3 | #3 | DAT-06: split con exclusiones de S11 | #2 | — | R2 |
 | 4 | #5 | DAT-04 y DAT-05: `markets`, `prices_raw` y `spot_1m` | #3 | — | R2 |
 | 5 | #7 | DAT-08: EDA sobre train | #5 | — | R2 |
 | 5 | #9 | DAT-11: trades de val y test, y la captura de train | #5 | — | R2 |
 | 5 | #10 | DAT-04, DAT-05 y DAT-07: `steps.parquet`, features y normalización | #5 | — | R2 |
-| 6 | #11 | ENV-01, ENV-02, ENV-04, ENV-05, ENV-10 e INF-06 (`info`): el entorno | #10 | #4 y #6 | R3; R4 el MDP |
+| 6 | #11 | ENV-01, ENV-02, ENV-04, ENV-05, ENV-10 e INF-06 (`info`): el entorno | #10 | #4 | R3 (aprobó); R4 el MDP |
 | 7 | #12 | AGT-03: baselines | #11 | — | Sin asignar (R4) |
-| 7 | #15 | ENV-06: invariantes con `hypothesis` | #11 | — | R3 |
+| 7 | #15 | ENV-06: invariantes con `hypothesis` | #11 | — | R3 (aprobó) |
 | 7 | #18 | AGT-02: adaptadores de SB3 y d3rlpy, con torch solo CPU | #11 | — | Sin asignar (R4) |
 | 8 | #13 | EVA-02: backtest | #12 | — | Sin asignar (R5) |
 | 9 | #14 | EVA-11: validación de ejecuciones y modo estricto | #13 | #9 | Sin asignar (R5) |
 | 10 | #16 | EVA-03: métricas | #14 | — | Sin asignar (R5) |
-| 11 | #17 | ENV-07: `render()` en modo texto | #16 | — | R3 |
+| 11 | #17 | ENV-07: `render()` en modo texto | #16 | — | R3 (aprobó) |
 | 12 | #19 | AGT-04, AGT-05 y AGT-06: entrenamiento de PPO y DQN y prueba de cordura | #17 | #18 | Sin asignar (R4) |
 | 13 | #20 | AGT-07 y AGT-08: dataset offline y entrenamiento de CQL y BC | #19 | — | Sin asignar (R4) |
 | 14 | #21 | INF-07: pipeline completo por la CLI y comando `evaluate` | #20 | — | Cualquier integrante |
 | 15 | #22 | EVA-05: `polym4v report`, con tabla comparativa y figuras | #21 | — | Sin asignar (R5) |
-| 15 | #23 | ENV-05: las seis variantes de recompensa de la ablación | #21 | #15 | R3 |
+| 15 | #23 | ENV-05: las seis variantes de recompensa de la ablación | #21 | #15 | R3 (aprobó) |
 | 15 | #25 | INF-08: job *smoke-train* en la CI y `nightly.yml` con tests `slow` y `network` | #21 | — | Cualquier integrante |
 | 16 | #24 | EVA-07: demo en Streamlit que reproduce trayectorias | #22 | — | Sin asignar (R5) |
 
@@ -133,24 +134,25 @@ la ablación de ENV-08, en dos etapas y con 5 semillas por variante:
 
 Las seis variantes están en #23. Mientras tanto, `configs/env.yaml` usa `pnl`.
 
-**Trades de train (R1, 31/10/2026):** se capturan en segundo plano (en curso el 01/11/2026), y el
-modo de entrenamiento se decide después comparando los dos modos en train (actualización de
-ADR-017).
+**Trades de train (R1, 31/10/2026):** capturados el 01/11/2026 (8 682 mercados y 18,9 millones de
+trades, 0 errores; documentado en #9). El modo de entrenamiento se decide comparando los dos modos
+en train (actualización de ADR-017).
 
-**Val sigue cerrado** hasta mezclar el protocolo (#8), y para eso el equipo tiene que responder E1
-y E2 en el PR. Los baselines, el backtest y las métricas solo se corrieron sobre train.
+**Val sigue cerrado** hasta mezclar el protocolo (#8). E1 y E2 se decidieron el 01/11/2026 con la
+respuesta de R3, que coincide con la recomendación: `Δ_min` es el 1 % del stake por mercado, y el
+baseline de referencia es `NoTrade` salvo que una heurística le gane en val con el IC 95 % por
+encima de cero. Falta que un integrante que no sea el autor apruebe el PR. Los baselines, el
+backtest y las métricas solo se corrieron sobre train.
 
 **Sin bloqueos, para empezar:**
 
 - AGT-01: prototipo en CartPole, para quien tome R4.
+- EVA-04: `stats.py` con la prueba del protocolo, sobre la rama de #16 (métricas).
 - ENV-09 y DAT-09 (P2): sensibilidad a los costos y extensión a ETH, si da el tiempo.
 - DOC-12: historial de prompts con su evaluación, que se lleva durante todo el proyecto.
 
 **Para que R1 confirme:** en #24, `streamlit` va en un grupo `demo` que `uv sync` instala por
 defecto (`default-groups`), así los tests de la demo corren en la CI.
-
-**Esperan respuesta del equipo:** EVA-04 (`stats.py` con la prueba del protocolo) espera E1 y E2
-en #8.
 
 **Esperan a abrir val (#8):** entrenar con datos reales y elegir checkpoints (AGT-04 en adelante),
 la ablación de la recompensa (ENV-08), la tabla de baselines y el reporte de val (EVA-05) y la
@@ -222,7 +224,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | DAT-08 | **En PR #7.** Notebook de EDA y una sección breve con sus hallazgos | F2 | P1 | DAT-05 | Notebook ejecutado y versionado, con ≥ 5 gráficos comentados |
 | DAT-09 | Extensión a ETH y/o a la segunda familia de mercados | F3 | P2 | DAT-07 | Dataset `eth_*` construido y evaluación de transferencia BTC → ETH |
 | DAT-10 | **Hecha el 31/10/2026:** BTC con 12 471 mercados y ETH con 12 149, sin errores ([11_descarga_de_datos.md](11_descarga_de_datos.md)). **Captura del crudo (S8, ADR-013):** historial de 1 minuto de los tokens YES y NO de todos los mercados horarios cerrados, con metadatos de cada petición y hash | F0 | P0 | DAT-01 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
-| DAT-11 | **En PR #9** (val y test; train se capturó después, ver la actualización de ADR-017). **Captura de trades (S4b, ADR-017):** trades taker públicos de los mercados de val y test, con el mismo esquema de crudo, caché y manifest que DAT-10 | F1 | P0 | DAT-10 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
+| DAT-11 | **En PR #9** (val y test; train se capturó el 01/11/2026, ver la actualización de ADR-017). **Captura de trades (S4b, ADR-017):** trades taker públicos de los mercados de val y test, con el mismo esquema de crudo, caché y manifest que DAT-10 | F1 | P0 | DAT-10 | Una segunda ejecución no hace llamadas de red y el manifest lista cada archivo con su hash |
 
 ### R3 — Ingeniero del entorno y la recompensa
 
@@ -230,7 +232,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | ---- | ------- | ------ | ------ | ------------ | ------------------------ |
 | ENV-01 | **En PR #11:** `docs/notas/mdp.md`. Especificar el MDP por escrito (estado, acciones, transición, recompensa y fin de episodio) y revisarlo con el equipo | F0 | P0 | — | Sección "MDP" en `docs/notas/mdp.md` aprobada por R4 |
 | ENV-02 | **En PR #11.** `Portfolio`: abrir y cerrar posiciones, mark-to-market y liquidación al resolver | F1 | P0 | ENV-01 | Tests unitarios de cada operación con valores calculados a mano |
-| ENV-03 | **En PR #6.** `execution.py`: spread, slippage y comisión configurables | F1 | P0 | ENV-02 | Test: un ciclo compra-venta inmediata sin cambio de precio pierde exactamente los costos |
+| ENV-03 | **Hecha el 01/11/2026 (#6).** `execution.py`: spread, slippage y comisión configurables | F1 | P0 | ENV-02 | Test: un ciclo compra-venta inmediata sin cambio de precio pierde exactamente los costos |
 | ENV-04 | **En PR #11.** `PolymarketEnv` v1: `reset` (elige un mercado del split), `step` y espacios. Manejo de acciones inválidas. | F1 | P0 | ENV-02, DAT-05 (fixtures) | Pasa `gymnasium.utils.env_checker.check_env` |
 | ENV-05 | **En PR #11** (`pnl`, `pnl_risk` y `terminal`) **y #23** (las seis variantes de la [investigación](ia/investigaciones/recompensas_rl_trading.md), aprobadas el 01/11/2026). `reward.py`: variantes `pnl`, `pnl_risk` y `terminal`, elegibles por config. `reward_components` en `info`. | F1 | P0 | ENV-04 | Test: con `pnl`, la suma de recompensas del episodio = PnL final / V_0 |
 | ENV-06 | **En PR #15** (con la corrección de un caso que encontró `hypothesis` al ampliarla en #23). Suite de invariantes con `hypothesis`: conservación del dinero, `cash ≥ 0` y política aleatoria durante N episodios sin errores | F1 | P0 | ENV-05 | Pasa con ≥ 200 ejemplos generados |
@@ -258,7 +260,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 
 | ID | Tarea | Fase | Prio | Depende de | Criterio de aceptación |
 | ---- | ------- | ------ | ------ | ------------ | ------------------------ |
-| EVA-01 | **En PR #8.** Definir el protocolo de evaluación (métricas, splits, semillas y pruebas estadísticas) en `docs/notas/protocolo_eval.md` | F0 | P0 | — | Aprobado por el equipo **antes** de ver resultados (evita el *p-hacking*) |
+| EVA-01 | **En PR #8**, con E1 y E2 decididas el 01/11/2026. Definir el protocolo de evaluación (métricas, splits, semillas y pruebas estadísticas) en `docs/notas/protocolo_eval.md` | F0 | P0 | — | Aprobado por el equipo **antes** de ver resultados (evita el *p-hacking*) |
 | EVA-02 | **En PR #13.** `run_backtest(policy, env, markets)` → DataFrame de trayectorias con todas las claves de `info` | F1 | P0 | ENV-04, AGT-02 | Test: el `NoTrade` termina con `V_final = V_0` en todos los mercados |
 | EVA-03 | **En PR #16.** `metrics.py`: retorno, Sharpe, max drawdown, win rate, operaciones, costos y % de acciones inválidas | F2 | P0 | EVA-02 | Tests con curvas de capital hechas a mano y su resultado conocido |
 | EVA-04 | `stats.py`: IC por bootstrap y diferencia pareada agente frente a baseline | F2 | P0 | EVA-03 | Test: el IC contiene la media verdadera en datos simulados (≈ 95 %) |
