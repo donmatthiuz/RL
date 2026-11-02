@@ -40,11 +40,26 @@ configs = st.builds(
     st.floats(0.001, 1.0),
     st.integers(0, 5),
 )
-rewards = st.builds(
-    RewardConfig,
-    name=st.sampled_from(["pnl", "pnl_risk", "terminal"]),
-    lambda_dd=st.floats(0, 1),
-    lambda_invalid=st.floats(0, 0.1),
+# Cada variante con solo los parámetros que usa: la config rechaza los demás.
+common = {"lambda_invalid": st.floats(0, 0.1), "scale": st.sampled_from(["v0", "stake"])}
+bases = st.sampled_from(["pnl", "pnl_mid", "terminal"])
+rewards = st.one_of(
+    st.builds(RewardConfig, name=bases, **common),
+    st.builds(
+        RewardConfig,
+        name=st.just("pnl_risk"),
+        base=bases,
+        lambda_dd=st.floats(0, 1, exclude_min=True),
+        **common,
+    ),
+    st.builds(
+        RewardConfig,
+        name=st.just("pnl_hold"),
+        base=bases,
+        lambda_hold=st.floats(0, 0.01, exclude_min=True),
+        **common,
+    ),
+    st.builds(RewardConfig, name=st.just("utility"), utility_a=st.floats(0.01, 5), **common),
 )
 episodes = st.lists(st.integers(0, 3), min_size=60, max_size=60)
 
@@ -91,12 +106,19 @@ def test_money_is_conserved_and_never_negative(config, reward_config, actions, m
 
 
 @settings(max_examples=200, deadline=None)
-@given(configs, episodes, st.integers(0, 11))
-def test_pnl_rewards_always_add_up_to_the_final_pnl(config, actions, market):
-    _, steps = play(config, RewardConfig(name="pnl"), actions, market)
+@given(
+    configs,
+    st.sampled_from(["pnl", "pnl_mid"]),
+    st.sampled_from(["v0", "stake"]),
+    episodes,
+    st.integers(0, 11),
+)
+def test_dense_rewards_always_add_up_to_the_final_pnl(config, name, scale, actions, market):
+    _, steps = play(config, RewardConfig(name=name, scale=scale), actions, market)
     total = sum(r for _, r, _ in steps)
     final = steps[-1][2]["portfolio_value"]
-    assert math.isclose(total, (final - config.initial_cash) / config.initial_cash, abs_tol=1e-9)
+    unit = config.initial_cash * (1.0 if scale == "v0" else config.stake_fraction)
+    assert math.isclose(total, (final - config.initial_cash) / unit, abs_tol=1e-9)
 
 
 @settings(max_examples=200, deadline=None)
@@ -106,6 +128,8 @@ def test_states_and_observations_stay_valid(config, reward_config, actions, mark
     for obs, r, info in steps:
         assert env.observation_space.contains(obs) and np.isfinite(obs).all()
         assert math.isfinite(r) and tuple(info) == INFO_KEYS
+        if info["reward_components"] is not None:
+            assert math.isclose(r, sum(info["reward_components"].values()), abs_tol=1e-12)
         side, size = info["position_side"], info["position_size"]
         assert side in (-1, 0, 1) and (size > 0) == (side != 0) and size >= 0
         assert info["action_executed"] in (None, 0, info["action"])

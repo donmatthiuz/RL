@@ -11,9 +11,9 @@ import pandas as pd
 
 from ..agents.base import Policy
 from ..env.market_env import INFO_KEYS, PolymarketEnv
+from ..env.reward import COMPONENTS
 
 STEP_KEYS = tuple(key for key in INFO_KEYS if key != "reward_components")
-REWARD_COMPONENTS = ("pnl", "drawdown", "invalid", "terminal")
 
 
 def run_backtest(
@@ -28,7 +28,7 @@ def run_backtest(
         while not done:
             obs, reward, done, _, info = env.step(policy.act(obs, info))
             row = {key: info[key] for key in STEP_KEYS}
-            row |= {f"r_{name}": info["reward_components"][name] for name in REWARD_COMPONENTS}
+            row |= {f"r_{name}": info["reward_components"][name] for name in COMPONENTS}
             rows.append(row | {"reward": reward, "done": done})
     frame = pd.DataFrame(rows)
     frame.insert(0, "policy", policy.name)
