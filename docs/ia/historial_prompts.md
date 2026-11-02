@@ -29,6 +29,7 @@ Code. El equipo lo revisa y completa.
 | P10 | 31/10/2026 | Perplexity | Comisión exacta de Polymarket | Satisfactorio, con vacíos |
 | P11 | 31/10/2026 | Subagente `academic-statistician` | Revisar el protocolo de evaluación | Satisfactorio: cuatro fallas graves |
 | P12 | 31/10/2026 | Claude Code | ¿Es realista S4 en un CLOB? | Satisfactorio: cambió la pregunta de S4 |
+| P14 | 01/11/2026 | Claude Code | Revisión de R3 de los PR del entorno | Satisfactorio: un hueco en la config de la ablación |
 
 ## Entradas
 
@@ -190,6 +191,21 @@ Code. El equipo lo revisa y completa.
     óptima.
   - Salió una lista revisada de seis variantes en dos etapas, con 5 semillas. R1 la aprobó el
     01/11/2026 y está implementada en el PR #23.
+
+### P14 — Revisión de R3 de los PR del entorno
+
+- **Prompt:** R3 pidió revisar la documentación y el proyecto, usar el grafo de graphify para
+  ubicarse y empezar con lo que le toca a su rol: la revisión de #1, #6, #11, #15, #17 y #23.
+- **Resultado:** satisfactorio.
+- **Por qué:** se revisó el código de `env/` y la configuración de la recompensa contra el MDP de
+  `docs/notas/mdp.md` y las decisiones S4, S6, S9 y S10. Apareció un hueco: `pnl_risk` sin
+  `lambda_dd` y `pnl_hold` sin `lambda_hold` se aceptaban y recompensaban igual que su base.
+- **Cómo se evaluó:** la suite completa en la cima de la pila (`feat/env-05-variantes`, 269 tests
+  y mypy), más una corrida aleatoria por variante para comprobar que la suma de recompensas cuadra
+  con la caja final. El hueco se confirmó primero con un test que fallaba.
+- **Corrección:** ninguna sobre la respuesta.
+- **Aporte:** commit `fix(env)` en #23: la config exige la penalización en esas dos variantes, y
+  las estrategias de `hypothesis` ya no generan una lambda de 0.
 
 ## Plantilla
 
