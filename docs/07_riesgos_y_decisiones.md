@@ -245,6 +245,10 @@ ADR-XXX*.
 - **Consecuencias:** el entorno (ENV-02 a ENV-05) y las claves de `info` quedan sin decisiones
   pendientes. Aparecen DAT-11 (trades de val y test) y EVA-11 (validación de ejecuciones). Si la
   conclusión cambia en modo estricto, se reporta como dependiente de liquidez no verificable.
+- **Actualización (31/10/2026, R1):** también se capturan los trades de train (unas 3 h). Si el
+  agente se entrena en modo estricto o no se decide después, comparando los dos modos en train.
+  Bajarlos no cierra ninguna opción y sigue la lógica de S8: archivar antes de que la API deje de
+  darlos.
 
 <!-- Plantilla para nuevas decisiones:
 ### ADR-00X — Título
