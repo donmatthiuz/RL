@@ -9,6 +9,7 @@ description = "PolyRL: aprendizaje por refuerzo sobre mercados históricos de Po
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "numpy>=2",
     "pandas>=3.1",
     "pandera>=0.35",
     "polymarket-client==0.14.0",
@@ -63,4 +64,10 @@ dev = [
     "pytest>=8,<10",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.3",
+]
+notebooks = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "nbclient>=0.11.0",
+    "nbformat>=5.11.1",
 ]
