@@ -21,7 +21,7 @@ from ..env.market_data import MarketData
 from ..env.market_env import PolymarketEnv
 from ..evaluation.backtest import run_backtest
 from ..evaluation.metrics import summarize
-from ..utils.config import ExperimentConfig, OfflineDataConfig, save_resolved
+from ..utils.config import ExperimentConfig, OfflineDataConfig, RewardConfig, save_resolved
 from .adapters import D3rlpyPolicy, quiet_d3rlpy
 from .base import Action, Policy
 from .baselines import baselines
@@ -30,9 +30,13 @@ from .train_sb3 import git_commit
 quiet_d3rlpy()
 
 
-def offline_path(folder: Path, dataset_id: str, offline: OfflineDataConfig) -> Path:
-    """Nombre del dataset offline: cambia si cambian el dataset, los baselines, ε o la semilla."""
+def offline_path(
+    folder: Path, dataset_id: str, offline: OfflineDataConfig, reward: RewardConfig
+) -> Path:
+    """Nombre del dataset offline: cambia si cambian el dataset, los baselines, ε, la semilla o la
+    recompensa, que queda guardada en cada transición."""
     key = f"{','.join(offline.policies)}_eps{offline.epsilon}_s{offline.seed}"
+    key += "_" + json.dumps(reward.model_dump(), sort_keys=True)
     digest = hashlib.sha256(key.encode()).hexdigest()[:8]
     return folder / f"{dataset_id}_{digest}.h5"
 

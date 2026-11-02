@@ -352,7 +352,7 @@ def _train(args: argparse.Namespace) -> Any:
     folder = Path(args.out) if args.out else paths.models
     offline_file = None
     if config.offline is not None and config.agent.algo in ("cql", "bc"):
-        offline_file = offline_path(paths.offline, config.dataset_id, config.offline)
+        offline_file = offline_path(paths.offline, config.dataset_id, config.offline, config.reward)
         if not offline_file.exists():
             raise ConfigurationError(
                 f"No existe {offline_file}: corre antes collect-offline con esta config"
@@ -378,7 +378,7 @@ def _collect_offline(args: argparse.Namespace) -> Any:
     dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
     data = MarketData.load(dataset, split="train", normalize=config.env.normalize)
     folder = Path(args.out) if args.out else paths.offline
-    out = offline_path(folder, config.dataset_id, config.offline)
+    out = offline_path(folder, config.dataset_id, config.offline, config.reward)
     manifest = build_offline_dataset(config, data, out)
     keys = ("transitions", "episodes", "invalid_share", "actions")
     return {"file": str(out), **{key: manifest[key] for key in keys}}
