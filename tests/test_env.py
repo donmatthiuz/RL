@@ -250,6 +250,13 @@ def test_reward_config_rejects_parameters_the_variant_does_not_use(kwargs):
         RewardConfig(**kwargs)
 
 
+@pytest.mark.parametrize("name", ["pnl_risk", "pnl_hold"])
+def test_penalty_variants_need_their_penalty(name):
+    # Sin su lambda, la variante es igual a su base y la ablación la reportaría como otra.
+    with pytest.raises(ValidationError):
+        RewardConfig(name=name)
+
+
 # --- Entorno (ENV-04) ---
 
 

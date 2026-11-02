@@ -119,6 +119,11 @@ class RewardConfig(StrictModel):
             raise ValueError("lambda_hold solo se usa con pnl_hold")
         if self.base != "pnl" and self.name not in ("pnl_risk", "pnl_hold"):
             raise ValueError("base solo se usa con pnl_risk y pnl_hold")
+        # Sin su penalización, la variante es igual a `base` y la ablación la contaría dos veces.
+        if self.name == "pnl_risk" and self.lambda_dd == 0:
+            raise ValueError("pnl_risk necesita lambda_dd > 0")
+        if self.name == "pnl_hold" and self.lambda_hold == 0:
+            raise ValueError("pnl_hold necesita lambda_hold > 0")
         return self
 
 

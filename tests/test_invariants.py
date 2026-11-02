@@ -46,10 +46,18 @@ bases = st.sampled_from(["pnl", "pnl_mid", "terminal"])
 rewards = st.one_of(
     st.builds(RewardConfig, name=bases, **common),
     st.builds(
-        RewardConfig, name=st.just("pnl_risk"), base=bases, lambda_dd=st.floats(0, 1), **common
+        RewardConfig,
+        name=st.just("pnl_risk"),
+        base=bases,
+        lambda_dd=st.floats(0, 1, exclude_min=True),
+        **common,
     ),
     st.builds(
-        RewardConfig, name=st.just("pnl_hold"), base=bases, lambda_hold=st.floats(0, 0.01), **common
+        RewardConfig,
+        name=st.just("pnl_hold"),
+        base=bases,
+        lambda_hold=st.floats(0, 0.01, exclude_min=True),
+        **common,
     ),
     st.builds(RewardConfig, name=st.just("utility"), utility_a=st.floats(0.01, 5), **common),
 )
