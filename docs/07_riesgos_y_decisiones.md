@@ -249,6 +249,10 @@ ADR-XXX*.
   agente se entrena en modo estricto o no se decide después, comparando los dos modos en train.
   Bajarlos no cierra ninguna opción y sigue la lógica de S8: archivar antes de que la API deje de
   darlos.
+- **Actualización (02/11/2026, R1):** se entrena en modo normal. El modo estricto se usa solo al
+  evaluar, en val y en test, como pide el protocolo (EVA-01). Entrenar en modo estricto exigía
+  conectar el verificador al entrenamiento y más horas de cómputo, y la pregunta que importa (si
+  la conclusión depende de liquidez no verificable) ya la responde la evaluación en los dos modos.
 
 <!-- Plantilla para nuevas decisiones:
 ### ADR-00X — Título

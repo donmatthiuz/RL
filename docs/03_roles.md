@@ -12,8 +12,8 @@ escriben una parte del informe.
 | **R1** Líder técnico e integrador (MLOps) | Josué | `utils/`, `cli.py`, CI/CD, `pyproject.toml`, `docs/`, contratos entre módulos | R4 |
 | **R2** Ingeniero de datos | Mathew | `data/`, `features/`, `notebooks/eda` | R5 |
 | **R3** Ingeniero del entorno y la recompensa | Gustavo | `env/` (incluye `reward.py`) | R4 |
-| **R4** Ingeniero de agentes RL | _por asignar_ | `agents/` (PPO, DQN, Offline RL) | R3 |
-| **R5** Evaluación, backtesting y demo | _por asignar_ | `evaluation/`, `app/`, `reports/` | R2 |
+| **R4** Ingeniero de agentes RL | Josué (asume el rol desde el 02/11/2026) | `agents/` (PPO, DQN, Offline RL) | R3 |
+| **R5** Evaluación, backtesting y demo | Carlos | `evaluation/`, `app/`, `reports/` | R2 |
 
 ---
 
