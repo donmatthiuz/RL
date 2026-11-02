@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [proyecto]
+  # Todos los PR, también los apilados sobre la rama de otro PR.
+  pull_request: {}
   workflow_dispatch: {}
 
 concurrency:

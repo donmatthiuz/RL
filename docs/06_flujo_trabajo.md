@@ -15,6 +15,7 @@ ramas nuevas.
 | No tocar otras ramas | Las ramas de laboratorios y exámenes no se modifican ni se mezclan con `proyecto` |
 | Sincronizar antes de subir | `git pull --rebase origin proyecto` antes de cada `git push` |
 | Nada de `push --force` | Reescribir la historia compartida rompe el trabajo de los demás |
+| Excepción: PR | Un cambio de contrato (esquemas, `Policy`, `info`) o un trabajo en el módulo de otro rol va en una rama corta `feat/<id>-<tema>` y un PR hacia `proyecto`. Lo revisa el dueño del módulo; si el rol no tiene dueño (hoy R4), queda sin revisor asignado para que lo revise cualquier integrante. Se mezcla cuando está aprobado y se borra la rama |
 | Commits pequeños | Un commit por cambio lógico, idealmente por tarea o subtarea de [04_tareas.md](04_tareas.md) |
 | No subir con tests rotos | Si `uv run pytest` falla en local, no se hace push (ver sección 3) |
 
@@ -31,6 +32,25 @@ git pull --rebase origin proyecto      # por si alguien subió algo mientras tan
 make check                             # volver a correr si el rebase trajo cambios
 git push origin proyecto
 ```
+
+### Pilas de PR
+
+Para no detenerse mientras un PR espera revisión, el trabajo que depende de él sale de su rama en
+vez de `proyecto`:
+
+```mermaid
+flowchart LR
+    P["proyecto"] --> A["PR A<br/>base: proyecto"] --> B["PR B<br/>base: rama de A"] --> C["PR C<br/>base: rama de B"]
+```
+
+- Cada PR tiene una sección **Orden de merge**: de qué PR depende, cuál se aprueba primero y qué PR
+  esperan por él.
+- Se mezcla de abajo hacia arriba, empezando por el PR cuya base es `proyecto`. Al borrar su rama,
+  GitHub cambia la base del PR siguiente a `proyecto`.
+- Se mezcla con **"Create a merge commit"**. *Squash* y *rebase* reescriben los commits, y el PR
+  siguiente vuelve a mostrar los cambios del anterior.
+- Si la revisión cambia un PR de abajo, el cambio se lleva a los de arriba con `git merge`, sin
+  `push --force`.
 
 **Para evitar conflictos:** cada rol trabaja casi siempre dentro de sus propias carpetas
 ([03_roles.md](03_roles.md)). Los archivos compartidos (`pyproject.toml`, `conftest.py`, los
@@ -52,7 +72,7 @@ docs(arquitectura): documentar variante execute_at=next [ENV-09]
 
 ## 3. Entregas y tests
 
-Como no hay Pull Requests, **los tests son la revisión**. Lo que se sube a `proyecto` se considera
+Salvo en los casos de PR de la sección 1, **los tests son la revisión**. Lo que se sube a `proyecto` se considera
 entregado, y lo entregado tiene que venir con sus tests.
 
 1. **Cada entrega trae sus tests.** El commit que completa una tarea incluye los tests de su
@@ -65,7 +85,8 @@ entregado, y lo entregado tiene que venir con sus tests.
    corre los tests de ese módulo y revisa el cambio. Si encuentra un problema, se corrige con un
    commit `fix(...)` con su test de regresión.
 4. **Los contratos no se rompen en silencio.** Un cambio en los esquemas, en `Policy` o en `info` se
-   avisa antes en el canal, y lo aprueba R1.
+   propone en un PR hacia `proyecto` y se avisa en el canal. Lo aprueban R1 y los dueños de los
+   módulos que lo usan; la CI corre también en el PR, aunque su base sea otra rama.
 
 **Checklist antes de cada push:**
 
