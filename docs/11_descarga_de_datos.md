@@ -11,7 +11,8 @@ diseño del ETL está en [08_datos_y_entrada_modelo.md](08_datos_y_entrada_model
 
 - `uv` y `make`. La primera vez, `make setup`.
 - Internet. Las APIs son públicas y no hace falta ninguna clave.
-- Unos 300 MB de disco para el crudo de BTC y ETH, y unos 55 MB para el dataset procesado.
+- Unos 300 MB de disco para el crudo de BTC y ETH, 156 MB para los trades de val y test, 931 MB
+  para los de train y unos 55 MB para el dataset procesado.
 - La carpeta de datos es `data/` por defecto. Se cambia con `POLYM4V_DATA_DIR` en `.env`, o con
   `RAW_DIR=<carpeta>` en cada comando de `make`.
 
@@ -27,10 +28,20 @@ entre peticiones: unos **77 mercados por minuto**.
 | 3 | `make capture-spot` | Klines de Binance de 1 minuto y de 1 hora, con el activo y las fechas de `configs/data.yaml` | 8 min | 1 044 bloques de 1 m y 522 de 1 h, 0 errores |
 | 4 | `make manifest` | Recalcula el hash de cada archivo del crudo | Segundos | `data/raw/manifest.json` |
 | 5 | `make dataset` | Construye `markets`, `prices_raw` y `spot_1m` | Unos 15 s | 12 295 mercados (8 683 en train, 1 860 en val y 1 752 en test) |
-| 6 | `make eda` (opcional) | Ejecuta el notebook de EDA, solo con train | Unos 10 s | Notebook y figuras en `docs/images/eda/` |
+| 6 | `make capture-trades` | Trades taker públicos de los mercados de val y test, para validar cada ejecución (DAT-11, EVA-11). Necesita el dataset del paso 5 | 1 h 6 min | 3 612 mercados y 3 076 834 trades, 0 errores, 156 MB |
+| 6b | `uv run polym4v capture-trades --split train` | Los mismos trades para los mercados de train | 19 h 42 min | 8 682 mercados y 18 904 947 trades, 0 errores, 931 MB |
+| 7 | `make eda` (opcional) | Ejecuta el notebook de EDA, solo con train | Unos 10 s | Notebook y figuras en `docs/images/eda/` |
 
-Los pasos 3, 5 y 6 llegan a `proyecto` con los PR #2, #5 y #7 (sección "Tablero" de
+Los pasos 3, 5, 6 y 7 llegan a `proyecto` con los PR #2, #5, #9 y #7 (sección "Tablero" de
 [04_tareas.md](04_tareas.md)). Hasta que se mezclen, se corren desde la rama de esos PR.
+
+La captura de trades va más lenta que la de precios porque cada mercado puede tener varias páginas
+de trades. En val y test fueron unos **55 mercados por minuto** (unos 850 trades por mercado); en
+train, unos **7 por minuto**, porque sus mercados traen en promedio unos 2 200 trades y algunos
+pasan de 15 000. Los de train también se capturan (decisión del 31/10/2026, ADR-017) con el paso
+6b, medido el 31/10 y el 01/11/2026. El dataset de ese momento ya incluía las features de DAT-07
+(PR #10), que descartan un mercado más sin historia suficiente; por eso train tiene 8 682 mercados
+y no 8 683.
 
 Las capturas largas se pueden dejar corriendo en segundo plano. El resumen sale por la salida
 estándar y el progreso, cada 250 mercados, por la de errores:
@@ -67,5 +78,6 @@ Solo se versiona la estructura de carpetas: `data/raw/.gitkeep` y `data/processe
 | `data/raw/gamma/events/<serie>/` | Un evento de Gamma por archivo, tal cual lo devuelve el SDK |
 | `data/raw/clob/prices-history/` | El historial de precios de cada token, con la petición que lo produjo |
 | `data/raw/binance/klines/<símbolo>/<intervalo>/` | Un bloque de klines por archivo |
+| `data/raw/data-api/trades/` | Los trades taker de un mercado por archivo, con la petición que los produjo. Solo los campos del mercado y de la operación, sin datos de las cuentas |
 | `data/raw/manifest.json` | Tamaño y hash de cada archivo del crudo |
 | `data/processed/<dataset_id>/` | `markets.parquet`, `prices_raw.parquet`, `spot_1m.parquet` y `manifest.json` |
