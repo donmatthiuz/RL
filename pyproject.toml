@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "d3rlpy==2.8.1",
     "gymnasium==1.0.0",
+    "matplotlib>=3.11.2",
     "numpy>=2",
     "pandas>=3.1",
     "pandera>=0.35",

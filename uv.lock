@@ -2921,6 +2921,7 @@ source = { editable = "." }
 dependencies = [
     { name = "d3rlpy" },
     { name = "gymnasium" },
+    { name = "matplotlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pandas" },
@@ -2956,6 +2957,7 @@ notebooks = [
 requires-dist = [
     { name = "d3rlpy", specifier = "==2.8.1" },
     { name = "gymnasium", specifier = "==1.0.0" },
+    { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "numpy", specifier = ">=2" },
     { name = "pandas", specifier = ">=3.1" },
     { name = "pandera", specifier = ">=0.35" },
