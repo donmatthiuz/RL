@@ -87,7 +87,7 @@ def parse_window_start(title: str, end_date: datetime) -> int | None:
 
 
 class RawStore:
-    """Archivos crudos bajo una raíz, uno por evento y uno por token."""
+    """Archivos crudos bajo una raíz: por evento, token, bloque de klines y mercado."""
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root)
@@ -100,6 +100,9 @@ class RawStore:
 
     def kline_path(self, symbol: str, interval: str, label: str) -> Path:
         return self.root / "binance" / "klines" / symbol / interval / f"{label}.json.gz"
+
+    def trades_path(self, market_id: str) -> Path:
+        return self.root / "data-api" / "trades" / f"{market_id}.json.gz"
 
     def write(self, path: Path, payload: dict[str, Any]) -> None:
         """Escribe de forma atómica; mtime=0 deja bytes estables para el hash."""
@@ -138,10 +141,10 @@ def get_with_retries(
     return status, body
 
 
-def _iter_events(
+def iter_pages(
     paginator: Any, sleep: Callable[[float], None], summary: dict[str, Any], retries: int = 4
 ) -> Iterator[Any]:
-    """Recorre las páginas de Gamma; ante una falla de red repite la misma página.
+    """Recorre las páginas de un paginador del SDK; ante una falla de red repite la misma página.
 
     El SDK solo reintenta los 429, así que sin esto una caída de red a mitad del listado
     corta toda la captura.
@@ -193,7 +196,7 @@ def capture_series(
         ascending=True,
         page_size=50,
     )
-    events = _iter_events(paginator, sleep, summary)
+    events = iter_pages(paginator, sleep, summary)
     for event in events:
         if limit is not None and summary["events"] >= limit:
             break
