@@ -5,6 +5,8 @@ baselines a través de esta interfaz. La acción es siempre la codiciosa (determ
 no explora. Estos modelos no guardan estado entre pasos (redes MLP), así que `reset` no hace nada.
 """
 
+import logging
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -12,6 +14,17 @@ from typing import Any
 import numpy as np
 
 SB3_ALGOS = ("ppo", "dqn")
+
+
+def quiet_d3rlpy() -> None:
+    """d3rlpy escribe sus logs en stdout, donde va el JSON de la CLI: deja solo advertencias."""
+    import d3rlpy  # noqa: F401  (configura structlog al importarse; esto lo reemplaza)
+    import structlog
+
+    structlog.configure(
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
+        wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
+    )
 
 
 class SB3Policy:
@@ -50,6 +63,7 @@ class D3rlpyPolicy:
         """Carga un archivo `.d3` guardado con `algo.save`."""
         import d3rlpy
 
+        quiet_d3rlpy()
         algo = d3rlpy.load_learnable(str(path), device=False)
         return cls(algo, name or type(algo).__name__.lower())
 

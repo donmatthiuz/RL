@@ -64,7 +64,7 @@ def test_run_id_follows_the_convention():
     assert run_id(experiment("ppo", 10), 3, now) == "20261101-123000_ppo_pnl_s3"
 
 
-@pytest.mark.parametrize("name", ["ppo", "dqn"])
+@pytest.mark.parametrize("name", ["ppo", "dqn", "cql", "bc"])
 def test_agents_use_the_same_simulator_as_the_baselines(name):
     """Los baselines corren con configs/env.yaml: los agentes no pueden tener otras reglas."""
     config = load_config(f"configs/{name}.yaml", ExperimentConfig)
