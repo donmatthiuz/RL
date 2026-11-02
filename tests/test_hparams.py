@@ -3,7 +3,15 @@ from pathlib import Path
 
 import yaml
 
-from polym4v.agents.hparams import GRID, SEEDS, point_id, points, write_grid
+from polym4v.agents.hparams import (
+    FINAL_SEEDS,
+    GRID,
+    SEEDS,
+    point_id,
+    points,
+    write_final,
+    write_grid,
+)
 from polym4v.cli import main
 from polym4v.utils.config import ExperimentConfig, load_config
 
@@ -44,3 +52,13 @@ def test_la_tabla_agrupa_por_carpeta_y_elige_por_algoritmo(tmp_path, capsys):
     result = json.loads(capsys.readouterr().out)
     assert result["best_by_algo"] == {"ppo": "ppo/b", "dqn": "dqn/c"}
     assert "Búsqueda de hiperparámetros" in (out / "hparams.md").read_text(encoding="utf-8")
+
+
+def test_la_config_final_es_el_mejor_punto_con_cinco_semillas(tmp_path):
+    write_grid(Path("configs"), tmp_path / "grid")
+    point = {"params.alpha": 4.0, "learning_rate": 3e-5}
+    best = {"cql": f"cql/{point_id(point)}"}
+    (path,) = write_final(tmp_path / "grid", best, tmp_path / "final")
+    config = load_config(path, ExperimentConfig)
+    assert path.name == "cql.yaml" and config.seeds == FINAL_SEEDS
+    assert config.agent.params["alpha"] == 4.0 and config.agent.learning_rate == 3e-5

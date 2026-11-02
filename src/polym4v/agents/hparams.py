@@ -13,6 +13,7 @@ from typing import Any
 from ..utils.config import ExperimentConfig, load_config, save_resolved
 
 SEEDS = [0, 1]
+FINAL_SEEDS = [0, 1, 2, 3, 4]  # AGT-10 y sección 5 del protocolo
 # Algoritmo → parámetro → valores. `params.x` es un parámetro propio de SB3 o de d3rlpy.
 GRID: dict[str, dict[str, list[Any]]] = {
     "ppo": {
@@ -74,4 +75,18 @@ def write_grid(configs: Path, out: Path) -> list[Path]:
             written.append(
                 save_resolved(apply(base, point), out / algo / f"{point_id(point)}.yaml")
             )
+    return written
+
+
+def write_final(grid_dir: Path, best_by_algo: dict[str, str], out: Path) -> list[Path]:
+    """`out/<algo>.yaml`: el mejor punto de cada algoritmo, con las 5 semillas de AGT-10.
+
+    `best_by_algo` es la salida de `polym4v hparams` (`<algo>/<punto>`).
+    """
+    written = []
+    for algo, variant in best_by_algo.items():
+        point = variant.split("/", 1)[1]
+        config = load_config(grid_dir / algo / f"{point}.yaml", ExperimentConfig)
+        final = config.model_copy(update={"seeds": FINAL_SEEDS})
+        written.append(save_resolved(final, out / f"{algo}.yaml"))
     return written
