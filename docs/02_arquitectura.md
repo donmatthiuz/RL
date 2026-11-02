@@ -333,8 +333,13 @@ dependencias `demo`, que `uv sync` instala por defecto pero no es una dependenci
   ejecutada, el estado de la orden (con el precio, las acciones y la comisión si se ejecutó) y los
   componentes de la recompensa.
 
-**v2 (EVA-08):** varios agentes en el mismo mercado de test y la curva de capital del agente frente
-a los baselines.
+**v2 (EVA-08):** además, una lista *Comparar con* suma otras políticas del mismo split:
+
+- Dos gráficos: el PnL de cada una dentro del mercado y el PnL acumulado en orden cronológico, con
+  el paso y el mercado actuales marcados. Una tabla resume el PnL y las órdenes ejecutadas.
+- Si existe `reports/<split>/summary.csv`, propone de entrada al mejor agente y al mejor baseline
+  en modo normal.
+- Una política sin el mercado elegido se deja afuera, con un aviso.
 
 ### 2.8 `utils/` y CLI (Rol 1)
 
