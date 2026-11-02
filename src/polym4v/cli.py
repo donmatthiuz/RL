@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import asdict, is_dataclass
 from datetime import datetime
@@ -30,7 +31,8 @@ from .data.splits import load_exclusions
 from .data.trades import capture_trades
 from .env.market_data import MarketData
 from .env.market_env import PolymarketEnv
-from .evaluation.backtest import episode_results, run_backtest
+from .evaluation.backtest import run_backtest
+from .evaluation.metrics import summarize
 from .evaluation.verification import TradeVerifier
 from .utils.config import DataConfig, SimulatorConfig, load_config, load_named
 from .utils.paths import get_paths
@@ -217,24 +219,14 @@ def _backtest(args: argparse.Namespace) -> Any:
     out = Path(args.out or paths.reports / "trajectories" / name)
     out.parent.mkdir(parents=True, exist_ok=True)
     trajectories.to_parquet(out, index=False)
-    results = episode_results(trajectories, config.env.initial_cash, stake)
-    ret = results["return_on_stake"]
-    executed = int(results["executed"].sum())
+    # NaN no es JSON válido: una métrica sin definir (por ejemplo, el Sharpe sin varianza) es null.
+    metrics = summarize(trajectories, config.env.initial_cash, stake)
+    metrics = {k: None if isinstance(v, float) and math.isnan(v) else v for k, v in metrics.items()}
     return {
-        "policy": args.policy,
         "split": args.split,
         "strict": args.strict,
         "markets_with_trades": None if verifier is None else len(verifier.trades),
-        "verified_share": (
-            float(results["verified"].sum() / executed) if verifier and executed else None
-        ),
-        "markets": len(results),
-        "return_on_stake_mean": float(ret.mean()),
-        "return_on_stake_ci95": float(1.96 * ret.std(ddof=1) / len(ret) ** 0.5),
-        "executed_per_market": float(results["executed"].mean()),
-        "no_price_per_market": float(results["no_price"].mean()),
-        "unverifiable_per_market": float(results["unverifiable"].mean()),
-        "invalid_per_market": float(results["invalid"].mean()),
+        **metrics,
         "trajectories": str(out),
     }
 

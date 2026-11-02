@@ -78,6 +78,7 @@ def test_cli_backtest_writes_trajectories_and_refuses_test(tmp_path, capsys, mon
     assert cli.main(args) == 0
     summary = json.loads(capsys.readouterr().out)
     assert summary["markets"] == 4 and summary["split"] == "train"
+    assert summary["verified_share"] is None
     assert len(pd.read_parquet(summary["trajectories"])) == 4 * 60
 
     assert cli.main([*args, "--split", "test"]) == 1
