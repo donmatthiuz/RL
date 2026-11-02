@@ -461,6 +461,10 @@ en **modo estricto**, donde las ejecuciones no verificables cuentan como no ejec
 conclusión cambia entre los dos modos, el resultado depende de liquidez no verificable y se
 reporta así (EVA-01).
 
+**Entrenamiento (31/10/2026, R1):** los trades de train también se capturan, y si el agente se
+entrena en modo estricto se decide después, comparando los dos modos en train (actualización de
+ADR-017).
+
 ### 6.3 S9 — Con qué precio se valora una posición abierta
 
 **No es pregunta:**
