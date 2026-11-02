@@ -91,8 +91,10 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         self.episode: Episode = data.episodes[0]
         self.k = 0
         self.portfolio = Portfolio(cash=config.initial_cash)
-        self.reward_state = RewardState(v0=config.initial_cash, peak=config.initial_cash)
-        self.value = config.initial_cash
+        self.reward_state = RewardState(
+            v0=config.initial_cash, peak=config.initial_cash, stake=self.stake
+        )
+        self.value = self.mid = config.initial_cash
 
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
@@ -107,8 +109,8 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         cash = self.config.initial_cash
         self.k = 0
         self.portfolio = Portfolio(cash=cash)
-        self.reward_state = RewardState(v0=cash, peak=cash)
-        self.value = cash
+        self.reward_state = RewardState(v0=cash, peak=cash, stake=self.stake)
+        self.value = self.mid = cash
         self.last_info = self._info(None, None, None, "ninguna", None, None, None, None)
         self.last_reward = 0.0
         return self._observation(), self.last_info
@@ -140,20 +142,26 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
 
         self.k += 1
         done = self.k == self.data.n_steps
+        holding = self.portfolio.side != FLAT
         if done:
             self.portfolio.settle(self.episode.outcome)
-            value = self.portfolio.cash
+            value = mid = self.portfolio.cash
         else:
-            value = self.portfolio.value(float(self.episode.p_yes[self.k]), self.costs)
+            p_yes = float(self.episode.p_yes[self.k])
+            value = self.portfolio.value(p_yes, self.costs)
+            mid = self.portfolio.mid_value(p_yes)
         total, components = reward(
             self.reward_config,
             self.reward_state,
             v_prev=self.value,
             v_now=value,
+            mid_prev=self.mid,
+            mid_now=mid,
+            holding=holding,
             invalid=requested != Action.WAIT and not valid,
             done=done,
         )
-        self.value = value
+        self.value, self.mid = value, mid
         info = self._info(
             requested, executed, valid, status, execution, verified, fill, components, t=t
         )

@@ -141,7 +141,7 @@ src/polym4v/env/
 ├── market_data.py  # Episodios desde steps y prices_raw, con la normalización de train
 ├── portfolio.py    # Portfolio: caja, posición, valor de liquidación (S9) y liquidación 0/1
 ├── execution.py    # Modelo de costos: medio spread y comisión taker (S5)
-├── reward.py       # Recompensas pnl, pnl_risk y terminal, elegibles por config
+├── reward.py       # Variantes de recompensa de la ablación de ENV-08, elegibles por config
 └── synthetic.py    # Mercados sintéticos: mercado nulo (ENV-10) y control positivo (AGT-06)
 ```
 
@@ -190,7 +190,7 @@ están en `INFO_KEYS` de `market_env.py`:
 | `fill_price`, `fill_shares`, `fee` | Precio pagado o recibido por el lado operado, acciones y comisión de la operación |
 | `position_side`, `position_size`, `cash` | Cartera después de la operación |
 | `portfolio_value`, `fees_paid` | Valor de la cartera (S9) en el instante siguiente y comisiones acumuladas del episodio |
-| `reward_components` | `pnl`, `drawdown`, `invalid` y `terminal` del paso |
+| `reward_components` | `pnl`, `drawdown`, `hold`, `invalid` y `terminal` del paso; suman la recompensa |
 
 ### 2.4 Función de recompensa (Rol 3, en colaboración con Rol 4)
 
@@ -206,24 +206,31 @@ r_t =  ΔV_t / V_0                         # beneficio/pérdida mark-to-market d
 
 donde `V_t = cash_t + valor_mark_to_market_t` y `DD_t = max_{τ≤t} V_τ - V_t`.
 
-| Variante (`reward.name`) | Descripción | Uso |
+| Variante (`reward.name`) | Descripción | Etapa de la ablación (ENV-08) |
 | -------------------------- | ------------- | ----- |
-| `pnl` | Solo `ΔV_t / V_0` | Línea base de la recompensa; la de `configs/env.yaml` hasta decidir R1 (ver la nota) |
-| `pnl_risk` | `pnl` más la penalización de drawdown | Propuesta como principal; ver la nota |
-| `terminal` | Solo el PnL final del episodio (recompensa escasa) | Ablación |
-| `sharpe_like` | `ΔV_t` dividido por una volatilidad móvil | Ablación opcional |
+| `pnl` | Solo `ΔV_t / V_0`; la de `configs/env.yaml` hasta cerrar la ablación | A |
+| `pnl_mid` | `ΔM_t / V_0`, con la posición a precio medio: no adelanta el costo de salir | A |
+| `terminal` | Solo el PnL final del episodio (recompensa escasa) | A |
+| `pnl_risk` | `base` más la penalización de drawdown (`λ_dd`) | B |
+| `pnl_hold` | `base` más el costo por mantener (`λ_hold`) | B |
+| `utility` | Solo al final, utilidad CARA del PnL sobre el monto (`a`) | B |
 
 Con mark-to-market, la suma de las recompensas `pnl` del episodio es igual al PnL total, así que la
 recompensa densa no cambia el objetivo final: solo da más señal en cada paso. Esto se verifica con
-un test.
+un test, también para `pnl_mid`.
 
-`V_t` valora la posición a liquidación (S9, ADR-016). Están implementados `pnl`, `pnl_risk`,
-`terminal` y `λ_inv`; `λ_cost`, `λ_hold` y `sharpe_like` no, porque ninguna config los usa.
+`V_t` valora la posición a liquidación (S9, ADR-016). `base` es la ganadora de la etapa A, sobre la
+que `pnl_risk` y `pnl_hold` suman su penalización, y `scale` divide por `V_0` o por el monto. La
+config rechaza un parámetro que la variante no usa. `λ_cost` y `sharpe_like` quedaron fuera: los
+costos ya están en `ΔV_t`, y un Sharpe de 60 pasos con una sola posición es muy ruidoso.
 
-**Nota (pendiente de R1):** con la valoración a liquidación, al comprar `V` cae lo que costaría
-salir (spread y comisiones), y esa caída también cuenta como drawdown. Con `pnl_risk`, la entrada se
-paga `1 + λ_dd` veces, que es justo lo que S9 quería evitar. Hasta que R1 decida si `pnl_risk` sigue
-como principal, `configs/env.yaml` usa `pnl`.
+**Decisión (R1, 01/11/2026):** antes de elegir la recompensa principal se revisaron cinco entornos
+de referencia y la literatura
+([investigación](ia/investigaciones/recompensas_rl_trading.md)). Ninguno castiga el drawdown en
+cada paso, y con la valoración a liquidación `pnl_risk` paga la entrada `1 + λ_dd` veces. La
+principal se elige con la ablación de ENV-08 en val, en dos etapas: primero `pnl`, `pnl_mid` y
+`terminal`, y después las variantes con riesgo sobre la ganadora. Hasta entonces,
+`configs/env.yaml` usa `pnl`.
 
 ### 2.5 `agents/` — Agentes y baselines (Rol 4)
 
@@ -318,14 +325,23 @@ EVA-04 (`stats.py`).
 
 ### 2.7 `app/` — Demo (Rol 5)
 
-Streamlit (`app/demo.py`):
+Streamlit (`app/demo.py`, `make demo`). Lee trayectorias ya calculadas en
+`reports/trajectories/*.parquet`, así que no necesita GPU ni red. Streamlit está en el grupo de
+dependencias `demo`, que `uv sync` instala por defecto pero no es una dependencia del paquete.
 
-- Se elige un mercado de test y un agente (o varios para compararlos).
-- Un reproductor paso a paso (*play/pause* y *slider* de tiempo).
-- Gráfico de `p_yes` con marcas de compra y venta, curva de capital del agente frente a los
-  baselines, y un panel con la acción, la posición, el saldo y la recompensa del paso actual.
-- Lee trayectorias ya calculadas en `reports/trajectories/*.parquet`, así que no necesita GPU ni
-  red.
+**v1 (EVA-07), funcional y sin diseño visual:**
+
+- Se elige un archivo de trayectorias (baseline o corrida, split y modo) y un mercado.
+- Un reproductor paso a paso: *slider* de tiempo, botones de paso anterior y siguiente, y
+  *Reproducir*, que avanza un paso cada 0,4 s.
+- Gráfico de `p_yes` con las compras YES y NO, las ventas y las órdenes que no se ejecutaron,
+  más el valor de la cartera, con el paso actual marcado.
+- Un panel con la caja, la posición, el valor y la recompensa del paso, la acción pedida y la
+  ejecutada, el estado de la orden (con el precio, las acciones y la comisión si se ejecutó) y los
+  componentes de la recompensa.
+
+**v2 (EVA-08):** varios agentes en el mismo mercado de test y la curva de capital del agente frente
+a los baselines.
 
 ### 2.8 `utils/` y CLI (Rol 1)
 
@@ -350,8 +366,8 @@ RL/
 ├── .pre-commit-config.yaml
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml              # lint, mypy y tests con cobertura en cada push y PR a proyecto
-│       ├── nightly.yml         # tests lentos y backtest corto (INF-08, previsto)
+│       ├── ci.yml              # lint, mypy, tests con cobertura y smoke-train en cada push y PR
+│       ├── nightly.yml         # tests slow y network todos los días (INF-08), desde main
 │       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09, previsto)
 ├── configs/
 │   ├── data.yaml

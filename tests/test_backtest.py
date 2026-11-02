@@ -40,7 +40,7 @@ def test_no_trade_ends_every_market_with_the_initial_cash(env):
 def test_trajectories_have_every_info_key_and_one_row_per_step(env):
     trajectories = run_backtest(RandomPolicy(seed=0), env)
     expected = {key for key in INFO_KEYS if key != "reward_components"}
-    assert expected <= set(trajectories.columns) and {"r_pnl", "reward", "done"} <= set(
+    assert expected <= set(trajectories.columns) and {"r_pnl", "r_hold", "reward", "done"} <= set(
         trajectories.columns
     )
     assert len(trajectories) == 15 * 60 and trajectories["done"].sum() == 15

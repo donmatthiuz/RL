@@ -93,12 +93,38 @@ class EnvConfig(StrictModel):
         return self
 
 
-class RewardConfig(StrictModel):
-    """Recompensa del entorno (docs/02, sección 2.4, y S9 en ADR-016)."""
+RewardBase = Literal["pnl", "pnl_mid", "terminal"]
 
-    name: Literal["pnl", "pnl_risk", "terminal"]
+
+class RewardConfig(StrictModel):
+    """Recompensa del entorno (docs/02, sección 2.4, S9 en ADR-016 y la lista de ENV-08).
+
+    `pnl_risk` y `pnl_hold` suman su penalización a `base`, la ganadora de la etapa A.
+    """
+
+    name: Literal["pnl", "pnl_mid", "terminal", "pnl_risk", "pnl_hold", "utility"]
+    base: RewardBase = "pnl"
     lambda_dd: float = Field(default=0.0, ge=0)
+    lambda_hold: float = Field(default=0.0, ge=0)
+    utility_a: float = Field(default=1.0, gt=0)
     lambda_invalid: float = Field(default=0.0, ge=0)
+    scale: Literal["v0", "stake"] = "v0"
+
+    @model_validator(mode="after")
+    def _check_variant(self) -> Self:
+        # Un parámetro que la variante no usa casi siempre es un error de la config de la ablación.
+        if self.lambda_dd > 0 and self.name != "pnl_risk":
+            raise ValueError("lambda_dd solo se usa con pnl_risk")
+        if self.lambda_hold > 0 and self.name != "pnl_hold":
+            raise ValueError("lambda_hold solo se usa con pnl_hold")
+        if self.base != "pnl" and self.name not in ("pnl_risk", "pnl_hold"):
+            raise ValueError("base solo se usa con pnl_risk y pnl_hold")
+        # Sin su penalización, la variante es igual a `base` y la ablación la contaría dos veces.
+        if self.name == "pnl_risk" and self.lambda_dd == 0:
+            raise ValueError("pnl_risk necesita lambda_dd > 0")
+        if self.name == "pnl_hold" and self.lambda_hold == 0:
+            raise ValueError("pnl_hold necesita lambda_hold > 0")
+        return self
 
 
 class SimulatorConfig(StrictModel):
