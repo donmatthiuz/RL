@@ -262,7 +262,8 @@ class Policy(Protocol):
 
 ```
 src/polym4v/agents/
-├── base.py         # Policy Protocol + wrapper SB3/d3rlpy → Policy
+├── base.py         # Policy Protocol y Action
+├── adapters.py     # SB3Policy (PPO, DQN) y D3rlpyPolicy (CQL, BC) → Policy
 ├── baselines.py    # Políticas heurísticas
 ├── train_sb3.py    # Entrenamiento PPO/DQN (callbacks, checkpoints, early stopping por val)
 ├── offline.py      # Recolección del dataset offline + entrenamiento CQL/BC
@@ -370,8 +371,9 @@ RL/
 | Lenguaje | Python 3.11 | Estándar en RL. Lo soportan todas las librerías. |
 | Gestión de entorno | `uv` (alternativa: `pip` + `venv`) | Rápido y con lockfile reproducible |
 | Entorno RL | `gymnasium` | API estándar que esperan SB3 y d3rlpy |
-| PPO / DQN | `stable-baselines3` (PyTorch) | Implementaciones probadas, para no reimplementar |
-| Offline RL | `d3rlpy` | Trae `DiscreteCQL` y `DiscreteBC` |
+| PPO / DQN | `stable-baselines3` 2.9.2 (PyTorch) | Implementaciones probadas, para no reimplementar |
+| Offline RL | `d3rlpy` 2.8.1 | Trae `DiscreteCQL` y `DiscreteBC`; exige `gymnasium` 1.0.0 (S7) |
+| Redes | `torch` solo CPU, del índice de PyTorch | Las redes son MLP pequeñas; la CI y cada integrante instalan lo mismo |
 | Datos | `pandas`, `pyarrow`, `requests`, `tenacity` | Simples y suficientes |
 | Validación | `pydantic` (configs), `pandera` (DataFrames) | Detecta errores de datos temprano |
 | CLI | `typer` | Comandos legibles |
