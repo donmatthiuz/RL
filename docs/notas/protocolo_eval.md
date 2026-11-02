@@ -100,14 +100,18 @@ válido si está bien medido. Si ningún agente gana, se reporta igual (D4).
 - Se corrige con Bonferroni: IC bilateral al 98,75 %, que equivale a una prueba unilateral con
   `α = 0,025 / 4`.
 
-**Clasificación de cada agente.** Se fija antes de abrir test, con el IC al 98,75 %:
+**Clasificación de cada agente.** Se fija antes de abrir test, con el IC al 98,75 %. Las
+condiciones se evalúan en el orden de la tabla y gana la primera que se cumple. Los dos lados son
+simétricos: una diferencia significativa pero menor que `Δ_min` no es "equivalente" ni a favor ni
+en contra del agente (decisión del 02/11/2026, a partir de la revisión de R5).
 
 | Resultado | Condición |
 | --- | --- |
 | Supera | Límite inferior > 0 y media ≥ `Δ_min` |
 | Mejor, pero no relevante | Límite inferior > 0 y media < `Δ_min` |
+| Inferior | Límite superior < 0 y media ≤ `-Δ_min` |
+| Peor, pero no relevante | Límite superior < 0 y media > `-Δ_min` |
 | Equivalente | El IC cae entero dentro de `(-Δ_min, +Δ_min)` (prueba TOST) |
-| Inferior | Límite superior < 0 |
 | Inconcluso | Cualquier otro caso |
 
 Un agente que aprende a no operar tiene `D = 0` contra `NoTrade` y queda "equivalente". Según D1,
@@ -200,7 +204,7 @@ borrador.
 | El "mejor baseline en val" casi seguro sería `NoTrade` o una heurística que ganó por azar | Alta | Regla de la sección 4 |
 | El IC no incluía la variación entre semillas | Alta | Bootstrap de dos niveles (sección 6) |
 | `Δ_min = 1 %` comparaba unidades distintas y probablemente no es detectable | Alta | Definición por mercado y potencia explícita (secciones 7 y 10) |
-| El criterio no separaba "no supera" de "no se pudo saber" | Alta | Clasificación en cinco resultados (sección 6) |
+| El criterio no separaba "no supera" de "no se pudo saber" | Alta | Clasificación en seis resultados, simétrica (sección 6) |
 | Bloques de un día suponían días independientes | Media | Bootstrap estacionario con largo de bloque de Politis y White |
 | Holm y Bonferroni podían contradecirse | Media | Solo Bonferroni |
 | Muchas diferencias iguales a cero | Media | Conteo y descomposición de la media |
