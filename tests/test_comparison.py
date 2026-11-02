@@ -1,5 +1,7 @@
 """Tests de la comparación de agentes con el baseline de referencia (EVA-04)."""
 
+import re
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -204,3 +206,19 @@ def test_el_reporte_de_test_exige_y_reutiliza_lo_fijado_en_val(tmp_path) -> None
     assert "Prueba del protocolo en test" in (reports / "test" / "comparison.md").read_text(
         encoding="utf-8"
     )
+
+
+def test_la_tabla_markdown_tiene_una_celda_por_columna():
+    row = dict.fromkeys(comparison.COLUMNS, 0.0) | {
+        "group": "ppo_pnl",
+        "strict": False,
+        "role": "principal",
+        "baseline": "no_trade",
+        "classification": "equivalente",
+        "reliable": True,
+        "depends_on_liquidity": False,
+    }
+    lines = comparison.comparison_markdown(pd.DataFrame([row]), "val").splitlines()
+    for line in lines[2:5]:
+        cells = re.split(r"(?<!\\)\|", line)[1:-1]
+        assert len(cells) == len(comparison.COLUMNS)

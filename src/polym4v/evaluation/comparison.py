@@ -37,7 +37,7 @@ COLUMNS = {
     "nonzero_markets": "Mercados con D ≠ 0",
     "nonzero_days": "Días con D ≠ 0",
     "trade_share": "P(D ≠ 0)",
-    "mean_when_trading": "E[D | D ≠ 0]",
+    "mean_when_trading": "E[D \\| D ≠ 0]",
     "reliable": "IC confiable",
     "mde": "MDE",
     "depends_on_liquidity": "Depende de liquidez",

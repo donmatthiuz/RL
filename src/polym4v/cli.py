@@ -194,6 +194,21 @@ def _parser() -> argparse.ArgumentParser:
     ablation.add_argument("--split", choices=("train", "val"), default="val")
     ablation.add_argument("--out", help="Carpeta del reporte (por defecto, reports/<split>)")
 
+    grid = commands.add_parser(
+        "hparams-grid", help="Escribe una config por punto de la búsqueda de AGT-09"
+    )
+    grid.add_argument("--configs", default="configs", help="Carpeta de las configs base")
+    grid.add_argument("--out", default="configs/hparams", help="Carpeta de salida")
+
+    hparams = commands.add_parser(
+        "hparams", help="Tabla de la búsqueda de hiperparámetros con las corridas entrenadas"
+    )
+    hparams.add_argument("--models", required=True, help="Carpeta con una subcarpeta por punto")
+    hparams.add_argument("--split", choices=("train", "val"), default="val")
+    hparams.add_argument("--out", help="Carpeta del reporte (por defecto, reports)")
+    hparams.add_argument("--grid", default="configs/hparams", help="Configs de la búsqueda")
+    hparams.add_argument("--final", help="Escribe aquí la mejor config de cada algoritmo (AGT-10)")
+
     train = commands.add_parser("train", help="Entrena PPO o DQN y elige el mejor checkpoint")
     train.add_argument("--config", default="configs/ppo.yaml", help="Config del experimento")
     train.add_argument(
@@ -463,6 +478,25 @@ def _run(args: argparse.Namespace) -> Any:
 
         out = Path(args.out) if args.out else get_paths().reports / args.split
         return build_ablation(Path(args.models), args.split, out)
+    if args.command == "hparams-grid":
+        from .agents.hparams import write_grid
+
+        written = write_grid(Path(args.configs), Path(args.out))
+        return {"configs": len(written), "out": args.out}
+    if args.command == "hparams":
+        from .evaluation.ablation import build_ablation
+
+        out = Path(args.out) if args.out else get_paths().reports
+        title = "Búsqueda de hiperparámetros (AGT-09)"
+        result = build_ablation(
+            Path(args.models), args.split, out, name="hparams", title=title, by_folder=True
+        )
+        if args.final:
+            from .agents.hparams import write_final
+
+            written = write_final(Path(args.grid), result["best_by_algo"], Path(args.final))
+            result["final"] = [str(path) for path in written]
+        return result
     if args.command == "collect-offline":
         return _collect_offline(args)
     if args.command == "config":
