@@ -177,13 +177,13 @@ def bootstrap_ci(
 
 
 def classify(mean: float, lower: float, upper: float, delta_min: float = DELTA_MIN) -> str:
-    """Clasificación de la sección 6, evaluando sus condiciones en el orden de la tabla."""
+    """Clasificación de la sección 6, en el orden de su tabla; los dos lados son simétricos."""
     if lower > 0:
         return "supera" if mean >= delta_min else "mejor, pero no relevante"
+    if upper < 0:
+        return "inferior" if mean <= -delta_min else "peor, pero no relevante"
     if -delta_min < lower and upper < delta_min:
         return "equivalente"
-    if upper < 0:
-        return "inferior"
     return "inconcluso"
 
 
