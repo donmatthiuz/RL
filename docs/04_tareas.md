@@ -28,7 +28,7 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 02/11/2026, de 66 tareas: 46 hechas, 1 en curso, 1 omitida y 18 sin empezar, casi todas del
+Al 02/11/2026, de 66 tareas: 45 hechas, 1 en curso, 1 omitida y 19 sin empezar, casi todas del
 documento. Todos los PR (#1 a #34) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
