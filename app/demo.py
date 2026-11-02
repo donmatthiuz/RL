@@ -18,6 +18,7 @@ import streamlit as st
 from matplotlib.figure import Figure
 
 from polym4v.agents.base import Action
+from polym4v.env.reward import COMPONENTS
 from polym4v.evaluation.backtest import episode_results
 from polym4v.evaluation.metrics import capital_curve
 from polym4v.evaluation.report import STRICT_SUFFIX, parse_name
@@ -26,7 +27,6 @@ from polym4v.utils.paths import get_paths
 
 SPLITS = ("train", "val", "test")
 SIDES = {1: "YES", -1: "NO", 0: "sin posición"}
-REWARD_COMPONENTS = ("r_pnl", "r_drawdown", "r_invalid", "r_terminal")
 PLAY_PAUSE_S = 0.4
 # Las corridas entrenadas son `<fecha>_<agente>_<recompensa>_s<semilla>`; lo demás, baselines.
 AGENT_LABEL = re.compile(r"^\d{8}-\d{6}_")
@@ -235,7 +235,7 @@ def step_panel(row: pd.Series, initial_cash: float) -> None:
         order["Respaldada por trades reales"] = "sí" if row["exec_verified"] else "no"
     left, right = st.columns(2)
     left.table(pd.DataFrame({"Valor": order}))
-    rewards = {name.removeprefix("r_"): row[name] for name in REWARD_COMPONENTS}
+    rewards = {name: row[f"r_{name}"] for name in COMPONENTS}
     right.table(pd.DataFrame({"Componente de la recompensa": rewards}))
 
 
