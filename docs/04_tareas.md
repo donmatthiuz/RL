@@ -28,49 +28,52 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 02/11/2026, de 66 tareas: 39 hechas, 6 en curso, 1 omitida y 20 sin empezar, casi todas del
-documento y de la fase final. Todos los PR (#1 a #32) están mezclados en `proyecto`.
+Al 02/11/2026, de 66 tareas: 46 hechas, 1 en curso, 1 omitida y 18 sin empezar, casi todas del
+documento. Todos los PR (#1 a #34) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
 | R1 Josué | INF-01 a INF-08 y DOC-01 | — | INF-09 e INF-10 |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
-| R4 (lo asume R1) | AGT-02, AGT-03, AGT-06, AGT-07 y AGT-09 | AGT-04, AGT-05, AGT-08 y AGT-10 (entrenando) | — |
-| R5 Carlos | EVA-01 a EVA-05 y EVA-07 | EVA-08 y EVA-11 | EVA-06, EVA-09 (P2) y EVA-10 |
+| R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
+| R5 Carlos | EVA-01 a EVA-07 y EVA-11 | EVA-08 (falta el mejor agente en un mercado de test) | EVA-09 (P2) y EVA-10 |
 | Todos (documento) | DOC-01 | DOC-12, durante todo el proyecto | DOC-02 a DOC-11, DOC-13 y DOC-14 |
 
 AGT-01 (prototipo en CartPole) se omite: los adaptadores y el test de cordura de AGT-06 ya cubren
 lo que buscaba.
 
-### Camino para terminar
+### Resultado y lo que falta
 
-Todo se entrena y se elige en val; test se abre una sola vez al final (EVA-01).
+**Resultado en test (EVA-06, #34, una sola vez):** ningún agente de RL le gana a `NoTrade`, el
+baseline de referencia ([comparación](../reports/test/comparison.md)).
 
-```mermaid
-flowchart LR
-    A["ENV-08 etapa A<br/>pnl, pnl_mid, terminal"] --> B["ENV-08 etapa B<br/>sobre la ganadora"]
-    B --> H["AGT-09<br/>hiperparámetros"] --> F["AGT-10<br/>5 semillas, models/final"]
-    BL["Baselines en val<br/>normal y estricto"] --> V
-    F --> V["Reporte de val<br/>fija baseline, bloque y MDE"] --> T["EVA-06<br/>test una vez"]
-    T --> D["EVA-08 demo, DOC-07 y DOC-08,<br/>slides, video, INF-09 e INF-10"]
-```
+| Agente | Media de D (normal) | IC 98,75 % | Normal | Estricto |
+| --- | --- | --- | --- | --- |
+| PPO | −0,0005 | −0,0029 a +0,0018 | equivalente | equivalente |
+| DQN | −0,0018 | −0,0082 a +0,0036 | equivalente | inconcluso |
+| CQL | −0,0126 | −0,0263 a −0,0027 | inferior | inferior |
+| BC | −0,0014 | −0,0050 a −0,0000 | peor, pero no relevante | equivalente |
 
-1. **ENV-08 (hecha, #30):** gana `pnl_risk` con base `pnl_mid` y `λ_dd = 1`, que pasa a todas las
-   configs ([ablación](../reports/val/ablation.md) y `docs/02`, sección 2.4).
-2. **Baselines en val (hecho, #31):** umbrales ajustados con `polym4v tune-baselines`
-   ([búsqueda](../reports/val/baselines_search.md)). Ninguna heurística se acerca a cero; el
-   baseline de referencia sigue siendo `NoTrade`.
-3. **AGT-09 (hecha, #32):** 25 configs × 2 semillas en val ([búsqueda](../reports/hparams.md)).
-   Todos los algoritmos quedan cerca de cero; la mejor config de cada uno está en
-   `configs/final/`.
-4. **AGT-10 (en curso):** `configs/final/` con 5 semillas en `models/final/`, y su evaluación en
-   val en los dos modos.
-5. **Reporte de val (EVA-05 y EVA-04):** fija el baseline de referencia, el largo de bloque y la
-   MDE antes de abrir test.
-6. **EVA-06:** test una sola vez, en modo normal y estricto.
-7. **Cierre:** demo con el mejor agente (EVA-08), Resultados y Conclusión (DOC-07 y DOC-08),
-   slides, video, release `v1.0` (INF-09) y reproducción por un tercero (INF-10).
+- PPO y DQN aprendieron a operar en pocos mercados y quedan equivalentes a no operar, que es un
+  resultado válido según D1. CQL parecía el mejor en val (+0,0109) y en test es inferior: su
+  ventaja venía de elegir checkpoints en val. BC opera en 23 mercados y su IC no es confiable.
+- Todas las heurísticas pierden; la mejor es `fair_value`, con −0,0214.
+- Test abarca 76 días, no los 73 que supuso el protocolo. Solo cambia la MDE, que queda un 2 % más
+  grande (conservadora); se declara en el informe.
+
+Camino seguido: ablación (#30), umbrales de los baselines (#31), búsqueda de hiperparámetros (#32),
+entrenamiento final y reporte de val (#33) y test (#34).
+
+**Lo que falta:**
+
+1. **EVA-08 (R5):** mostrar en la demo el mejor agente (PPO) frente a `NoTrade` en un mercado de
+   test.
+2. **Documento (todos):** DOC-02 a DOC-09, con Resultados y Conclusión (DOC-07 y DOC-08, R5) a
+   partir de `reports/val/` y `reports/test/`.
+3. **Slides y presentación (R1):** DOC-10, DOC-13 y DOC-14. **Video (R5):** DOC-11.
+4. **Cierre técnico (R1):** release `v1.0` con los artefactos (INF-09), reproducción por un tercero
+   (INF-10) y `proyecto` a `main`, para que corra el nightly.
 
 ### Decisiones del 02/11/2026
 
@@ -191,13 +194,13 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | AGT-01 | **Se omite (02/11/2026):** los adaptadores y el test de cordura de AGT-06 ya cubren el dominio de las librerías. Revisar la teoría y las librerías (SB3 PPO/DQN, d3rlpy CQL) y hacer un prototipo en `CartPole` para dominar la API | F0 | P1 | — | Notebook o script donde PPO resuelve CartPole |
 | AGT-02 | **Hecha el 02/11/2026 (#4 y #18).** Protocolo `Policy` y adaptadores `SB3Policy` y `D3rlpyPolicy` | F1 | P0 | INF-06 | Test: el adaptador devuelve acciones válidas para observaciones del espacio |
 | AGT-03 | **Hecha el 02/11/2026 (#12).** Baselines: `Random`, `NoTrade`, `Favorite`, `Momentum` y `MeanReversion` (con R5) | F1 | P0 | AGT-02 | Tests con escenarios de precio sintéticos donde el comportamiento esperado es obvio |
-| AGT-04 | **Código mezclado el 02/11/2026 (#19); falta superar a `Random` en val.** `train_sb3.py` para **PPO**: entornos vectorizados, `EvalCallback` en *val*, checkpoints, TensorBoard y guardado de la config resuelta | F2 | P0 | ENV-07, INF-05 | PPO entrena y **supera a `Random`** en val en una corrida corta |
-| AGT-05 | **Código mezclado el 02/11/2026 (#19); falta superar a `Random` en val.** **DQN** con el mismo script (ε-schedule, replay buffer, target network) | F2 | P0 | AGT-04 | DQN entrena y supera a `Random` en val |
+| AGT-04 | **Hecha el 02/11/2026 (#19 y #33):** PPO queda en +0,0012 en val y `Random` en −1,52. `train_sb3.py` para **PPO**: entornos vectorizados, `EvalCallback` en *val*, checkpoints, TensorBoard y guardado de la config resuelta | F2 | P0 | ENV-07, INF-05 | PPO entrena y **supera a `Random`** en val en una corrida corta |
+| AGT-05 | **Hecha el 02/11/2026 (#19 y #33):** DQN queda en −0,0015 en val y `Random` en −1,52. **DQN** con el mismo script (ε-schedule, replay buffer, target network) | F2 | P0 | AGT-04 | DQN entrena y supera a `Random` en val |
 | AGT-06 | **Hecha el 02/11/2026 (#19).** Test de cordura: entorno sintético donde existe una estrategia óptima conocida (por ejemplo, el precio siempre converge al resultado). PPO y DQN deben aprenderla. | F2 | P0 | AGT-04 | Ambos alcanzan ≥ 90 % del retorno óptimo en el entorno sintético |
 | AGT-07 | **Hecha el 02/11/2026 (#20).** `collect-offline`: generar el dataset de transiciones con baselines ε-greedy sobre train | F3 | P0 | AGT-03 | Archivo `data/offline/*.h5` con ≥ 100k transiciones y su manifest |
-| AGT-08 | **Código mezclado el 02/11/2026 (#20); falta evaluarlos en val.** Entrenar **Discrete CQL** y **Discrete BC** con d3rlpy y su adaptador `Policy` | F3 | P0 | AGT-07 | Ambos evaluados en val con `run_backtest` |
+| AGT-08 | **Hecha el 02/11/2026 (#20 y #33):** CQL y BC evaluados en val. Entrenar **Discrete CQL** y **Discrete BC** con d3rlpy y su adaptador `Policy` | F3 | P0 | AGT-07 | Ambos evaluados en val con `run_backtest` |
 | AGT-09 | **Hecha el 02/11/2026 (#32):** 25 configs × 2 semillas ([tabla](../reports/hparams.md)). Ajuste de hiperparámetros acotado (≤ 20 configs por algoritmo, selección por val) | F3 | P1 | AGT-05, AGT-08 | Tabla de búsqueda en `reports/hparams.md` |
-| AGT-10 | **En curso desde el 02/11/2026:** `configs/final/`, 5 semillas por algoritmo. Entrenamiento final: 5 semillas por algoritmo con la mejor config, y modelos congelados | F3 | P0 | AGT-09 | `models/final/` completo, con config, semilla y commit en cada run |
+| AGT-10 | **Hecha el 02/11/2026 (#32 y #33):** `configs/final/`, 5 semillas por algoritmo en `models/final/`. Entrenamiento final: 5 semillas por algoritmo con la mejor config, y modelos congelados | F3 | P0 | AGT-09 | `models/final/` completo, con config, semilla y commit en cada run |
 
 ### R5 — Evaluación, backtesting y demo
 
@@ -208,12 +211,12 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-03 | **Hecha el 02/11/2026 (#16).** `metrics.py`: retorno, Sharpe, max drawdown, win rate, operaciones, costos y % de acciones inválidas | F2 | P0 | EVA-02 | Tests con curvas de capital hechas a mano y su resultado conocido |
 | EVA-04 | **Hecha el 02/11/2026 (#26 y #27, R5).** `stats.py`: IC por bootstrap y diferencia pareada agente frente a baseline | F2 | P0 | EVA-03 | Test: el IC contiene la media verdadera en datos simulados (≈ 95 %) |
 | EVA-05 | **Hecha el 02/11/2026 (#22).** `report.py` y `polym4v report`: tabla comparativa y figuras (curvas de capital, distribución del PnL, curvas de aprendizaje) | F2 | P0 | EVA-03 | Se genera `reports/val/` de forma automática con un solo comando |
-| EVA-06 | **Evaluación final en test** (una sola vez, con los modelos congelados de AGT-10) | F4 | P0 | AGT-10 | `reports/test/` con la tabla final e IC 95 % |
+| EVA-06 | **Hecha el 02/11/2026 (#34), una sola vez:** [reports/test/](../reports/test/comparison.md). **Evaluación final en test** (una sola vez, con los modelos congelados de AGT-10) | F4 | P0 | AGT-10 | `reports/test/` con la tabla final e IC 95 % |
 | EVA-07 | **Hecha el 02/11/2026 (#24).** Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
 | EVA-08 | **Código mezclado el 02/11/2026 (#28, R5); falta mostrar el mejor agente en un mercado de test.** Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
 | EVA-09 | (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
-| EVA-11 | **Código mezclado el 02/11/2026 (#14); falta el reporte de val y test.** **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
+| EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 
 ### Documento, slides y video (todos)
 
@@ -278,20 +281,20 @@ flowchart LR
 
 **H2 (cierre de F2)**
 
-- [ ] PPO y DQN entrenados, y ambos superan a `Random` en val
+- [x] PPO y DQN entrenados, y ambos superan a `Random` en val
 - [x] Test de cordura en el entorno sintético aprobado (AGT-06)
-- [ ] Primera tabla comparativa en val (`reports/val/`)
+- [x] Primera tabla comparativa en val (`reports/val/`)
 - [x] Pipeline E2E en la CI (INF-07)
 
 **H3 (cierre de F3)**
 
-- [ ] CQL y BC entrenados
+- [x] CQL y BC entrenados
 - [x] Ablación de la recompensa terminada
-- [ ] Modelos finales congelados con 5 semillas (`models/final/`)
+- [x] Modelos finales congelados con 5 semillas (`models/final/`)
 - [x] Demo v1 funcionando
 
 **H4 (cierre de F4)**
 
-- [ ] Evaluación en test hecha una sola vez y documentada
+- [x] Evaluación en test hecha una sola vez y documentada
 - [ ] Demo v2, informe y presentación entregados
 - [ ] Release `v1.0` con artefactos y reproducibilidad verificada por un tercero (INF-10)

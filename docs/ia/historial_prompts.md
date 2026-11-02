@@ -30,6 +30,7 @@ Code. El equipo lo revisa y completa.
 | P11 | 31/10/2026 | Subagente `academic-statistician` | Revisar el protocolo de evaluación | Satisfactorio: cuatro fallas graves |
 | P12 | 31/10/2026 | Claude Code | ¿Es realista S4 en un CLOB? | Satisfactorio: cambió la pregunta de S4 |
 | P14 | 01/11/2026 | Claude Code | Revisión de R3 de los PR del entorno | Satisfactorio: un hueco en la config de la ablación |
+| P15 | 02/11/2026 | Claude Code | Mezclar la pila, entrenar y evaluar en test | Satisfactorio: cuatro fallas encontradas en el camino |
 
 ## Entradas
 
@@ -206,6 +207,25 @@ Code. El equipo lo revisa y completa.
 - **Corrección:** ninguna sobre la respuesta.
 - **Aporte:** commit `fix(env)` en #23: la config exige la penalización en esas dos variantes, y
   las estrategias de `hypothesis` ya no generan una lambda de 0.
+
+### P15 — Mezclar la pila, entrenar y evaluar en test
+
+- **Prompt:** R1 pidió verificar si se podían mezclar los PR y empezar a entrenar, asumir los roles
+  sin dueño para terminar y usar la GPU para entrenar.
+- **Resultado:** satisfactorio.
+- **Por qué:** se mezclaron los 34 PR, cada uno con la razón escrita cuando faltaba su revisor, y se
+  siguió el protocolo de EVA-01 hasta test: ablación, umbrales de los baselines, búsqueda de
+  hiperparámetros, entrenamiento final, reporte de val y una sola evaluación en test. Cada decisión
+  de diseño (clasificación simétrica, modo de entrenamiento, valores de la etapa B, grilla de
+  AGT-09 y abrir test) la tomó R1 con una recomendación y sus razones.
+- **Cómo se evaluó:** la suite completa y el smoke después de cada merge, un ensayo de punta a punta
+  de la evaluación en val con modelos de la ablación antes de usar los finales, y la medición de
+  CPU contra GPU antes de decidir dónde entrenar.
+- **Corrección:** la GPU que pidió R1 no se usó: medida en la RTX 5070, fue entre 3 y 7 veces más
+  lenta que la CPU con estas redes de 64 × 64 (tabla en `docs/04_tareas.md`).
+- **Aporte:** cuatro fallas encontradas en el camino: el dataset offline podía reusar recompensas
+  viejas, a la demo le faltaba el componente `hold`, la tabla del protocolo se rompía en Markdown y
+  faltaba el ajuste de umbrales de los baselines que pide el protocolo.
 
 ## Plantilla
 
