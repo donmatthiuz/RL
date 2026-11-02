@@ -187,6 +187,27 @@ def _parser() -> argparse.ArgumentParser:
         "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
     )
 
+    behavior = commands.add_parser(
+        "behavior", help="Análisis exploratorio del comportamiento de los agentes (EVA-12)"
+    )
+    behavior.add_argument("--split", choices=("val", "test"), default="val")
+    behavior.add_argument("--config", default="configs/env.yaml", help="Config del simulador")
+    behavior.add_argument("--dataset", help="Carpeta del dataset (por defecto, la de la config)")
+    behavior.add_argument(
+        "--trajectories", help="Carpeta de trayectorias (por defecto, reports/trajectories)"
+    )
+    behavior.add_argument("--models", help="Carpeta de modelos (por defecto, la de .env)")
+    behavior.add_argument("--out", help="Carpeta del reporte (por defecto, reports/<split>)")
+    behavior.add_argument(
+        "--skip-importance", action="store_true", help="Sin la importancia de features (solo val)"
+    )
+    behavior.add_argument("--repeats", type=int, default=3, help="Permutaciones por feature")
+    behavior.add_argument(
+        "--allow-test",
+        action="store_true",
+        help="Describe las trayectorias de test que ya existen, sin correr políticas",
+    )
+
     ablation = commands.add_parser(
         "ablation", help="Tabla de la ablación de la recompensa con las corridas entrenadas"
     )
@@ -326,15 +347,11 @@ def _backtest(args: argparse.Namespace) -> Any:
 
 
 def _evaluate(args: argparse.Namespace) -> Any:
-    from .agents.adapters import D3rlpyPolicy, SB3Policy
+    from .agents.adapters import load_policy
 
     run = Path(args.run)
     config = load_config(run / "config.yaml", ExperimentConfig)
-    algo = config.agent.algo
-    if algo in ("cql", "bc"):
-        policy: Any = D3rlpyPolicy.load(run / "best.d3", algo)
-    else:
-        policy = SB3Policy.load(run / "best.zip", algo)
+    policy = load_policy(run, config.agent.algo)
     return {"run": run.name, **_run_policy(policy, run.name, config, args)}
 
 
@@ -358,6 +375,43 @@ def _report(args: argparse.Namespace) -> Any:
         )
     except (FileNotFoundError, ValueError) as exc:
         raise ConfigurationError(str(exc)) from exc
+
+
+def _behavior(args: argparse.Namespace) -> Any:
+    from .evaluation.behavior import agent_runs, build_behavior, run_importance
+
+    if args.split == "test" and not args.allow_test:
+        raise ConfigurationError(
+            "test se evaluó una sola vez (EVA-06); usa --allow-test para describir sus trayectorias"
+        )
+    config = load_config(args.config, SimulatorConfig)
+    paths = get_paths()
+    dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
+    folder = Path(args.trajectories or paths.reports / "trajectories")
+    markets = pd.read_parquet(dataset / "markets.parquet", columns=["market_id", "outcome"])
+    outcomes = dict(zip(markets["market_id"], markets["outcome"].astype(int), strict=True))
+    importance = steps = None
+    if args.split == "val" and not args.skip_importance:
+        runs = agent_runs(folder, "val", Path(args.models or paths.models))
+        data = MarketData.load(dataset, split="val", normalize=config.env.normalize)
+        importance = run_importance(runs, data, repeats=args.repeats)
+    if args.split == "test":
+        steps = pd.read_parquet(dataset / "steps.parquet", columns=["market_id", "k", "p_yes", "x"])
+    try:
+        result = build_behavior(
+            args.split,
+            folder,
+            Path(args.out or paths.reports / args.split),
+            outcomes,
+            config.env,
+            importance=importance,
+            steps=steps,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise ConfigurationError(str(exc)) from exc
+    if importance is not None:
+        result["batch_agreement"] = importance[1]
+    return result
 
 
 def _train(args: argparse.Namespace) -> Any:
@@ -463,6 +517,8 @@ def _run(args: argparse.Namespace) -> Any:
         return _evaluate(args)
     if args.command == "report":
         return _report(args)
+    if args.command == "behavior":
+        return _behavior(args)
     if args.command == "tune-baselines":
         from .evaluation.tuning import tune, write_tuning
 
