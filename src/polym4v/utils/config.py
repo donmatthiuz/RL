@@ -64,8 +64,19 @@ class DataConfig(StrictModel):
         return self
 
 
+class CostConfig(StrictModel):
+    """Costos del simulador, iguales para todos los splits (S5 y ADR-009)."""
+
+    half_spread: float = Field(ge=0, lt=0.5)
+    fee_rate: float = Field(ge=0)
+    fee_exponent: float = Field(ge=0)
+    fee_decimals: int = Field(ge=0)
+    min_fee: float = Field(ge=0)
+    tick: float = Field(gt=0, lt=0.5)
+
+
 # Cada archivo configs/<nombre>.yaml se valida con el modelo de su nombre.
-CONFIG_MODELS: dict[str, type[BaseModel]] = {"data": DataConfig}
+CONFIG_MODELS: dict[str, type[BaseModel]] = {"data": DataConfig, "costs": CostConfig}
 
 
 def load_config(path: str | Path, model: type[M]) -> M:
