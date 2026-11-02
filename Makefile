@@ -27,7 +27,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot dataset manifest entregable
+	pre-commit config capture capture-spot capture-trades dataset eda manifest entregable
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -89,8 +89,14 @@ capture: ## Archiva el historial crudo de una serie (SERIES, RAW_DIR, PAUSE)
 capture-spot: ## Archiva las klines de Binance del activo y fechas de la config (CONFIG, RAW_DIR)
 	$(UV) run polym4v capture-spot --config $(CONFIG) --out $(RAW_DIR)
 
+capture-trades: ## Archiva los trades taker de val y test del dataset (CONFIG, RAW_DIR, PAUSE)
+	$(UV) run polym4v capture-trades --config $(CONFIG) --out $(RAW_DIR) --pause $(PAUSE)
+
 dataset: ## Construye markets, prices_raw y spot_1m desde el crudo (CONFIG, RAW_DIR)
 	$(UV) run polym4v build-dataset --config $(CONFIG) --raw $(RAW_DIR)
+
+eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make dataset)
+	$(UV) run --group notebooks jupyter execute --inplace notebooks/eda/01_eda_btc_horario.ipynb
 
 manifest: ## Recalcula el manifest con el hash de cada archivo crudo (RAW_DIR)
 	$(UV) run polym4v manifest --out $(RAW_DIR)
