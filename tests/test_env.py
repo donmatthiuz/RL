@@ -1,4 +1,5 @@
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -262,7 +263,10 @@ def test_penalty_variants_need_their_penalty(name):
 
 def test_passes_the_gymnasium_checker(data):
     check_env(make_env(data), skip_render_check=True)
-    check_env(PolymarketEnv(data, ENV, PNL, render_mode="ansi"))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        check_env(PolymarketEnv(data, ENV, PNL, render_mode="ansi"))
+    assert not [w for w in caught if "render fps" in str(w.message)]
 
 
 def test_order_fills_at_first_price_after_latency(data):
@@ -330,6 +334,13 @@ def test_open_position_is_settled_at_one_or_zero(data):
         expected = 1000.0 - 20.0 + (shares if episode.outcome == 1 else 0.0)
         assert last["portfolio_value"] == pytest.approx(expected)
         assert last["position_side"] == FLAT
+
+
+def test_step_after_the_end_asks_for_reset(data):
+    env = make_env(data)
+    run(env, [], data.market_ids[0])
+    with pytest.raises(RuntimeError, match="reset"):
+        env.step(Action.WAIT)
 
 
 def test_no_trade_ends_with_the_initial_cash(data):
