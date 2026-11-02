@@ -1,6 +1,7 @@
 import json
 
 import pytest
+import yaml
 
 from polym4v.cli import main
 from polym4v.evaluation.ablation import ablation_table, build_ablation, load_runs
@@ -74,3 +75,18 @@ def test_comando_escribe_tabla_y_figura(tmp_path, capsys):
 def test_sin_corridas_falla_con_un_mensaje_claro(tmp_path):
     with pytest.raises(FileNotFoundError, match="No hay corridas"):
         build_ablation(tmp_path, "val", tmp_path / "out")
+
+
+def test_variantes_con_parametros_se_distinguen_por_su_config(tmp_path):
+    for sub, reward in (
+        ("dd05", {"name": "pnl_risk", "base": "pnl_mid", "lambda_dd": 0.5}),
+        ("dd10", {"name": "pnl_risk", "base": "pnl_mid", "lambda_dd": 1.0}),
+    ):
+        write_run(tmp_path / sub, "pnl_risk", 0, 0.01, [0.01])
+        run = next((tmp_path / sub / "ppo").iterdir())
+        (run / "config.yaml").write_text(yaml.safe_dump({"reward": reward}), encoding="utf-8")
+    table = ablation_table(load_runs(tmp_path, "val"))
+    assert sorted(table["variant"]) == [
+        "ppo_pnl_risk (base=pnl_mid, λ_dd=0.5)",
+        "ppo_pnl_risk (base=pnl_mid, λ_dd=1)",
+    ]

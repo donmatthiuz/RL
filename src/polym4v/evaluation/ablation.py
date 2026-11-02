@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import yaml
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
@@ -35,17 +36,43 @@ COLUMNS = {
 }
 
 
+def variant_name(algo: str, reward: dict[str, Any]) -> str:
+    """Algoritmo y recompensa, con los parámetros que distinguen una variante de otra."""
+    name = reward["name"]
+    params = []
+    if name in ("pnl_risk", "pnl_hold") and reward.get("base", "pnl") != "pnl":
+        params.append(f"base={reward['base']}")
+    if name == "pnl_risk":
+        params.append(f"λ_dd={reward['lambda_dd']:g}")
+    if name == "pnl_hold":
+        params.append(f"λ_hold={reward['lambda_hold']:g}")
+    if name == "utility":
+        params.append(f"a={reward['utility_a']:g}")
+    if reward.get("scale", "v0") != "v0":
+        params.append(f"scale={reward['scale']}")
+    return f"{algo}_{name}" + (f" ({', '.join(params)})" if params else "")
+
+
 def load_runs(folder: Path, split: str) -> pd.DataFrame:
-    """Una fila por corrida evaluada en `split`, con su variante, semilla y checkpoints."""
+    """Una fila por corrida evaluada en `split`, con su variante, semilla y checkpoints.
+
+    Busca en toda la carpeta, así cada etapa o variante puede tener su propia subcarpeta.
+    """
     rows = []
-    for path in sorted(folder.glob("*/*/metrics.json")):
+    for path in sorted(folder.rglob("metrics.json")):
         metrics = json.loads(path.read_text(encoding="utf-8"))
         match = RUN_ID.match(metrics.get("run_id", ""))
         if match is None or metrics.get("eval_split") != split or not metrics.get("checkpoints"):
             continue
+        config = path.parent / "config.yaml"
+        reward = (
+            yaml.safe_load(config.read_text(encoding="utf-8"))["reward"]
+            if config.exists()
+            else {"name": match["reward"]}
+        )
         rows.append(
             {
-                "variant": f"{match['algo']}_{match['reward']}",
+                "variant": variant_name(match["algo"], reward),
                 "seed": int(match["seed"]),
                 "best": metrics["best"],
                 "checkpoints": metrics["checkpoints"],
