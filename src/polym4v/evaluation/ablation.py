@@ -53,10 +53,12 @@ def variant_name(algo: str, reward: dict[str, Any]) -> str:
     return f"{algo}_{name}" + (f" ({', '.join(params)})" if params else "")
 
 
-def load_runs(folder: Path, split: str) -> pd.DataFrame:
+def load_runs(folder: Path, split: str, by_folder: bool = False) -> pd.DataFrame:
     """Una fila por corrida evaluada en `split`, con su variante, semilla y checkpoints.
 
-    Busca en toda la carpeta, así cada etapa o variante puede tener su propia subcarpeta.
+    Busca en toda la carpeta, así cada etapa o variante puede tener su propia subcarpeta. Con
+    `by_folder`, la variante es `<algoritmo>/<carpeta>`, la carpeta de `<carpeta>/<algo>/<run_id>`:
+    así se agrupa la búsqueda de hiperparámetros (AGT-09), donde cada punto tiene su carpeta.
     """
     rows = []
     for path in sorted(folder.rglob("metrics.json")):
@@ -70,9 +72,14 @@ def load_runs(folder: Path, split: str) -> pd.DataFrame:
             if config.exists()
             else {"name": match["reward"]}
         )
+        variant = (
+            f"{match['algo']}/{path.parents[2].name}"
+            if by_folder
+            else variant_name(match["algo"], reward)
+        )
         rows.append(
             {
-                "variant": variant_name(match["algo"], reward),
+                "variant": variant,
                 "seed": int(match["seed"]),
                 "best": metrics["best"],
                 "checkpoints": metrics["checkpoints"],
@@ -145,9 +152,11 @@ def _cell(value: Any) -> str:
     return str(value)
 
 
-def ablation_markdown(table: pd.DataFrame, split: str) -> str:
+def ablation_markdown(
+    table: pd.DataFrame, split: str, title: str = "Ablación de la recompensa"
+) -> str:
     lines = [
-        f"## Ablación de la recompensa en {split}",
+        f"## {title} en {split}",
         "",
         "Cada semilla aporta el retorno de su mejor checkpoint en este split. El IC es de la media",
         "entre semillas (t de Student), así que solo mide la variación entre semillas.",
@@ -160,20 +169,30 @@ def ablation_markdown(table: pd.DataFrame, split: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def build_ablation(models: Path, split: str, out: Path) -> dict[str, Any]:
-    """Escribe `ablation.csv`, `ablation.md` y `ablation.png` en `out`."""
-    runs = load_runs(models, split)
+def build_ablation(
+    models: Path,
+    split: str,
+    out: Path,
+    *,
+    name: str = "ablation",
+    title: str = "Ablación de la recompensa",
+    by_folder: bool = False,
+) -> dict[str, Any]:
+    """Escribe `<name>.csv`, `<name>.md` y `<name>.png` en `out`."""
+    runs = load_runs(models, split, by_folder)
     if runs.empty:
         raise FileNotFoundError(f"No hay corridas evaluadas en {split} en {models}")
     table = ablation_table(runs)
     out.mkdir(parents=True, exist_ok=True)
-    table.to_csv(out / "ablation.csv", index=False)
-    (out / "ablation.md").write_text(ablation_markdown(table, split), encoding="utf-8")
-    plot_curves(learning_curves(runs), out / "ablation.png")
+    table.to_csv(out / f"{name}.csv", index=False)
+    (out / f"{name}.md").write_text(ablation_markdown(table, split, title), encoding="utf-8")
+    plot_curves(learning_curves(runs), out / f"{name}.png")
+    algos = table["variant"].str.split(r"[_/]", n=1).str[0]
     return {
         "split": split,
         "runs": len(runs),
         "variants": table["variant"].tolist(),
         "best": table["variant"].iloc[0],
-        "files": ["ablation.csv", "ablation.md", "ablation.png"],
+        "best_by_algo": table.groupby(algos, sort=False)["variant"].first().to_dict(),
+        "files": [f"{name}.csv", f"{name}.md", f"{name}.png"],
     }

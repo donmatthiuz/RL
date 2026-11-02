@@ -1,0 +1,51 @@
+dataset_id: btc_updown_1h_v1
+env:
+  initial_cash: 1000.0
+  stake_fraction: 0.02
+  latency_s: 2
+  tolerance_s: 60
+  no_open_last_minutes: 2
+  normalize: true
+  costs:
+    half_spread: 0.01
+    fee_rate: 0.07
+    fee_exponent: 1.0
+    fee_decimals: 5
+    min_fee: 1.0e-05
+    tick: 0.001
+reward:
+  name: pnl_risk
+  base: pnl_mid
+  lambda_dd: 1.0
+  lambda_hold: 0.0
+  utility_a: 1.0
+  lambda_invalid: 0.0
+  scale: v0
+agent:
+  algo: cql
+  policy: MlpPolicy
+  net_arch:
+  - 64
+  - 64
+  learning_rate: 0.0001
+  gamma: 0.999
+  total_timesteps: 200000
+  n_envs: 1
+  checkpoints: 10
+  params:
+    batch_size: 256
+    alpha: 1.0
+    target_update_interval: 2000
+seeds:
+- 0
+- 1
+eval_split: val
+offline:
+  policies:
+  - favorite
+  - momentum
+  - mean_reversion
+  - fair_value
+  - no_trade
+  epsilon: 0.2
+  seed: 0
