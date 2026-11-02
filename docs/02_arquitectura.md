@@ -229,8 +229,18 @@ de referencia y la literatura
 ([investigación](ia/investigaciones/recompensas_rl_trading.md)). Ninguno castiga el drawdown en
 cada paso, y con la valoración a liquidación `pnl_risk` paga la entrada `1 + λ_dd` veces. La
 principal se elige con la ablación de ENV-08 en val, en dos etapas: primero `pnl`, `pnl_mid` y
-`terminal`, y después las variantes con riesgo sobre la ganadora. Hasta entonces,
-`configs/env.yaml` usa `pnl`.
+`terminal`, y después las variantes con riesgo sobre la ganadora.
+
+**Resultado (02/11/2026, [reports/val/ablation.md](../reports/val/ablation.md)):** PPO, 5 semillas
+por variante, con el retorno del mejor checkpoint de cada semilla en val.
+
+- **Etapa A:** `pnl_mid` (−0,0348) y `pnl` (−0,0358) quedan empatadas y `terminal` (−0,0673) es
+  claramente peor. Gana `pnl_mid`, que además varía menos entre semillas.
+- **Etapa B:** solo `pnl_risk` cambia el comportamiento: con `λ_dd = 1` el agente no opera en el
+  89 % de los mercados y queda en +0,0012 (IC 95 % entre semillas de +0,0001 a +0,0023); con
+  `λ_dd = 0,5`, en +0,0001. `pnl_hold` y `utility` se quedan cerca de `pnl_mid`.
+- **Principal:** `pnl_risk` con base `pnl_mid` y `λ_dd = 1`, en todas las configs. Es la que más
+  encarece entrar, y el riesgo es que esa ventaja sea selección en val: test lo confirma o no.
 
 ### 2.5 `agents/` — Agentes y baselines (Rol 4)
 

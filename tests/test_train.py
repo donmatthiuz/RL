@@ -61,7 +61,8 @@ def test_train_keeps_the_best_checkpoint_and_records_the_run(algo, tmp_path):
 
 def test_run_id_follows_the_convention():
     now = datetime(2026, 11, 1, 12, 30, tzinfo=UTC)
-    assert run_id(experiment("ppo", 10), 3, now) == "20261101-123000_ppo_pnl_s3"
+    expected = f"20261101-123000_ppo_{SIM.reward.name}_s3"
+    assert run_id(experiment("ppo", 10), 3, now) == expected
 
 
 @pytest.mark.parametrize("name", ["ppo", "dqn", "cql", "bc"])
