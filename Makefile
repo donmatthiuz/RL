@@ -27,7 +27,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture manifest entregable
+	pre-commit config capture capture-spot manifest entregable
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -85,6 +85,9 @@ config: ## Valida un YAML de configuración y lo muestra resuelto (CONFIG)
 
 capture: ## Archiva el historial crudo de una serie (SERIES, RAW_DIR, PAUSE)
 	$(UV) run polym4v capture --series $(SERIES) --out $(RAW_DIR) --pause $(PAUSE)
+
+capture-spot: ## Archiva las klines de Binance del activo y fechas de la config (CONFIG, RAW_DIR)
+	$(UV) run polym4v capture-spot --config $(CONFIG) --out $(RAW_DIR)
 
 manifest: ## Recalcula el manifest con el hash de cada archivo crudo (RAW_DIR)
 	$(UV) run polym4v manifest --out $(RAW_DIR)
