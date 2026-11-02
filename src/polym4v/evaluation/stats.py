@@ -83,8 +83,10 @@ def politis_white_block(series: np.ndarray) -> float:
     x = x - x.mean()
     if float(x @ x) == 0:
         return 1.0
-    k_n = max(5, int(math.log10(n)))
+    k_n = max(5, int(math.log10(max(n, 1))))
     m_max = math.ceil(math.sqrt(n)) + k_n
+    if n <= m_max + 1:  # Sin días suficientes para estimar las autocorrelaciones.
+        return 1.0
     b_max = math.ceil(min(3 * math.sqrt(n), n / 3))
     threshold = 2 * math.sqrt(math.log10(n) / n)
     autocov = np.zeros(m_max + 1)
@@ -119,6 +121,12 @@ def _daily(differences: np.ndarray, days: np.ndarray) -> tuple[np.ndarray, np.nd
     totals = np.zeros((len(counts), differences.shape[1]))
     np.add.at(totals, day_index, differences)
     return totals, counts
+
+
+def daily_means(differences: np.ndarray, days: np.ndarray) -> np.ndarray:
+    """Media diaria de `D`, promediando las semillas; es la serie que usa Politis y White."""
+    totals, counts = _daily(differences, days)
+    return totals.mean(axis=1) / counts
 
 
 def _bca_limits(
@@ -228,8 +236,7 @@ def minimum_detectable_effect(
     differences: np.ndarray, days: np.ndarray, *, test_days: int, max_lag: int = 3
 ) -> float:
     """Diferencia mínima detectable en test, estimada sobre val (sección 7, Newey-West)."""
-    totals, counts = _daily(differences, days)
-    daily = totals.mean(axis=1) / counts
+    daily = daily_means(differences, days)
     centered = daily - daily.mean()
     n = len(centered)
     long_run = float(centered @ centered) / n

@@ -8,8 +8,8 @@ Lee lo que ya calcularon otros comandos, sin volver a correr políticas:
 - los `metrics.json` de las corridas entrenadas, con la evaluación de cada checkpoint, de los que
   salen las curvas de aprendizaje. Solo entran las corridas evaluadas en el mismo split.
 
-Todas las políticas tienen que cubrir los mismos mercados: la comparación es pareada (EVA-01). Los
-intervalos de confianza y la prueba del protocolo llegan con EVA-04.
+Todas las políticas tienen que cubrir los mismos mercados: la comparación es pareada (EVA-01). Si
+hay agentes y `no_trade`, también escribe la prueba del protocolo (`comparison.py`, EVA-04).
 """
 
 import json
@@ -22,6 +22,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 from .backtest import STEP_KEYS, episode_results
+from .comparison import compare_agents, comparison_markdown, freeze_params, load_params, save_params
 from .metrics import capital_curve, summarize
 
 STRICT_SUFFIX = "_estricto"
@@ -203,6 +204,28 @@ def plot_learning(runs: list[dict[str, Any]], path: Path) -> None:
     _save(fig, path)
 
 
+def _write_comparison(
+    items: list[Trajectories], split: str, out: Path, initial_cash: float, stake: float
+) -> list[str]:
+    """La prueba del protocolo; en test usa lo que se fijó en val, sin volver a calcularlo."""
+    frames = {(item.label, item.strict): item.frame for item in items}
+    params = (
+        load_params(out.parent / "val")
+        if split == "test"
+        else freeze_params(frames, initial_cash, stake)
+    )
+    if params is None:
+        return []
+    if split == "val":
+        save_params(params, out)
+    table = compare_agents(frames, params, initial_cash, stake)
+    if table.empty:
+        return []
+    table.to_csv(out / "comparison.csv", index=False)
+    (out / "comparison.md").write_text(comparison_markdown(table, split), encoding="utf-8")
+    return ["comparison.csv", "comparison.md"]
+
+
 def build_report(
     split: str,
     trajectories: Path,
@@ -225,6 +248,7 @@ def build_report(
     plot_capital(items, initial_cash, stake, out / "capital.png")
     plot_distribution(items, initial_cash, stake, out / "returns.png")
     files = ["summary.csv", "summary.md", "capital.png", "returns.png"]
+    files += _write_comparison(items, split, out, initial_cash, stake)
     runs = load_runs(models, split)
     if runs:
         plot_learning(runs, out / "learning.png")
