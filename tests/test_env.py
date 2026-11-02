@@ -1,4 +1,5 @@
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -137,6 +138,10 @@ def test_terminal_reward_only_at_the_end_and_invalid_penalty():
 
 def test_passes_the_gymnasium_checker(data):
     check_env(make_env(data), skip_render_check=True)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        check_env(PolymarketEnv(data, ENV, PNL, render_mode="ansi"))
+    assert not [w for w in caught if "render fps" in str(w.message)]
 
 
 def test_order_fills_at_first_price_after_latency(data):
@@ -251,6 +256,19 @@ def test_cannot_open_without_cash_for_the_rounded_fee(data):
     env = make_env(data, ENV.model_copy(update={"stake_fraction": 1.0}))
     env.reset(options={"market_id": data.market_ids[0]})
     assert env.action_masks().tolist() == [True, False, False, False]
+
+
+def test_text_render_describes_each_step(data):
+    """ENV-07: render en modo texto, una línea por paso."""
+    env = PolymarketEnv(data, ENV, PNL, render_mode="ansi")
+    env.reset(options={"market_id": data.market_ids[0]})
+    assert "reset" in env.render()
+    env.step(Action.BUY_YES)
+    line = env.render()
+    assert "BUY_YES" in line and "ejecutada" in line and "pos=YES" in line
+    assert make_env(data).render() is None
+    with pytest.raises(ValueError, match="render_mode"):
+        PolymarketEnv(data, ENV, PNL, render_mode="human")
 
 
 def test_tolerance_cannot_exceed_the_step(data):
