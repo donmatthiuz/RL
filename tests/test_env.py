@@ -206,6 +206,13 @@ def test_open_position_is_settled_at_one_or_zero(data):
         assert last["position_side"] == FLAT
 
 
+def test_step_after_the_end_asks_for_reset(data):
+    env = make_env(data)
+    run(env, [], data.market_ids[0])
+    with pytest.raises(RuntimeError, match="reset"):
+        env.step(Action.WAIT)
+
+
 def test_no_trade_ends_with_the_initial_cash(data):
     env = make_env(data)
     for episode in data.episodes:
