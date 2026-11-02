@@ -1,12 +1,15 @@
-"""Demo de PolyRL (EVA-07): reproduce paso a paso las trayectorias de `backtest` y `evaluate`.
+"""Demo de PolyRL (EVA-07 y EVA-08): reproduce y compara trayectorias de `backtest` y `evaluate`.
 
 Lee los Parquet de `reports/trajectories/` (o de la carpeta que se elija), así que no necesita GPU
 ni red. Muestra un mercado a la vez: el precio YES con las compras y ventas, el valor de la cartera
-y el estado del paso elegido. Es funcional; el diseño visual se define al final del proyecto.
+y el estado del paso elegido. Además compara otras políticas del mismo split en ese mercado y en el
+PnL acumulado; si existe el reporte del split, propone al mejor agente y al mejor baseline. Es
+funcional; el diseño visual se define al final del proyecto.
 
 Correr con `make demo`.
 """
 
+import re
 import time
 from pathlib import Path
 
@@ -15,6 +18,8 @@ import streamlit as st
 from matplotlib.figure import Figure
 
 from polym4v.agents.base import Action
+from polym4v.evaluation.backtest import episode_results
+from polym4v.evaluation.metrics import capital_curve
 from polym4v.evaluation.report import STRICT_SUFFIX, parse_name
 from polym4v.utils.config import SimulatorConfig, load_config
 from polym4v.utils.paths import get_paths
@@ -23,6 +28,12 @@ SPLITS = ("train", "val", "test")
 SIDES = {1: "YES", -1: "NO", 0: "sin posición"}
 REWARD_COMPONENTS = ("r_pnl", "r_drawdown", "r_invalid", "r_terminal")
 PLAY_PAUSE_S = 0.4
+# Las corridas entrenadas son `<fecha>_<agente>_<recompensa>_s<semilla>`; lo demás, baselines.
+AGENT_LABEL = re.compile(r"^\d{8}-\d{6}_")
+
+
+def file_name(label: str, split: str, strict: bool) -> str:
+    return f"{label} · {split}" + (f" · {STRICT_SUFFIX[1:]}" if strict else "")
 
 
 def list_files(folder: Path) -> dict[str, Path]:
@@ -33,8 +44,7 @@ def list_files(folder: Path) -> dict[str, Path]:
             parsed = parse_name(path, split)
             if parsed is not None:
                 label, strict = parsed
-                name = f"{label} · {split}" + (f" · {STRICT_SUFFIX[1:]}" if strict else "")
-                files[name] = path
+                files[file_name(label, split, strict)] = path
     return files
 
 
@@ -42,6 +52,34 @@ def list_files(folder: Path) -> dict[str, Path]:
 def load(path: str, mtime: float) -> pd.DataFrame:
     """Trayectorias de un archivo; `mtime` invalida la caché si el archivo se vuelve a generar."""
     return pd.read_parquet(path)
+
+
+@st.cache_data
+def market_pnl(path: str, mtime: float, initial_cash: float, stake: float) -> pd.Series:
+    """PnL de cada mercado, en orden cronológico, con la misma cuenta que el reporte."""
+    results = episode_results(pd.read_parquet(path), initial_cash, stake)
+    return results["final_value"] - initial_cash
+
+
+def split_of(name: str) -> str:
+    return name.split(" · ")[1]
+
+
+def default_comparison(summary: Path, split: str, options: list[str]) -> list[str]:
+    """Mejor agente y mejor baseline del reporte del split, en modo normal, si están disponibles."""
+    if not summary.exists():
+        return []
+    table = pd.read_csv(summary)
+    table = table[~table["strict"]].sort_values("mean_return", ascending=False)
+    is_agent = table["label"].map(lambda label: bool(AGENT_LABEL.match(label)))
+    picked = []
+    for rows in (table[is_agent], table[~is_agent]):
+        for label in rows["label"]:
+            name = file_name(label, split, False)
+            if name in options:
+                picked.append(name)
+                break
+    return picked
 
 
 def market_label(steps: pd.DataFrame) -> str:
@@ -89,6 +127,83 @@ def figure(steps: pd.DataFrame, k: int, initial_cash: float) -> Figure:
     for ax in (price, value):
         ax.axvline(k, color="tab:orange", linewidth=1)
     return fig
+
+
+def comparison_figure(
+    frames: dict[str, pd.DataFrame],
+    pnl: dict[str, pd.Series],
+    market_id: str,
+    position: int,
+    k: int,
+    initial_cash: float,
+) -> Figure:
+    """PnL de cada política dentro del mercado y acumulado, con el mercado y el paso marcados."""
+    fig = Figure(figsize=(9, 6))
+    market, total = fig.subplots(2, 1)
+    for name, frame in frames.items():
+        steps = frame[frame["market_id"] == market_id]
+        market.plot(steps["k"], steps["portfolio_value"] - initial_cash, label=name)
+        curve = capital_curve(pnl[name])
+        total.plot(range(1, len(curve) + 1), curve.to_numpy(), label=name)
+    market.axhline(0, color="gray", linewidth=0.8)
+    market.axvline(k, color="tab:orange", linewidth=1)
+    market.set_xlabel("Paso (minuto del mercado)")
+    market.set_ylabel("PnL en este mercado (USDC)")
+    market.legend(fontsize="small")
+    total.axhline(0, color="gray", linewidth=0.8)
+    total.axvline(position, color="tab:orange", linewidth=1)
+    total.set_xlabel("Mercado (orden cronológico)")
+    total.set_ylabel("PnL acumulado (USDC)")
+    fig.tight_layout()
+    return fig
+
+
+def comparison_rows(
+    frames: dict[str, pd.DataFrame], pnl: dict[str, pd.Series], market_id: str, position: int
+) -> pd.DataFrame:
+    """PnL en el mercado, acumulado hasta él y órdenes ejecutadas en él, por política."""
+    rows = {}
+    for name, frame in frames.items():
+        steps = frame[frame["market_id"] == market_id]
+        rows[name] = {
+            "PnL en este mercado": f"{pnl[name].loc[market_id]:+.2f}",
+            f"PnL acumulado al mercado {position}": f"{pnl[name].iloc[:position].sum():+.2f}",
+            "Órdenes ejecutadas": int((steps["order_status"] == "ejecutada").sum()),
+        }
+    return pd.DataFrame(rows).T
+
+
+def comparison_section(
+    choice: str,
+    chosen: pd.DataFrame,
+    others: list[str],
+    files: dict[str, Path],
+    market_id: str,
+    position: int,
+    k: int,
+    initial_cash: float,
+    stake: float,
+) -> None:
+    """Compara la política elegida con `others`, dejando afuera las que no tienen este mercado."""
+    frames = {choice: chosen}
+    missing = []
+    for name in others:
+        frame = load(str(files[name]), files[name].stat().st_mtime)
+        if (frame["market_id"] == market_id).any():
+            frames[name] = frame
+        else:
+            missing.append(name)
+    if missing:
+        st.warning(f"Sin este mercado, se dejan afuera: {', '.join(missing)}.")
+    if len(frames) < 2:
+        return
+    pnl = {
+        name: market_pnl(str(files[name]), files[name].stat().st_mtime, initial_cash, stake)
+        for name in frames
+    }
+    st.subheader("Comparación")
+    st.pyplot(comparison_figure(frames, pnl, market_id, position, k, initial_cash))
+    st.table(comparison_rows(frames, pnl, market_id, position))
 
 
 def step_panel(row: pd.Series, initial_cash: float) -> None:
@@ -163,6 +278,15 @@ market_id = st.sidebar.selectbox(
 steps = markets[market_id]
 last = len(steps) - 1
 
+split = split_of(choice)
+options = [name for name in files if name != choice and split_of(name) == split]
+others = st.sidebar.multiselect(
+    "Comparar con",
+    options,
+    default=default_comparison(paths.reports / split / "summary.csv", split, options),
+    key=f"compare_{choice}",
+)
+
 st.session_state.setdefault("step", 0)
 st.session_state.step = min(st.session_state.step, last)
 playing = st.sidebar.toggle("Reproducir", key="playing")
@@ -184,6 +308,8 @@ forward.button("Siguiente", on_click=move, args=(1, last))
 
 st.pyplot(figure(steps, k, initial_cash))
 step_panel(steps.iloc[k], initial_cash)
+position = list(markets).index(market_id) + 1
+comparison_section(choice, trajectories, others, files, market_id, position, k, initial_cash, stake)
 
 if playing and k < last:
     time.sleep(PLAY_PAUSE_S)

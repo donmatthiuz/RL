@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -93,3 +94,89 @@ def test_playing_advances_until_the_last_step(app):
     app.sidebar.toggle[0].set_value(True).run()
     assert not app.exception
     assert app.slider[0].value == 59
+
+
+def test_without_a_report_nothing_is_compared_by_default(app):
+    compare = app.sidebar.multiselect[0]
+    assert compare.options == ["random · train"]
+    assert compare.value == []
+    assert not [title for title in app.subheader if title.value == "Comparación"]
+
+
+def test_comparing_shows_both_policies_with_the_pnl_of_the_report(app, frames):
+    app.sidebar.multiselect[0].select("random · train").run()
+    assert not app.exception
+    assert [title.value for title in app.subheader][-1] == "Comparación"
+    table = app.table[-1].value
+    assert list(table.index) == ["favorite · train", "random · train"]
+
+    market = frames["random"]["market_id"].iloc[0]
+    last = frames["random"][frames["random"]["market_id"] == market].iloc[-1]
+    assert table.loc["random · train", "PnL en este mercado"] == (
+        f"{last['portfolio_value'] - 1000.0:+.2f}"
+    )
+
+
+def test_cumulative_pnl_grows_with_the_chosen_market(app, frames):
+    app.sidebar.multiselect[0].select("random · train").run()
+    market = app.sidebar.selectbox[1]
+    market.select(market.options[1]).run()
+    assert not app.exception
+    random = frames["random"]
+    finals = random[random["done"]]["portfolio_value"].to_numpy() - 1000.0
+    table = app.table[-1].value
+    column = "PnL acumulado al mercado 2"
+    assert table.loc["random · train", column] == f"{finals[:2].sum():+.2f}"
+
+
+def test_a_policy_without_the_market_is_left_out_with_a_warning(tmp_path, monkeypatch, frames):
+    folder = tmp_path / "reports" / "trajectories"
+    folder.mkdir(parents=True)
+    favorite = frames["favorite"]
+    favorite.to_parquet(folder / "favorite_train.parquet")
+    other = frames["random"]
+    other[other["market_id"] != favorite["market_id"].iloc[0]].to_parquet(
+        folder / "random_train.parquet"
+    )
+    monkeypatch.setenv("POLYM4V_REPORTS_DIR", str(tmp_path / "reports"))
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    at.sidebar.multiselect[0].select("random · train").run()
+    assert not at.exception
+    assert "random · train" in at.warning[0].value
+    assert not [title for title in at.subheader if title.value == "Comparación"]
+
+
+def test_the_report_proposes_the_best_agent_and_the_best_baseline(tmp_path, monkeypatch, frames):
+    """Criterio de EVA-08: el mejor agente frente al mejor baseline, de entrada."""
+    reports = tmp_path / "reports"
+    folder = reports / "trajectories"
+    folder.mkdir(parents=True)
+    frames["random"].to_parquet(folder / "20261101-000000_ppo_pnl_s0_test.parquet")
+    frames["random"].to_parquet(folder / "20261101-000000_ppo_pnl_s1_test.parquet")
+    frames["favorite"].to_parquet(folder / "favorite_test.parquet")
+    frames["favorite"].to_parquet(folder / "no_trade_test.parquet")
+    frames["favorite"].to_parquet(folder / "momentum_test_estricto.parquet")
+    (reports / "test").mkdir()
+    pd.DataFrame(
+        {
+            "label": [
+                "momentum",
+                "20261101-000000_ppo_pnl_s1",
+                "no_trade",
+                "20261101-000000_ppo_pnl_s0",
+            ],
+            "strict": [True, False, False, False],
+            "mean_return": [0.9, 0.2, 0.0, -0.1],
+        }
+    ).to_csv(reports / "test" / "summary.csv", index=False)
+    monkeypatch.setenv("POLYM4V_REPORTS_DIR", str(reports))
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    assert not at.exception
+    assert at.sidebar.selectbox[0].value == "20261101-000000_ppo_pnl_s0 · test"
+    assert at.sidebar.multiselect[0].value == [
+        "20261101-000000_ppo_pnl_s1 · test",
+        "no_trade · test",
+    ]
+    assert [title.value for title in at.subheader][-1] == "Comparación"
