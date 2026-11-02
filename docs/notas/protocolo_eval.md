@@ -7,7 +7,8 @@ Cómo se va a decidir si los agentes funcionan, escrito **antes** de ver cualqui
 no ajustar el análisis a lo que salga (*p-hacking*). Se aprueba en su PR y se congela al
 mezclarlo: cambiarlo después exige un ADR que diga qué cambió y por qué.
 
-- **Estado:** borrador para aprobar (31/10/2026). Las decisiones del equipo están en la sección 10.
+- **Estado:** borrador para aprobar (31/10/2026). Las decisiones E1 y E2 se tomaron el 01/11/2026
+  (sección 10); falta aprobar el PR.
 - **Revisión:** el agente `academic-statistician` revisó el primer borrador. Sus hallazgos y lo
   que se cambió están en la sección 11.
 - **Base:** la pregunta del proyecto (D1), el compromiso de reportar aunque nada gane (D4), el
@@ -23,9 +24,12 @@ válido si está bien medido. Si ningún agente gana, se reporta igual (D4).
 
 | Split | Mercados | Para qué se usa |
 | --- | --- | --- |
-| train | 8 683 | Entrenar, ajustar normalizaciones y generar el dataset offline |
-| val | 1 860 | Elegir hiperparámetros, checkpoints y baselines, y estimar la potencia |
-| test | 1 752 (unos 73 días) | Una sola evaluación final (EVA-06), con todo congelado |
+| train | 8 682 | Entrenar, ajustar normalizaciones y generar el dataset offline |
+| val | 1 861 | Elegir hiperparámetros, checkpoints y baselines, y estimar la potencia |
+| test | 1 751 (unos 73 días) | Una sola evaluación final (EVA-06), con todo congelado |
+
+- Son los conteos del dataset con las features de DAT-07 (PR #10), que descarta un mercado sin
+  historia suficiente para calcularlas. Sin las features eran 8 683, 1 860 y 1 752.
 
 - Los mercados de los análisis previos ya están fuera de test (S11). Las reglas que descartan
   mercados (datos faltantes o resultado distinto del de Binance) son las de DAT-05, iguales para
@@ -181,10 +185,13 @@ Se reportan para entender el resultado. No cambian la clasificación.
 
 ## 10. Decisiones del equipo en este PR
 
-| # | Pregunta clave | Opciones | Recomendación |
+Las dos las respondió R3 en la revisión del PR el 01/11/2026 y coinciden con la recomendación del
+borrador.
+
+| # | Pregunta clave | Opciones | Decisión |
 | --- | --- | --- | --- |
-| E1 | ¿Desde qué diferencia por mercado una mejora importa? (`Δ_min`, la pide D3) | 0,5 %, 1 % o 2 % del stake por mercado, promediado sobre todos los mercados de test (también los que no opera) | **1 %.** Con órdenes de 20 USDC (`stake_fraction = 0,02`), son unos +35 % del saldo inicial sumados sobre los 1 752 mercados: una ventaja clara y sostenida. La MDE probablemente sea mayor (sección 7), así que lo más probable es un resultado "inconcluso" o "equivalente", y se dirá |
-| E2 | ¿Quién es el baseline de referencia? | `NoTrade` salvo que una heurística le gane en val; la heurística con mayor media en val | **`NoTrade` salvo que una heurística le gane en val.** Si ninguna heurística es rentable, la de mayor media en val sería una que casi no opera y ganó por azar |
+| E1 | ¿Desde qué diferencia por mercado una mejora importa? (`Δ_min`, la pide D3) | 0,5 %, 1 % o 2 % del stake por mercado, promediado sobre todos los mercados de test (también los que no opera) | **1 %.** Con órdenes de 20 USDC (`stake_fraction = 0,02`), son unos +35 % del saldo inicial sumados sobre los 1 751 mercados: una ventaja clara y sostenida. 0,5 % queda chico frente a los costos de una operación y 2 % haría casi imposible concluir "equivalente". La MDE probablemente sea mayor (sección 7), así que lo más probable es un resultado "inconcluso" o "equivalente", y se dirá |
+| E2 | ¿Quién es el baseline de referencia? | `NoTrade` salvo que una heurística le gane en val; la heurística con mayor media en val | **`NoTrade`, salvo que una heurística le gane en val con el IC 95 % por encima de cero** (regla de la sección 4). Si ninguna heurística es rentable, la de mayor media en val sería una que casi no opera y ganó por azar |
 
 ## 11. Revisión estadística del primer borrador
 
