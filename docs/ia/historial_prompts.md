@@ -31,6 +31,7 @@ Code. El equipo lo revisa y completa.
 | P12 | 31/10/2026 | Claude Code | ¿Es realista S4 en un CLOB? | Satisfactorio: cambió la pregunta de S4 |
 | P14 | 01/11/2026 | Claude Code | Revisión de R3 de los PR del entorno | Satisfactorio: un hueco en la config de la ablación |
 | P15 | 02/11/2026 | Claude Code | Mezclar la pila, entrenar y evaluar en test | Satisfactorio: cuatro fallas encontradas en el camino |
+| P16 | 02/11/2026 | Claude Code | Qué aprendió cada agente (XAI) | Parcial: dos cifras y cinco afirmaciones corregidas |
 
 ## Entradas
 
@@ -226,6 +227,27 @@ Code. El equipo lo revisa y completa.
 - **Aporte:** cuatro fallas encontradas en el camino: el dataset offline podía reusar recompensas
   viejas, a la demo le faltaba el componente `hold`, la tabla del protocolo se rompía en Markdown y
   faltaba el ajuste de umbrales de los baselines que pide el protocolo.
+
+### P16 — Qué aprendió cada agente (XAI)
+
+- **Prompt:** R1 preguntó qué dice el resultado, qué funcionó y qué no, si se puede hacer XAI y
+  cómo prepararse para las preguntas de la presentación, y pidió dejar el análisis como evidencia en
+  los reportes.
+- **Resultado:** parcial.
+- **Por qué:** la primera respuesta se apoyó en un conteo rápido sobre las trayectorias que daba por
+  hecho que cada compra se mantenía hasta el final. Con las operaciones reales, con sus ventas, PPO
+  pierde −27,23 USDC en test en las compras a más de 0,98, no −19,1, y las dos pérdidas grandes
+  resultaron ser el mismo mercado en dos semillas. Además afirmó de más: que PPO predice cuándo el
+  resultado está decidido, que le gana a alguien que no sabe operar y que CQL sobreajustó.
+- **Cómo se evaluó:** una revisión externa pegada por R1 marcó cinco afirmaciones sin demostrar, y
+  cada una se contrastó con una medición: la importancia por permutación (PPO decide con el spot),
+  la calibración del precio (el precio ya cubre lo que PPO aprovecha) y las operaciones de CQL (sus
+  10 mejores apuestas de val suman más que su ganancia total). Antes de permutar, se comprobó que
+  volver a correr cada agente en val da las mismas acciones que sus trayectorias.
+- **Corrección:** el informe usa las operaciones reales, y cada afirmación lleva su límite:
+  exploratorio, fuera del protocolo, en val, y test solo descrito, sin volver a evaluar.
+- **Aporte:** EVA-12, `polym4v behavior` y `make behavior`, con `reports/val/behavior.md` y
+  `reports/test/inspection.md`.
 
 ## Plantilla
 
