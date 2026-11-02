@@ -79,6 +79,8 @@ def write_raw(root, n=10, broken=None):
         history = [{"t": t, "p": 0.5} for t in range(w0 - 6 * 3600, w0 + 2 * 3600, 60)]
         if broken.get(i) == "pocos puntos":
             history = [h for h in history if not w0 + 600 <= h["t"] < w0 + 3600]
+        if broken.get(i) == "sin precio al empezar":
+            history = [h for h in history if h["t"] >= w0 + 300]
         if broken.get(i) == "precio fuera de rango":
             history[400]["p"] = 5000.49
         for side in (1, 2):
@@ -146,6 +148,7 @@ def test_bad_markets_are_discarded_with_their_reason(tmp_path):
         3: "precio fuera de rango",
         4: "sin historial",
         5: "no coincide",
+        6: "sin precio al empezar",
     }
     manifest = build_dataset(
         CONFIG, write_raw(tmp_path / "raw", broken=broken), NONE, tmp_path / "out"
@@ -156,11 +159,39 @@ def test_bad_markets_are_discarded_with_their_reason(tmp_path):
         "precio fuera de rango": 1,
         "sin historial": 1,
         "el resultado no coincide con Binance": 1,
+        "sin historia para las features": 1,
     }
     markets = pd.read_parquet(tmp_path / "out" / "markets.parquet")
-    assert set(markets["slug"]) == {f"btc-{i}" for i in (0, 1, 6, 7, 8, 9)}
-    prices = pd.read_parquet(tmp_path / "out" / "prices_raw.parquet")
-    assert set(prices["market_id"]) == set(markets["market_id"])
+    assert set(markets["slug"]) == {f"btc-{i}" for i in (0, 1, 7, 8, 9)}
+    for table in ("prices_raw", "steps"):
+        frame = pd.read_parquet(tmp_path / "out" / f"{table}.parquet")
+        assert set(frame["market_id"]) == set(markets["market_id"])
+
+
+def test_steps_follow_the_decision_grid(tmp_path):
+    build_dataset(CONFIG, write_raw(tmp_path / "raw", n=2), NONE, tmp_path / "out")
+
+    steps = pd.read_parquet(tmp_path / "out" / "steps.parquet")
+    markets = pd.read_parquet(tmp_path / "out" / "markets.parquet")
+    assert len(steps) == 2 * 60
+    merged = steps.merge(markets[["market_id", "w0"]], on="market_id")
+    assert (merged["ts"] == merged["w0"] + 60 * merged["k"]).all()
+    # Precio constante y spot que no se mueve respecto de la apertura: valor justo de 0,5.
+    assert (steps["p_yes"] == 0.5).all() and (steps["p_stale_s"] == 0).all()
+
+
+def test_normalization_is_fitted_only_with_train(tmp_path):
+    build_dataset(CONFIG, write_raw(tmp_path / "raw"), NONE, tmp_path / "out")
+
+    out = tmp_path / "out"
+    stats = json.loads((out / "normalization.json").read_text())
+    markets, steps = (
+        pd.read_parquet(out / "markets.parquet"),
+        pd.read_parquet(out / "steps.parquet"),
+    )
+    train = steps[steps["market_id"].isin(markets.loc[markets["split"] == "train", "market_id"])]
+    assert stats["fitted_on"] == "train"
+    assert stats["features"]["x"]["mean"] == pytest.approx(train["x"].mean())
 
 
 def test_test_exclusions_are_recorded(tmp_path):
@@ -205,4 +236,10 @@ def test_cli_build_dataset(tmp_path, capsys):
 
     result = json.loads(capsys.readouterr().out)
     assert result["markets_per_split"] == {"train": 7, "val": 1, "test": 2}
-    assert set(result["files"]) == {"markets.parquet", "prices_raw.parquet", "spot_1m.parquet"}
+    assert set(result["files"]) == {
+        "markets.parquet",
+        "prices_raw.parquet",
+        "spot_1m.parquet",
+        "steps.parquet",
+        "normalization.json",
+    }

@@ -2,9 +2,6 @@
 
 Cada dato guarda cuándo ocurrió (`ts_event`) y cuándo se pudo conocer (`ts_available`). El
 simulador solo lee filas con `ts_available <= t`. Todos los tiempos son segundos unix en UTC.
-
-`steps.parquet` no está aquí: depende de qué ve el agente y de cuándo se ejecuta (S3 y S4),
-que siguen pendientes.
 """
 
 import math
@@ -72,7 +69,8 @@ class Market(pa.DataFrameModel):
 class PriceTick(pa.DataFrameModel):
     """`prices_raw.parquet`: cada punto del historial del CLOB, sin re-muestrear.
 
-    `ts_available` es `ts_event` más la latencia del feed; su valor lo fija S4.
+    `ts_available` es `ts_event` más la latencia del feed, que vale 0. El entorno ejecuta las
+    órdenes con estos puntos (S4).
     """
 
     market_id: Series[str]
@@ -118,6 +116,38 @@ class SpotKline(pa.DataFrameModel):
     def prices_inside_range(cls, df: pd.DataFrame) -> pd.Series:
         low, high = df["low"], df["high"]
         return df["open"].between(low, high) & df["close"].between(low, high)
+
+
+class Step(pa.DataFrameModel):
+    """`steps.parquet`: una fila por mercado e instante de decisión `ts = w0 + 60·k` (S2, S3).
+
+    Cada columna se calcula solo con datos con `ts_available <= ts`, así que se conoce en `ts`.
+    Las features siguen la sección 4.1 de docs/08; `edge_tp` es la ventaja en el instante del
+    último precio (S3b, ADR-016).
+    """
+
+    market_id: Series[str]
+    k: Series[int] = pa.Field(ge=0)
+    ts: Series[int] = pa.Field(ge=0)
+    p_stale_s: Series[int] = pa.Field(ge=0)
+    spot: Series[float] = pa.Field(gt=0)
+    p_yes: Series[float] = pa.Field(ge=0, le=1)
+    dp_1: Series[float] = pa.Field(ge=-1, le=1)
+    dp_5: Series[float] = pa.Field(ge=-1, le=1)
+    p_stale: Series[float] = pa.Field(ge=0, le=1)
+    x: Series[float]
+    r_1: Series[float]
+    r_5: Series[float]
+    sigma: Series[float] = pa.Field(ge=0)
+    tau: Series[float] = pa.Field(gt=0, le=1)
+    z: Series[float] = pa.Field(ge=-5, le=5)
+    p_fair: Series[float] = pa.Field(ge=0, le=1)
+    edge: Series[float] = pa.Field(ge=-1, le=1)
+    edge_tp: Series[float] = pa.Field(ge=-1, le=1)
+
+    class Config:
+        strict = True
+        unique = ["market_id", "k"]
 
 
 def known_market_fields(t: int, w0: int, w1: int) -> frozenset[str]:

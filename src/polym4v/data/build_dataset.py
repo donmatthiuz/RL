@@ -1,8 +1,8 @@
-"""Construcción del dataset procesado desde el crudo (DAT-04 y DAT-05, sin `steps`).
+"""Construcción del dataset procesado desde el crudo (DAT-04, DAT-05 y DAT-07).
 
-Solo lee `data/raw/`: no llama a la red. Escribe `markets`, `prices_raw` y `spot_1m`, validados con
-los contratos de `schemas.py`, y un manifest con el hash de cada archivo y los mercados
-descartados con su motivo. `steps.parquet` se agrega cuando se decidan S3 y S4.
+Solo lee `data/raw/`: no llama a la red. Escribe `markets`, `prices_raw`, `spot_1m` y `steps`,
+validados con los contratos de `schemas.py`, la normalización de las features ajustada con train y
+un manifest con el hash de cada archivo y los mercados descartados con su motivo.
 """
 
 import gzip
@@ -16,10 +16,12 @@ from typing import Any
 
 import pandas as pd
 
+from ..features.market import MARKET_FEATURES, add_features, fit_zscore
 from ..utils.config import DataConfig
 from .capture import RawStore, parse_window_start
-from .schemas import KLINE_SECONDS, Market, PriceTick, SpotKline
+from .schemas import KLINE_SECONDS, Market, PriceTick, SpotKline, Step
 from .splits import SplitExclusions, assign_splits
+from .steps import align
 
 KLINE_COLUMNS = ["ts_event", "open", "high", "low", "close", "volume"]
 
@@ -120,7 +122,8 @@ def build_dataset(
 ) -> dict[str, Any]:
     """Construye el dataset en `out` y devuelve su manifest.
 
-    `latency_s` es la latencia del feed de precios; la fija S4 y, mientras tanto, vale 0.
+    `latency_s` es la latencia del feed de precios: cuánto después de su fecha se conoce un
+    punto. Vale 0; la latencia de una orden (S4a) es otra cosa y la aplica el entorno.
     """
     out = Path(out)
     window_s, context_s = config.window_minutes * 60, config.context_minutes * 60
@@ -153,27 +156,40 @@ def build_dataset(
     if not rows:
         raise ValueError("Ningún mercado del crudo pasó los filtros; revisa la config y data/raw")
 
-    markets, removed = assign_splits(pd.DataFrame(rows), config.split, exclusions)
+    candidates = pd.DataFrame(rows)
     slugs = {row["market_id"]: row["slug"] for row in rows}
-    for record in removed.to_dict("records"):
-        market_id = record["market_id"]
-        discarded.append(
-            {"event_id": events_of[market_id], "slug": slugs[market_id], "motivo": record["motivo"]}
-        )
-
-    prices = pd.DataFrame(ticks)
-    prices = prices[prices["market_id"].isin(markets["market_id"])]
-    prices = prices.sort_values(["market_id", "side", "ts_event"]).reset_index(drop=True)
-
     spot = load_klines(raw, symbol, "1m")
     spot.insert(1, "ts_available", spot["ts_event"] + KLINE_SECONDS)
-    lo, hi = markets["w0"].min() - context_s, markets["w1"].max()
+    lo, hi = candidates["w0"].min() - context_s, candidates["w1"].max()
     spot = spot[(spot["ts_event"] >= lo) & (spot["ts_event"] < hi)].reset_index(drop=True)
+
+    # Los pasos se calculan solo con prices_raw y spot_1m, así se pueden rehacer desde el dataset.
+    n_steps = window_s // config.step_seconds
+    prices = pd.DataFrame(ticks)
+    aligned = align(candidates, prices, spot, step_s=config.step_seconds, n_steps=n_steps)
+    steps = add_features(aligned, window_s)
+    incomplete = set(steps.loc[steps.isna().any(axis=1), "market_id"])
+    candidates = candidates[~candidates["market_id"].isin(incomplete)].reset_index(drop=True)
+    markets, removed = assign_splits(candidates, config.split, exclusions)
+    reasons = {market_id: "sin historia para las features" for market_id in sorted(incomplete)}
+    reasons |= dict(zip(removed["market_id"], removed["motivo"], strict=True))
+    for market_id, reason in reasons.items():
+        discarded.append(
+            {"event_id": events_of[market_id], "slug": slugs[market_id], "motivo": reason}
+        )
+
+    kept = prices["market_id"].isin(markets["market_id"])
+    prices = prices[kept].sort_values(["market_id", "side", "ts_event"]).reset_index(drop=True)
+    steps = steps[steps["market_id"].isin(markets["market_id"])].reset_index(drop=True)
+    steps["p_stale_s"] = steps["p_stale_s"].astype("int64")
+    train = steps["market_id"].isin(markets.loc[markets["split"] == "train", "market_id"])
+    normalization = {"fitted_on": "train", "features": fit_zscore(steps[train])}
 
     tables: dict[str, pd.DataFrame] = {
         "markets": Market.validate(markets[list(Market.to_schema().columns)]),
         "prices_raw": PriceTick.validate(prices),
         "spot_1m": SpotKline.validate(spot),
+        "steps": Step.validate(steps[list(Step.to_schema().columns)]),
     }
     out.mkdir(parents=True, exist_ok=True)
     files = {}
@@ -181,12 +197,16 @@ def build_dataset(
         target = out / f"{name}.parquet"
         frame.to_parquet(target, index=False)
         files[target.name] = {"rows": len(frame), "sha256": _sha256(target)}
+    target = out / "normalization.json"
+    target.write_text(json.dumps(normalization, indent=2), encoding="utf-8")
+    files[target.name] = {"rows": len(normalization["features"]), "sha256": _sha256(target)}
 
     manifest = {
         "dataset_id": config.dataset_id,
         "built_at": datetime.now(UTC).isoformat(),
         "config": config.model_dump(mode="json"),
         "feed_latency_s": latency_s,
+        "market_features": list(MARKET_FEATURES),
         "markets_per_split": markets["split"].value_counts().to_dict(),
         "discarded_by_reason": dict(Counter(d["motivo"] for d in discarded)),
         "discarded": discarded,
