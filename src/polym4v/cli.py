@@ -177,6 +177,13 @@ def _parser() -> argparse.ArgumentParser:
         "--allow-test", action="store_true", help="Test se evalúa una sola vez (EVA-01)"
     )
 
+    ablation = commands.add_parser(
+        "ablation", help="Tabla de la ablación de la recompensa con las corridas entrenadas"
+    )
+    ablation.add_argument("--models", required=True, help="Carpeta con las corridas de la ablación")
+    ablation.add_argument("--split", choices=("train", "val"), default="val")
+    ablation.add_argument("--out", help="Carpeta del reporte (por defecto, reports/<split>)")
+
     train = commands.add_parser("train", help="Entrena PPO o DQN y elige el mejor checkpoint")
     train.add_argument("--config", default="configs/ppo.yaml", help="Config del experimento")
     train.add_argument(
@@ -345,7 +352,7 @@ def _train(args: argparse.Namespace) -> Any:
     folder = Path(args.out) if args.out else paths.models
     offline_file = None
     if config.offline is not None and config.agent.algo in ("cql", "bc"):
-        offline_file = offline_path(paths.offline, config.dataset_id, config.offline)
+        offline_file = offline_path(paths.offline, config.dataset_id, config.offline, config.reward)
         if not offline_file.exists():
             raise ConfigurationError(
                 f"No existe {offline_file}: corre antes collect-offline con esta config"
@@ -371,7 +378,7 @@ def _collect_offline(args: argparse.Namespace) -> Any:
     dataset = Path(args.dataset) if args.dataset else paths.processed / config.dataset_id
     data = MarketData.load(dataset, split="train", normalize=config.env.normalize)
     folder = Path(args.out) if args.out else paths.offline
-    out = offline_path(folder, config.dataset_id, config.offline)
+    out = offline_path(folder, config.dataset_id, config.offline, config.reward)
     manifest = build_offline_dataset(config, data, out)
     keys = ("transitions", "episodes", "invalid_share", "actions")
     return {"file": str(out), **{key: manifest[key] for key in keys}}
@@ -430,6 +437,11 @@ def _run(args: argparse.Namespace) -> Any:
         return _evaluate(args)
     if args.command == "report":
         return _report(args)
+    if args.command == "ablation":
+        from .evaluation.ablation import build_ablation
+
+        out = Path(args.out) if args.out else get_paths().reports / args.split
+        return build_ablation(Path(args.models), args.split, out)
     if args.command == "collect-offline":
         return _collect_offline(args)
     if args.command == "config":

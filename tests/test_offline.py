@@ -79,13 +79,17 @@ def test_collection_covers_every_policy_and_market(data):
 
 def test_offline_dataset_is_saved_with_its_manifest(data, tmp_path):
     config = experiment("cql")
-    path = offline_path(tmp_path, "sintetico", config.offline)
+    path = offline_path(tmp_path, "sintetico", config.offline, config.reward)
     manifest = build_offline_dataset(config, data, path)
     assert manifest["transitions"] == 3 * len(data) * 60 and manifest["episodes"] == 18
     assert json.loads(path.with_suffix(".json").read_text())["sha256"] == manifest["sha256"]
     assert load_offline_dataset(path).transition_count == manifest["transitions"]
-    other = offline_path(tmp_path, "sintetico", config.offline.model_copy(update={"epsilon": 0.1}))
+    other = offline_path(
+        tmp_path, "sintetico", config.offline.model_copy(update={"epsilon": 0.1}), config.reward
+    )
     assert other != path
+    mid = config.reward.model_copy(update={"name": "pnl_mid"})
+    assert offline_path(tmp_path, "sintetico", config.offline, mid) != path
 
 
 def test_unknown_baselines_and_missing_offline_section_are_errors(data, tmp_path):
@@ -99,7 +103,7 @@ def test_unknown_baselines_and_missing_offline_section_are_errors(data, tmp_path
 @pytest.mark.parametrize("algo", ["cql", "bc"])
 def test_train_offline_keeps_the_best_checkpoint(data, algo, tmp_path):
     config = experiment(algo)
-    path = offline_path(tmp_path, "sintetico", config.offline)
+    path = offline_path(tmp_path, "sintetico", config.offline, config.reward)
     build_offline_dataset(config, data, path)
 
     metrics = train_offline(config, 0, path, data, tmp_path / algo)

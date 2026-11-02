@@ -19,7 +19,9 @@ env:
     min_fee: 0.00001
     tick: 0.001
 reward:
-  name: pnl                 # pnl, pnl_mid, terminal, pnl_risk, pnl_hold o utility (ENV-05)
+  name: pnl_risk            # ganadora de la ablación de ENV-08 en val (02/11/2026, reports/val)
+  base: pnl_mid
+  lambda_dd: 1.0
   lambda_invalid: 0.0       # S6
 agent:
   algo: cql
