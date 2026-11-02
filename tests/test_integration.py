@@ -1,7 +1,7 @@
 """Pipeline completo por la CLI sobre un mini-dataset (INF-07).
 
-Del crudo al dataset, el backtest de un baseline, el entrenamiento de PPO y CQL y la evaluación de
-sus mejores checkpoints, con los mismos comandos que se usan con los datos reales.
+Del crudo al dataset, el backtest de un baseline, el entrenamiento de PPO y CQL, la evaluación de
+sus mejores checkpoints y el reporte, con los mismos comandos que se usan con los datos reales.
 """
 
 import json
@@ -74,4 +74,9 @@ def test_pipeline_from_raw_data_to_evaluated_agents(tmp_path, capsys, monkeypatc
     # 4. Test sigue cerrado sin permiso explícito.
     assert cli.main(["evaluate", "--run", folder, "--split", "test"]) == 1
     assert "una sola vez" in capsys.readouterr().err
+
+    # 5. Reporte de train con el baseline y los dos agentes, y sus curvas de aprendizaje.
+    report = run(capsys, "report", "--split", "train", "--config", str(sim_path))
+    assert len(report["policies"]) == 3 and len(report["runs"]) == 2
+    assert "learning.png" in report["files"]
     assert dataset.exists()

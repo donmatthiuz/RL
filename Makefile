@@ -35,7 +35,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train manifest entregable
+	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report manifest entregable eda
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -111,6 +111,12 @@ collect-offline: ## Recolecta el dataset offline de CQL y BC sobre train (AGENT=
 
 train: ## Entrena un agente con todas las semillas de su config (AGENT=ppo|dqn|cql|bc, SEED)
 	$(UV) run polym4v train --config configs/$(AGENT).yaml $(if $(SEED),--seed $(SEED))
+
+report: ## Tabla y figuras de un split con las trayectorias y corridas ya calculadas (SPLIT)
+	$(UV) run polym4v report --split $(SPLIT)
+
+eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make dataset)
+	$(UV) run --group notebooks jupyter execute --inplace notebooks/eda/01_eda_btc_horario.ipynb
 
 manifest: ## Recalcula el manifest con el hash de cada archivo crudo (RAW_DIR)
 	$(UV) run polym4v manifest --out $(RAW_DIR)

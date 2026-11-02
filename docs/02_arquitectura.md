@@ -287,8 +287,22 @@ src/polym4v/evaluation/
 ├── backtest.py     # run_backtest(policy, env, markets) → DataFrame de trayectorias
 ├── metrics.py      # Métricas por episodio y agregadas
 ├── stats.py        # Bootstrap IC 95 %, test de diferencias pareadas
-└── report.py       # Tablas markdown/LaTeX y gráficos (matplotlib)
+└── report.py       # Tabla (CSV y Markdown) y figuras (matplotlib) de un split: polym4v report
 ```
+
+**Reporte** (`make report SPLIT=train`): lee las trayectorias de `reports/trajectories/` y los
+`metrics.json` de `models/`, sin volver a correr políticas, y escribe en `reports/<split>/`:
+
+- `summary.csv` y `summary.md`: una fila por baseline o corrida, con las métricas de EVA-03 y de
+  mayor a menor retorno medio. El modo estricto de EVA-11 es una fila aparte.
+- `capital.png`: PnL acumulado mercado a mercado, en orden cronológico.
+- `returns.png`: distribución del retorno por mercado sobre el monto, con la media marcada.
+- `learning.png`: retorno de cada checkpoint de las corridas evaluadas en ese split, con el elegido
+  marcado.
+
+Todas las políticas tienen que cubrir los mismos mercados, porque la comparación es pareada. Test
+pide `--allow-test`, igual que `backtest` y `evaluate`. Los intervalos de confianza llegan con
+EVA-04 (`stats.py`).
 
 **Métricas:**
 
@@ -328,7 +342,7 @@ src/polym4v/utils/
 ├── seeding.py      # set_global_seed(seed): random, numpy, torch, gym
 ├── logging.py      # logging estándar + TensorBoard
 └── paths.py        # Rutas centralizadas (data/, models/, reports/)
-src/polym4v/cli.py   # argparse: build-dataset | backtest | collect-offline | train | evaluate (y las capturas)
+src/polym4v/cli.py   # argparse: build-dataset | backtest | collect-offline | train | evaluate | report (y las capturas)
 ```
 
 ---
@@ -366,7 +380,7 @@ RL/
 ├── docs/                       # esta documentación
 ├── data/        (gitignored)   # raw/, processed/, offline/
 ├── models/      (gitignored)   # <agente>/<run_id>/{model.zip, config.yaml, metrics.json}
-└── reports/                    # resultados finales (tablas y figuras sí se versionan)
+└── reports/                    # <split>/ con tablas y figuras (se versionan); trajectories/ no
 ```
 
 ---
