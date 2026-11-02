@@ -113,6 +113,8 @@ class PolymarketEnv(gym.Env[np.ndarray, np.int64]):
         return self._observation(), self.last_info
 
     def step(self, action: Any) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
+        if self.k == self.data.n_steps:
+            raise RuntimeError("El episodio ya terminó: llama a reset() antes de step()")
         requested = Action(int(action))
         t = int(self.episode.ts[self.k])
         valid = bool(self.action_masks()[requested])
