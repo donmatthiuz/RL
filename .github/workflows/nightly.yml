@@ -1,0 +1,29 @@
+name: Nightly
+
+on:
+  # GitHub corre schedule y workflow_dispatch solo con el workflow de la rama por defecto (main).
+  schedule:
+    - cron: "0 6 * * *" # todos los días a las 06:00 UTC, medianoche en Guatemala
+  workflow_dispatch: {}
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  slow-and-network:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - run: make install
+      # slow: la prueba de cordura de AGT-06. network: las APIs reales siguen entregando lo que
+      # leen el crudo y el dataset (docs/05, sección 5.2).
+      - run: make nightly

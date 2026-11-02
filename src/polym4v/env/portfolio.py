@@ -72,5 +72,11 @@ class Portfolio:
         """Valor de la cartera: caja más el valor de liquidación de la posición."""
         return self.cash + self.liquidation_value(p_yes, costs)
 
+    def mid_value(self, p_yes: float) -> float:
+        """Caja más la posición a precio medio, sin costos de salida (recompensa `pnl_mid`)."""
+        if self.side == FLAT:
+            return self.cash
+        return self.cash + self.shares * side_price(p_yes, self.side)
+
     def _flat(self) -> None:
         self.side, self.shares, self.entry_price, self.cost = FLAT, 0.0, 0.0, 0.0

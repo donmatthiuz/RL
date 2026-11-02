@@ -19,8 +19,7 @@ env:
     min_fee: 0.00001
     tick: 0.001
 reward:
-  name: pnl                 # pnl, pnl_risk o terminal (ENV-05)
-  lambda_dd: 0.0            # solo con pnl_risk
+  name: pnl                 # pnl, pnl_mid, terminal, pnl_risk, pnl_hold o utility (ENV-05)
   lambda_invalid: 0.0       # S6
 agent:
   algo: bc

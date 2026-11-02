@@ -32,16 +32,16 @@ sirve. Por eso el testing no es opcional: es parte del método científico del p
 | Unitario | `tests/unit/` | (ninguno) | Funciones y clases aisladas | Cada push |
 | Propiedades | `tests/unit/` | (ninguno) | Invariantes con `hypothesis` | Cada push |
 | Integración | `tests/integration/` | `integration` | Varios módulos juntos sobre el mini-dataset | Cada push |
-| Smoke de entrenamiento | `tests/integration/` | `smoke` | PPO/DQN/CQL entrenan unos pocos miles de pasos sin errores | Cada push |
-| Lento | `tests/` | `slow` | Entrenamientos más largos, backtest completo de val | Nightly / manual |
-| Red | `tests/network/` | `network` | Que las APIs reales sigan respondiendo con el esquema esperado | Nightly / manual |
+| Smoke de entrenamiento | `tests/test_smoke.py` | `smoke` | PPO, DQN, CQL y BC entrenan unos 2 000 pasos con su config real sin errores | Cada push, en su propio job (`smoke-train`) |
+| Lento | `tests/` | `slow` | Entrenamientos más largos, como la prueba de cordura de AGT-06 | Nightly / manual |
+| Red | `tests/test_network.py` | `network` | Que Gamma, el CLOB, la data-api y Binance sigan entregando lo que leen el crudo y el dataset | Nightly / manual |
 
 Configuración en `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers -m 'not slow and not network'"
+addopts = "-ra --strict-markers -m 'not slow and not network and not smoke'"
 markers = [
   "integration: varios módulos sobre el mini-dataset",
   "smoke: entrenamiento muy corto para detectar errores de integración",
@@ -63,11 +63,13 @@ Comandos:
 ```bash
 make test        # suite por defecto (rápida)
 make coverage    # con cobertura (mínimo 70 %)
-make check       # lo mismo que la CI: lint, tipos y cobertura
+make smoke       # cada config real de agente entrena unos 2 000 pasos (unos 15 s)
+make nightly     # tests lentos y de las APIs reales (-m "slow or network")
+make check       # lo mismo que la CI: lint, tipos, cobertura y smoke
 ```
 
-Los targets de integración (`-m integration`) y del nightly (`-m "slow or network"`) se agregan
-al `Makefile` cuando existan esos tests (INF-07 e INF-08).
+La suite por defecto deja afuera `smoke`, que corre en su propio job de la CI, pero incluye
+`integration` (INF-07).
 
 ---
 
@@ -234,6 +236,11 @@ jobs:
 - Las dependencias quedan fijadas en `uv.lock`. Actualizarlas requiere un commit propio (`chore(deps): ...`).
 
 ### 5.2 `nightly.yml` — tests lentos y verificación de las APIs
+
+> **Implementado (INF-08):** `.github/workflows/nightly.yml` corre `make nightly` todos los días a
+> las 06:00 UTC y a mano. GitHub solo dispara `schedule` y `workflow_dispatch` con el workflow de la
+> rama por defecto, así que el nightly empieza a correr cuando `proyecto` llegue a `main`. Hasta
+> entonces, `make nightly` se corre en local. La CI suma el job `smoke-train` (`make smoke`).
 
 ```yaml
 name: Nightly
