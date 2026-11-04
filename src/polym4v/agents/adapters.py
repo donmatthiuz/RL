@@ -48,6 +48,11 @@ class SB3Policy:
         action, _ = self.model.predict(obs, deterministic=True)
         return int(action)
 
+    def act_batch(self, obs: np.ndarray) -> np.ndarray:
+        """Acciones de un lote de observaciones, una por fila (EVA-12)."""
+        actions, _ = self.model.predict(obs, deterministic=True)
+        return np.asarray(actions, dtype=np.int64)
+
     def reset(self) -> None:
         pass
 
@@ -71,5 +76,17 @@ class D3rlpyPolicy:
         # d3rlpy predice por lotes: se agrega la dimensión del lote y se toma la única acción.
         return int(self.algo.predict(np.asarray(obs, dtype=np.float32)[None, :])[0])
 
+    def act_batch(self, obs: np.ndarray) -> np.ndarray:
+        """Acciones de un lote de observaciones, una por fila (EVA-12)."""
+        return np.asarray(self.algo.predict(np.asarray(obs, dtype=np.float32)), dtype=np.int64)
+
     def reset(self) -> None:
         pass
+
+
+def load_policy(run: str | Path, algo: str) -> SB3Policy | D3rlpyPolicy:
+    """El mejor checkpoint de una corrida de `models/<algo>/<run_id>/`."""
+    run = Path(run)
+    if algo in SB3_ALGOS:
+        return SB3Policy.load(run / "best.zip", algo)
+    return D3rlpyPolicy.load(run / "best.d3", algo)
