@@ -10,12 +10,12 @@ repositorio y revisa si el proyecto cumple. Las tareas que salen de aquí son la
 | Entregable | Qué se pide | Dónde vive | Puntos | Estado |
 | --- | --- | --- | --- | --- |
 | Aprobación del tema | Propuesta y correo de aprobación | [propuesta](../entregas/propuesta/), [evidencias](images/evidencias/) | 3 | Hecho |
-| Documento | PDF con las secciones de la sección 2 y el enlace al repositorio | [entregas/final/informe/](../entregas/final/informe/) | 5 | Estructura lista |
+| Documento | PDF con las secciones de la sección 2 y el enlace al repositorio | [entregas/final/informe/](../entregas/final/informe/) | 5 | En curso: borrador de la propuesta de solución (DOC-04) y notas en resultados y conclusión |
 | Repositorio | Público, con todo el código y el documento | `github.com/donmatthiuz/RL`, rama `proyecto` | 1 | Público (verificado el 31/10/2026) |
-| Video | Funcionamiento, implementación y hallazgos principales | [entregas/final/video/](../entregas/final/video/) | 1 | Pendiente |
+| Video | Funcionamiento, implementación y hallazgos principales | [entregas/final/video/](../entregas/final/video/) | 1 | Pendiente. La demo (`make demo`) ya abre el mejor agente en test |
 | Slides | Máximo 10, en HTML, con su versión PDF | [entregas/final/presentacion/](../entregas/final/presentacion/) | 5 | Pendiente (al final) |
 | Presentación | Exposición en clase y respuestas a las preguntas | En clase | 10 | Pendiente |
-| Calidad de la solución | Implementación funcional y verificada | `src/`, `tests/`, CI | 5 | En curso |
+| Calidad de la solución | Implementación funcional y verificada | `src/`, `tests/`, CI | 5 | Cumple: 369 tests, CI en verde y evaluación en test hecha |
 
 En Canvas se suben dos archivos: el **PDF del documento**, que incluye el enlace al repositorio, y
 el **PDF de las slides**.
@@ -75,19 +75,19 @@ El guion y el enlace van en [entregas/final/video/](../entregas/final/video/).
 
 ## 6. ¿Cumplimos?
 
-Revisión del 31/10/2026:
+Revisión del 31/10/2026, con las filas actualizadas el 09/11/2026:
 
 | Requisito | Estado | Nota |
 | --- | --- | --- |
 | Tema de RL con aplicación real | Cumple | Mercados de predicción reales, con datos históricos y costos reales |
 | Más allá de lo que resuelve un prompt | Cumple | Pipeline de datos, simulador propio, tres familias de agentes y evaluación estadística |
 | Proceso iterativo demostrable | Cumple; falta contarlo | ADR, decisiones S1 a S11, PR y entregas parciales. Va en el documento (sección 2) |
-| Técnicas del curso | En curso | PPO, DQN y Offline RL (CQL y BC) |
-| Corroborar si funciona o no | En curso | Comparación contra baselines con los mismos costos (D1); si nada gana, se reporta (D4) |
+| Técnicas del curso | Cumple | PPO, DQN y Offline RL (CQL y BC), entrenados con 5 semillas cada uno |
+| Corroborar si funciona o no | Cumple | En test ningún agente le gana a `NoTrade`: PPO y DQN quedan equivalentes, CQL inferior y BC peor, pero no relevante ([comparación](../reports/test/comparison.md)). EVA-12 explica por qué ([comportamiento](../reports/val/behavior.md)) |
 | Repositorio público | Cumple | Verificado el 31/10/2026 |
 | Secciones del documento | **Corregido hoy** | Las tareas `DOC-*` seguían otra estructura (introducción, metodología, discusión). Se alinearon con las secciones exigidas |
-| Herramientas no vistas en clase, en detalle | Pendiente | Candidatas, a confirmar con las anotaciones del curso: APIs de Polymarket y Binance, Gymnasium, Stable-Baselines3, d3rlpy, pandera, uv y GitHub Actions |
-| Historial de prompts con evaluación | **Faltaba; iniciado hoy** | [ia/historial_prompts.md](ia/historial_prompts.md) |
+| Herramientas no vistas en clase, en detalle | Pendiente (DOC-06) | Candidatas, a confirmar con las anotaciones del curso: APIs de Polymarket y Binance, Gymnasium, Stable-Baselines3, d3rlpy, pandera, uv y GitHub Actions |
+| Historial de prompts con evaluación | Al día (P1 a P20) | [ia/historial_prompts.md](ia/historial_prompts.md) |
 | Video | **No estaba en el plan; agregado** | DOC-11 |
 | Slides en HTML con PDF | **No estaba definido; agregado** | DOC-10 |
 | Bibliografía | **No era una sección; agregada** | DOC-09 |

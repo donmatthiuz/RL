@@ -297,7 +297,8 @@ src/polym4v/evaluation/
 ├── backtest.py     # run_backtest(policy, env, markets) → DataFrame de trayectorias
 ├── metrics.py      # Métricas por episodio y agregadas
 ├── stats.py        # Bootstrap IC 95 %, test de diferencias pareadas
-└── report.py       # Tabla (CSV y Markdown) y figuras (matplotlib) de un split: polym4v report
+├── report.py       # Tabla (CSV y Markdown) y figuras (matplotlib) de un split: polym4v report
+└── behavior.py     # Comportamiento de los agentes (EVA-12, exploratorio): polym4v behavior
 ```
 
 **Reporte** (`make report SPLIT=train`): lee las trayectorias de `reports/trajectories/` y los
@@ -313,6 +314,13 @@ src/polym4v/evaluation/
 Todas las políticas tienen que cubrir los mismos mercados, porque la comparación es pareada. Test
 pide `--allow-test`, igual que `backtest` y `evaluate`. Los intervalos de confianza llegan con
 EVA-04 (`stats.py`).
+
+**Comportamiento** (`make behavior`, EVA-12): análisis exploratorio, fuera del protocolo de EVA-01,
+de qué aprendió cada agente. En val escribe `reports/val/behavior.md` con las operaciones por tramo
+de precio, el mapa de decisiones por minuto y precio del favorito, la calibración del precio y la
+importancia de las features por permutación, para la que vuelve a correr cada agente en val. En
+test solo describe las trayectorias que ya existen (`reports/test/inspection.md`), con las pérdidas
+grandes y el recorrido de BTC en esos mercados; no corre ninguna política.
 
 **Métricas:**
 
@@ -354,9 +362,34 @@ dependencias `demo`, que `uv sync` instala por defecto pero no es una dependenci
 
 - Dos gráficos: el PnL de cada una dentro del mercado y el PnL acumulado en orden cronológico, con
   el paso y el mercado actuales marcados. Una tabla resume el PnL y las órdenes ejecutadas.
-- Si existe `reports/<split>/summary.csv`, propone de entrada al mejor agente y al mejor baseline
-  en modo normal.
+- Si existe la comparación del protocolo (`reports/<split>/comparison.csv`), abre test (o val)
+  con el mejor agente según la media de D frente a su baseline, en modo normal y en el primer
+  mercado donde operó. El agente se muestra con su semilla mediana según `summary.csv`, no con la
+  mejor, para no elegir una semilla con suerte; en test es PPO s0 frente a `NoTrade`.
 - Una política sin el mercado elegido se deja afuera, con un aviso.
+
+**v3 (EVA-13), con diseño:** cuatro páginas con `st.navigation` (inicio, simulación, comparación y
+cómo funciona) y la identidad de `entregas/final/presentacion/DESIGN.md`:
+
+- **Tema:** `.streamlit/config.toml` lleva los tokens de color, las fuentes (Space Grotesk, Inter y
+  JetBrains Mono) y la paleta de series; `app/core.py` repite los colores para los gráficos de
+  Altair, que reemplazan a matplotlib porque son interactivos y no parpadean al reproducir.
+- **Simulación:** el bloque que cambia con cada minuto es un `st.fragment` que se vuelve a dibujar
+  solo con `run_every` mientras se reproduce. Los botones (reproducir o pausar, minuto anterior y
+  siguiente, reiniciar, ir al cierre y la velocidad) cambian el estado con callbacks; no hay un
+  toggle. Al llegar al cierre se detiene sola.
+- **Datos del mercado:** la pregunta, el precio de BTC por minuto, la apertura, el cierre y el
+  resultado salen del dataset si está en la máquina y, si no, de `app/trayectorias/mercados_test.parquet`
+  (`make demo-muestra`, `app/muestra.py`).
+- La política y el mercado elegidos se comparten entre páginas (`app/selection.py`).
+- **Tarjetas (DESIGN.md 9.3):** `card()` de `app/core.py` es un contenedor con borde y clave
+  `card_*`; el CSS de `app/demo.py` le da la superficie blanca y `height="stretch"` iguala el alto
+  de las tarjetas de una fila. La barra lateral (carpeta de trayectorias) está en todas las páginas.
+
+**Publicada (EVA-09):** sin trayectorias en `reports/trajectories/`, la demo usa la muestra de test
+de `app/trayectorias/` (PPO s0, `NoTrade` y `fair_value`, unos 3 MB). En Streamlit Community Cloud
+las dependencias salen de `app/requirements.txt`, que deja afuera torch y las librerías de RL, y el
+paquete se importa desde `src/` sin instalarlo.
 
 ### 2.8 `utils/` y CLI (Rol 1)
 
@@ -383,7 +416,7 @@ RL/
 │   └── workflows/
 │       ├── ci.yml              # lint, mypy, tests con cobertura y smoke-train en cada push y PR
 │       ├── nightly.yml         # tests slow y network todos los días (INF-08), desde main
-│       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09, previsto)
+│       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09)
 ├── configs/
 │   ├── data.yaml
 │   ├── env.yaml
@@ -395,7 +428,12 @@ RL/
 │   ├── data/  features/  env/  agents/  evaluation/  utils/
 │   └── cli.py
 ├── app/
-│   └── demo.py
+│   ├── demo.py                 # entrada: tema, logo y navegación (EVA-13)
+│   ├── app_pages/              # inicio, simulación, comparación y cómo funciona
+│   ├── core.py  charts.py  selection.py  muestra.py
+│   ├── static/                 # monograma de PolyRL
+│   ├── requirements.txt        # dependencias de la demo publicada, sin torch (EVA-09)
+│   └── trayectorias/           # muestra de test para la demo publicada
 ├── notebooks/                  # EDA y exploración (no es código de producción)
 ├── tests/
 │   ├── unit/  integration/

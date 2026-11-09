@@ -34,6 +34,9 @@ flowchart LR
 - `.skills/` y `.agents/` son la fuente versionada. `.claude/skills` y `.claude/agents` son enlaces
   simbólicos para que Claude Code los cargue. El resto de `.claude/` (la configuración personal)
   no se versiona.
+- `.agents/` es para subagentes. La única excepción es `.agents/skills/`: contiene un enlace a la
+  skill `developing-with-streamlit` porque algunos asistentes buscan skills junto a los agentes. La
+  copia canónica está en `.skills/`; no se escribió ninguna skill propia.
 - Si al clonar los enlaces no funcionan (por ejemplo en Windows sin soporte de symlinks), se
   recrean desde la raíz del repo con `ln -sfn ../.skills .claude/skills` y
   `ln -sfn ../.agents .claude/agents`.
@@ -90,7 +93,18 @@ RL) y `project-manager-senior` (atado a Laravel; `docs/04_tareas.md` ya cumple e
 catálogo no tiene un agente de RL: para eso están los apuntes del curso y la documentación de
 stable-baselines3 y d3rlpy.
 
-## 4. Documentación actualizada (Context7)
+## 4. Asistentes de código
+
+| Herramienta | Para qué se usa | Quién verifica |
+| --- | --- | --- |
+| Claude Code | Implementación, análisis, revisión y documentación del proyecto (P1 a P20) | El dueño del módulo o R1, con tests y revisión del PR |
+| OpenCode | Diseño de la presentación y registro de IA (P21 y P22), con los agentes de `.agents/` | R1 revisa el PR y aprueba antes de construir el deck |
+
+- OpenCode usa el mismo repositorio y los mismos agentes y skills; no crea agentes ni skills.
+- En ambos casos, la IA propone y la persona decide; el resultado se contrasta con archivos del
+  repositorio, no con la memoria del modelo.
+
+## 5. Documentación actualizada (Context7)
 
 El código se escribe contra la documentación vigente de cada librería, no contra lo que el
 asistente recuerde. Para eso el proyecto configura Context7 como servidor MCP en `.mcp.json`.
@@ -102,7 +116,20 @@ asistente recuerde. Para eso el proyecto configura Context7 como servidor MCP en
   deprecado desde Python 3.14 y se quitó del código, y que la API nueva de historial de Polymarket
   solo guarda 1 minuto durante 7 días (decisión S8).
 
-## 5. Skills (`.skills/`)
+## 6. Navegador: MCP de Chrome DevTools y Playwright
+
+La demo se valida en un navegador real, no solo con tests de Streamlit.
+
+- **MCP de Chrome DevTools:** mide el alto de tarjetas y métricas, revisa el contraste y confirma
+  que la página no tenga desbordes. Se usó en P20 para comprobar que las tarjetas de una fila
+  coinciden.
+- **Playwright:** toma capturas de cada página y del reproductor para revisar el resultado visual y
+  para la captura de la slide 10. En P19 permitió ver métricas cortadas, un registro saturado y un
+  gráfico que no llenaba su tarjeta, y corregirlos.
+- **Quién verifica:** R5 toma las capturas y R1 aprueba la que va a la presentación. Las capturas no
+  se retocan: si un dato se ve, es porque la demo lo muestra.
+
+## 7. Skills (`.skills/`)
 
 | Skill | Para qué | Cuándo usarla |
 | --- | --- | --- |
@@ -112,8 +139,14 @@ asistente recuerde. Para eso el proyecto configura Context7 como servidor MCP en
 | `planning-with-files` | Planes persistentes en archivos | Tareas largas de varias sesiones |
 | `security-compliance` | Revisar secretos y controles | Al tocar `.env` o credenciales de Polymarket |
 | `entregable-pdf` | Generar los entregables con el formato acordado | Cada entrega al profesor |
+| `developing-with-streamlit` | Pautas oficiales de Streamlit: páginas, tema, CSS, caché y accesibilidad | Al tocar `app/` o el tema de la demo |
 
-## 6. Cómo pedirle algo a un agente
+`developing-with-streamlit` no es una skill del equipo: viene dentro del paquete `streamlit`
+instalado y se enlaza desde `.venv/.../streamlit/.agents/skills/developing-with-streamlit` a
+`.skills/` y `.agents/skills/`. No se copia ni se modifica; se actualiza con la versión de
+Streamlit.
+
+## 8. Cómo pedirle algo a un agente
 
 Nombrarlo en la petición, por ejemplo: "usa el agente `specialized-model-qa` para revisar
 `src/polym4v/data/transform.py`". El agente devuelve un informe; la persona responsable decide qué

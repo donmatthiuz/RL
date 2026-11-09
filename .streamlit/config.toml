@@ -1,0 +1,40 @@
+# Tema de la demo (EVA-13), con los tokens de entregas/final/presentacion/DESIGN.md (sección 4).
+# Va en la raíz porque Streamlit Community Cloud solo lee la configuración desde ahí.
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#1D4ED8"
+backgroundColor = "#F7F8FA"
+secondaryBackgroundColor = "#EDF1F7"
+textColor = "#0B1220"
+linkColor = "#1D4ED8"
+borderColor = "#D7DEE8"
+dataframeBorderColor = "#D7DEE8"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "8px"
+paddingTop = "0.5rem"
+buttonRadius = "6px"
+greenColor = "#0E7C66"
+redColor = "#B42318"
+blueColor = "#1D4ED8"
+orangeColor = "#E8A317"
+violetColor = "#7C3AED"
+grayColor = "#64748B"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap, system-ui, sans-serif"
+headingFont = "'Space Grotesk':https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap, system-ui, sans-serif"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap, monospace"
+headingFontWeights = [700, 700, 600, 600, 600, 600]
+metricValueFontWeight = 700
+metricValueFontSize = "1.5rem"
+chartCategoricalColors = ["#1D4ED8", "#7C3AED", "#0891B2", "#C2410C", "#64748B"]
+
+[theme.sidebar]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F8FA"

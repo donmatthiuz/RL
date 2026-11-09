@@ -29,8 +29,16 @@ Code. El equipo lo revisa y completa.
 | P10 | 31/10/2026 | Perplexity | Comisión exacta de Polymarket | Satisfactorio, con vacíos |
 | P11 | 31/10/2026 | Subagente `academic-statistician` | Revisar el protocolo de evaluación | Satisfactorio: cuatro fallas graves |
 | P12 | 31/10/2026 | Claude Code | ¿Es realista S4 en un CLOB? | Satisfactorio: cambió la pregunta de S4 |
+| P13 | 01/11/2026 | Claude Code y Perplexity | Recompensa del entorno | Satisfactorio con reservas |
 | P14 | 01/11/2026 | Claude Code | Revisión de R3 de los PR del entorno | Satisfactorio: un hueco en la config de la ablación |
 | P15 | 02/11/2026 | Claude Code | Mezclar la pila, entrenar y evaluar en test | Satisfactorio: cuatro fallas encontradas en el camino |
+| P16 | 02/11/2026 | Claude Code | Qué aprendió cada agente (XAI) | Parcial: dos cifras y cinco afirmaciones corregidas |
+| P17 | 02/11/2026 | Claude Code | Explicar el agente y el avance del 02/11 | Parcial: corregidos el minuto 59, los redondeos y el signo del PDF |
+| P18 | 02/11/2026 | Claude Code | Cierre técnico | Satisfactorio |
+| P19 | 08/11/2026 | Claude Code | Diseño de la demo | Satisfactorio |
+| P20 | 09/11/2026 | Claude Code y MCP de Chrome | Ajustes de la demo con la skill de Streamlit | Satisfactorio |
+| P21 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Diseño de la presentación final | Satisfactorio: corrigió la sección 9 tras la nota de R1 |
+| P22 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Fuentes, referencias y registro de IA del diseño | Satisfactorio |
 
 ## Entradas
 
@@ -226,6 +234,142 @@ Code. El equipo lo revisa y completa.
 - **Aporte:** cuatro fallas encontradas en el camino: el dataset offline podía reusar recompensas
   viejas, a la demo le faltaba el componente `hold`, la tabla del protocolo se rompía en Markdown y
   faltaba el ajuste de umbrales de los baselines que pide el protocolo.
+
+### P16 — Qué aprendió cada agente (XAI)
+
+- **Prompt:** R1 preguntó qué dice el resultado, qué funcionó y qué no, si se puede hacer XAI y
+  cómo prepararse para las preguntas de la presentación, y pidió dejar el análisis como evidencia en
+  los reportes.
+- **Resultado:** parcial.
+- **Por qué:** la primera respuesta se apoyó en un conteo rápido sobre las trayectorias que daba por
+  hecho que cada compra se mantenía hasta el final. Con las operaciones reales, con sus ventas, PPO
+  pierde −27,23 USDC en test en las compras a más de 0,98, no −19,1, y las dos pérdidas grandes
+  resultaron ser el mismo mercado en dos semillas. Además afirmó de más: que PPO predice cuándo el
+  resultado está decidido, que le gana a alguien que no sabe operar y que CQL sobreajustó.
+- **Cómo se evaluó:** una revisión externa pegada por R1 marcó cinco afirmaciones sin demostrar, y
+  cada una se contrastó con una medición: la importancia por permutación (PPO decide con el spot),
+  la calibración del precio (el precio ya cubre lo que PPO aprovecha) y las operaciones de CQL (sus
+  10 mejores apuestas de val suman más que su ganancia total). Antes de permutar, se comprobó que
+  volver a correr cada agente en val da las mismas acciones que sus trayectorias.
+- **Corrección:** el informe usa las operaciones reales, y cada afirmación lleva su límite:
+  exploratorio, fuera del protocolo, en val, y test solo descrito, sin volver a evaluar.
+- **Aporte:** EVA-12, `polym4v behavior` y `make behavior`, con `reports/val/behavior.md` y
+  `reports/test/inspection.md`.
+
+### P17 — Explicar el agente y el avance del 02/11
+
+- **Prompt:** R1 pidió explicar de forma simple qué haría el agente si se pusiera a operar hoy (con
+  qué monto empieza, cuál es la primera transacción) con una animación para quien no conoce el
+  proyecto, y después actualizar el reporte de avance al 02/11/2026.
+- **Resultado:** parcial.
+- **Por qué:** la primera versión de la animación mostraba en el minuto 59 la cuenta ya liquidada y
+  decía que el agente "ya no puede comprar" mientras seguía con la posición, y redondeaba precios
+  como 0,9885 a 0,989, justo la diferencia que explica por qué pierde. En el PDF, la fuente no tiene
+  el signo menos (U+2212) y los resultados negativos de test salían sin signo.
+- **Cómo se evaluó:** las cifras de la animación se sacaron de las trayectorias reales (un mercado
+  que gana, uno que espera y uno que pierde, y el día del 15/08/2026) y se compararon con
+  `reports/`. El PDF se revisó página por página como imagen y con su texto extraído.
+- **Corrección:** el minuto 59 muestra la posición del minuto 58 hasta el cierre, los precios van
+  con cuatro decimales y el PDF usa el guion como signo.
+- **Aporte:** una explicación visual para la presentación y el video, y el avance del 02/11 en
+  `entregas/2026-11-02/`.
+
+### P18 — Cierre técnico
+
+- **Prompt:** R1 pidió hacer todo lo que falta salvo el documento, las slides, el video, el ensayo y
+  la entrega en Canvas, y dejar lo demás listo para seguir. Decidió con R1 el contenido del Release,
+  que Mathew corra la reproducción y despliegue la demo, y que los PR los mezcle R1.
+- **Resultado:** satisfactorio.
+- **Por qué:** al revisar EVA-08 apareció que la demo proponía la mejor corrida suelta de test
+  (DQN s4), no el mejor agente del protocolo; se cambió por el agente con mayor media de D,
+  mostrado con su semilla mediana (PPO s0). El release no podía recalcular el reporte en la CI,
+  porque los datos y los modelos no se versionan.
+- **Cómo se evaluó:** la demo se probó con las trayectorias reales y en un entorno que simula
+  Streamlit Community Cloud (solo `app/requirements.txt`, sin torch ni el paquete instalado). La
+  guía de reproducción se ensayó en un clon limpio y dio exactamente el PnL de PPO s0 en val del
+  reporte.
+- **Aporte:** EVA-08 (#36), la demo lista para publicar (EVA-09), `release.yml` y
+  `make release-modelos` (INF-09) y la guía de INF-10 en el README (#37).
+
+### P19 — Diseño de la demo
+
+- **Prompt:** R1 pidió una demo más visual e interactiva dentro de los límites de Streamlit, con
+  marca, la simulación de la hora con BTC, el reloj y el precio, secciones separadas para comparar
+  y para explicar las políticas, el mercado y las trayectorias, botones en lugar del toggle, y que
+  los agentes de diseño orientaran el trabajo.
+- **Resultado:** satisfactorio.
+- **Por qué:** dos agentes de `.agents/` dieron la base. UX Architect propuso las cuatro páginas, el
+  reproductor con `st.fragment` y la narración de cada minuto. UI Designer propuso el sistema
+  visual. Su paleta cambiaba el azul y el ámbar del `DESIGN.md` que R1 estaba escribiendo para la
+  presentación; se mantuvo el `DESIGN.md` como fuente común y de su propuesta solo se tomó lo que
+  no choca (el color dice el lado y la forma, la acción; BTC en gris neutro).
+- **Cómo se evaluó:** tests con AppTest sobre mercados sintéticos (reproducir, pausar, cierre,
+  narración, elección del protocolo), capturas reales en Chrome con Playwright de cada página y
+  del reproductor, y una copia del repositorio con solo `app/requirements.txt` que simula
+  Streamlit Community Cloud. Las capturas mostraron métricas cortadas, un registro saturado de
+  pedidos inválidos y un gráfico que no llenaba su tarjeta; se corrigieron. La copia mostró que
+  las páginas no se encontraban con una ruta relativa al script.
+- **Aporte:** EVA-13: `app/views/`, `app/core.py`, `app/charts.py`, `app/selection.py`, el tema en
+  `.streamlit/config.toml` y la muestra de mercados de `make demo-muestra`.
+
+### P20 — Ajustes de la demo con la skill de Streamlit
+
+- **Prompt:** R1 pidió barra lateral también en el inicio, quitar el aviso del pie por
+  sobreexplicado, arreglar la falta de simetría, poner "[DEMO]" en el nombre, validar con el MCP de
+  Chrome, aplicar el DESIGN.md y usar la skill `developing-with-streamlit` que instaló.
+- **Resultado:** satisfactorio.
+- **Por qué:** la skill marcó prácticas que la primera versión no seguía: páginas en `app_pages/`,
+  margen con `paddingTop` del tema en vez de CSS, `st.switch_page` en lugar de `st.page_link`,
+  `title=` en las alertas, `alt=` en gráficos y tablas, límites de caché y métricas con
+  `height="stretch"`. El CSS que queda es el que pide el DESIGN.md (superficie blanca de las
+  tarjetas y etiquetas en mono), apuntado a claves `card_*` como recomienda la skill.
+- **Cómo se evaluó:** con el MCP de Chrome se midió el alto de cada tarjeta y métrica: todas las
+  de una fila coinciden. Tests de la demo, suite completa y la copia que simula Community Cloud.
+- **Aporte:** EVA-13, PR #41.
+
+### P21 — Diseño de la presentación final
+
+- **Prompt:** "quiero que usando esos agentes de diseño creemos un design md para la presentacion y
+  ademas relacionado con la web, sera 1 html la capacidad de que se convierta a pdf para enviar,
+  tomemos los agentes y usemoslo para diseño y toma de referencia como hice una presentacion
+  `Sentinel_Fase4_final.html` ... esta tiene otro branding otros integrantes asi que fijo cambiaraia,
+  es solo de referencia".
+- **Herramienta:** OpenCode con el modelo DeepSeek V4.1 Flash Free, sobre la rama `proyecto`.
+- **Resultado:** satisfactorio, con una corrección de fondo.
+- **Por qué:** los agentes de `.agents/` dieron los marcos que faltaban (Brand Guardian para la
+  identidad, UI Designer para los tokens, UX Architect para la retícula, Visual Storyteller para el
+  arco y UI Finish-Gate Reviewer para la compuerta). La referencia de Sentinel aportó la estructura
+  (lienzo 16:9, navegación por pasos, `?pdf`, `?guion` y el script de exportación), no su marca.
+  La primera versión describió la demo como si no tuviera diseño final; R1 corrigió esa premisa.
+- **Cómo se evaluó:** cada cifra se contrastó con un archivo del repositorio; la identidad se
+  revisó contra el tema real de `.streamlit/config.toml`; el Markdown se revisó con el skill
+  `markdown-style` y las tablas con su ancho.
+- **Corrección:** la sección 9 pasó de "propuesta de diseño" a "cómo quedó", con las cuatro páginas
+  reales, el tema en la raíz, los gráficos Altair y el CSS mínimo. Se corrigió el ejemplo falso de
+  la línea 57 sobre PPO en test.
+- **Aporte:** `entregas/final/presentacion/DESIGN.md` y la actualización de su `README.md`.
+
+### P22 — Fuentes, referencias y registro de IA del diseño
+
+- **Prompt:** dejar listo el diseño sin construir `index.html`: corregir la sección 9 con la demo
+  real, poner la ubicación exacta de cada referencia, agregar la tabla "Fuentes de cada slide",
+  definir la captura de la slide 10 y la regla de formato decimal, indicar el origen de los WOFF2,
+  actualizar los documentos de IA, pasar Ruff y la compuerta del UI Finish-Gate Reviewer.
+- **Herramienta:** OpenCode con el modelo DeepSeek V4.1 Flash Free, en la rama `docs/doc-10-design`.
+- **Resultado:** satisfactorio.
+- **Por qué:** la tarea obligó a leer el código real de la demo y los reportes, no a confiar en la
+  memoria. Aparecieron dos datos que la versión anterior tenía mal: el tema vive en la raíz y no en
+  `app/.streamlit/`, y los gráficos son Altair, no matplotlib. También se aclaró que
+  `Sentinel_Fase4_final.html` es del proyecto Sentinel del mismo autor, no de otro equipo.
+- **Cómo se evaluó:** se leyeron `app/demo.py`, `app/core.py`, `app/charts.py`, `app/selection.py`,
+  las cuatro páginas y `.streamlit/config.toml`; las cifras se sacaron de `manifest.json`,
+  `reports/val/comparison.csv`, `reports/test/comparison.csv`, `reports/test/summary.csv` y
+  `reports/test/inspection_payoff.csv`; se comprobó que el mercado 13/08/2026 12:00 UTC existe en
+  la trayectoria de PPO s0 en test y que el minuto 57 ejecuta la compra de YES.
+- **Corrección:** se reemplazó "pregúntale a R1 la ruta" por la ruta exacta del archivo y se corrigió
+  "entrega de otro equipo" por "proyecto Sentinel del mismo autor".
+- **Aporte:** `DESIGN.md` con la sección 9 real, la tabla de fuentes por slide, las referencias
+  ubicadas y los pendientes marcados; `README.md` de la presentación y este registro.
 
 ## Plantilla
 

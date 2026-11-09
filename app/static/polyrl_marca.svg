@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 48" width="252" height="48" role="img" aria-label="PolyRL demo">
+  <rect width="48" height="48" rx="10" fill="#1D4ED8"/>
+  <path d="M11 20 L19.5 8 L28 20 Z" fill="#FFFFFF"/>
+  <path d="M8 24 H40" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.1 6"/>
+  <path d="M20 28 H37 L28.5 40 Z" fill="#FFFFFF" fill-opacity="0.55"/>
+  <text x="60" y="33" font-family="'Space Grotesk', system-ui, sans-serif" font-size="26" font-weight="700" fill="#0B1220" letter-spacing="-0.5">PolyRL</text>
+  <text x="158" y="32" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="18" font-weight="600" fill="#1D4ED8" letter-spacing="0.5">[DEMO]</text>
+</svg>

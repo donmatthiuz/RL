@@ -61,12 +61,91 @@ make dataset
 # Ejecutar la EDA (notebooks/eda/), solo con train; las figuras quedan en docs/images/eda/
 make eda
 
+# Baselines y entrenamiento (configs/<agente>.yaml, todas sus semillas)
+make backtest POLICY=fair_value SPLIT=val
+make collect-offline AGENT=cql
+make train AGENT=ppo
+
+# Evaluar una corrida en val y armar el reporte del split (reports/val/)
+uv run polym4v evaluate --run models/ppo/<corrida> --split val
+make report SPLIT=val
+
+# Comportamiento de los agentes (EVA-12) y demo
+make behavior
+make demo
+
 # Generar el PDF de una entrega
 make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
+
+# Publicar los modelos y trayectorias en el Release de un tag (después del workflow release.yml)
+make release-modelos TAG=v1.0
 ```
 
-> Los comandos de dataset, entrenamiento, evaluación y demo se agregan al `Makefile` a medida que
-> avanzan las tareas de [`docs/04_tareas.md`](docs/04_tareas.md).
+## Demo
+
+`make demo` abre la demo de Streamlit, con la identidad visual de
+[DESIGN.md](entregas/final/presentacion/DESIGN.md). Tiene cuatro páginas:
+
+- **Inicio:** qué es PolyRL y el resultado en test.
+- **Simulación:** una hora de mercado con un agente, minuto a minuto, con botones para reproducir,
+  pausar y avanzar. Muestra la hora, el precio de BTC contra la apertura, el precio YES, la
+  posición, la cartera, una narración de cada minuto, el registro de órdenes y el resultado al
+  cierre. Empieza en test con el mejor agente del protocolo (PPO, con su semilla mediana), en el
+  primer mercado donde operó.
+- **Comparación:** las políticas en el mismo mercado y en todo el split, el veredicto del protocolo
+  con sus intervalos y por qué acertar no alcanza.
+- **Cómo funciona:** el mercado, el entorno y los costos, las acciones, cada política y los datos.
+
+Lee las trayectorias de `reports/trajectories/` y, si no hay, la muestra de test de
+[`app/trayectorias/`](app/trayectorias/): PPO, `NoTrade`, `fair_value` y el precio de BTC de cada
+mercado, que se regenera con `make demo-muestra`. Reproduce trayectorias grabadas: no vuelve a
+correr ningún agente ni a evaluar test.
+
+**Versión publicada:** pendiente (EVA-09). Para publicarla en Streamlit Community Cloud:
+
+1. Entrar a Community Cloud con la cuenta de GitHub dueña del repositorio y crear una app
+   desde un repositorio existente.
+2. Repositorio `donmatthiuz/RL`, rama `proyecto` y archivo principal `app/demo.py`.
+3. En las opciones avanzadas, Python 3.12. Las dependencias salen de
+   [`app/requirements.txt`](app/requirements.txt), que deja afuera torch y las librerías de RL.
+4. El tema sale de `.streamlit/config.toml`, en la raíz, que es donde Community Cloud lo lee.
+5. Poner la URL en este apartado y marcar EVA-09 en el tablero.
+
+## Reproducir un resultado
+
+Guía de INF-10: alguien que no entrenó los agentes clona el repositorio y obtiene, con el modelo
+publicado, el mismo resultado de PPO en val que el reporte. Toma unas 3 horas, casi todas de
+descarga.
+
+1. **Entorno:** clonar el repositorio en la rama `proyecto` y correr `make setup`.
+2. **Datos:** seguir los pasos 1, 3, 4 y 5 de [docs/11_descarga_de_datos.md](docs/11_descarga_de_datos.md)
+   (`make capture`, `make capture-spot`, `make manifest` y `make dataset`). Los trades y ETH no
+   hacen falta. Al terminar, `data/processed/btc_updown_1h_v1/manifest.json` tiene que traer
+   estos hashes:
+
+   | Archivo | Filas | sha256 |
+   | --- | --- | --- |
+   | `markets.parquet` | 12 294 | `4a66bfea2ff0c776b664f685a294dc96ee6829b90f7419ca4d40c35888ad37e1` |
+   | `prices_raw.parquet` | 2 945 766 | `954bd5d4546765c588e38ad4bbe3bcbb3cbd36313af263525ca8ef9bfe3a29e6` |
+   | `spot_1m.parquet` | 750 000 | `e6cd2824b157b7d6300d22a49e787c4531cf4090ea56fbc481a1c2c6626cdbfe` |
+   | `steps.parquet` | 737 640 | `d7153cf44875afaf33af16e50e908324513851aa3e71eec5f9fa7f5bbdd17c9b` |
+
+3. **Modelo:** descargar `modelos-v1.0.zip` del Release `v1.0` del repositorio y descomprimirlo
+   en `models/`. Queda, por ejemplo, `models/ppo/20261102-152322_ppo_pnl_risk_s0/`.
+4. **Evaluar en val:**
+
+   ```bash
+   uv run polym4v evaluate --run models/ppo/20261102-152322_ppo_pnl_risk_s0 --split val
+   ```
+
+5. **Comparar:** el JSON que imprime tiene que dar `markets` 1861, `total_pnl` 77.99 y
+   `mean_return` 0.002095, la fila de esa corrida en
+   [reports/val/summary.csv](reports/val/summary.csv). Con los mismos hashes del paso 2 coincide
+   exactamente; si algún hash difiere, se anota cuál y la diferencia del resultado.
+6. **Registrar:** quién lo corrió, la fecha y lo obtenido, en la fila de INF-10 del
+   [tablero](docs/04_tareas.md).
+
+Test no se vuelve a evaluar (EVA-01): para reproducir se usa val.
 
 ## Mantenimiento de la documentación
 
