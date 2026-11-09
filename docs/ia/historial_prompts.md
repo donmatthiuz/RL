@@ -249,6 +249,41 @@ Code. El equipo lo revisa y completa.
 - **Aporte:** EVA-12, `polym4v behavior` y `make behavior`, con `reports/val/behavior.md` y
   `reports/test/inspection.md`.
 
+### P17 — Explicar el agente y el avance del 02/11
+
+- **Prompt:** R1 pidió explicar de forma simple qué haría el agente si se pusiera a operar hoy (con
+  qué monto empieza, cuál es la primera transacción) con una animación para quien no conoce el
+  proyecto, y después actualizar el reporte de avance al 02/11/2026.
+- **Resultado:** parcial.
+- **Por qué:** la primera versión de la animación mostraba en el minuto 59 la cuenta ya liquidada y
+  decía que el agente "ya no puede comprar" mientras seguía con la posición, y redondeaba precios
+  como 0,9885 a 0,989, justo la diferencia que explica por qué pierde. En el PDF, la fuente no tiene
+  el signo menos (U+2212) y los resultados negativos de test salían sin signo.
+- **Cómo se evaluó:** las cifras de la animación se sacaron de las trayectorias reales (un mercado
+  que gana, uno que espera y uno que pierde, y el día del 15/08/2026) y se compararon con
+  `reports/`. El PDF se revisó página por página como imagen y con su texto extraído.
+- **Corrección:** el minuto 59 muestra la posición del minuto 58 hasta el cierre, los precios van
+  con cuatro decimales y el PDF usa el guion como signo.
+- **Aporte:** una explicación visual para la presentación y el video, y el avance del 02/11 en
+  `entregas/2026-11-02/`.
+
+### P18 — Cierre técnico
+
+- **Prompt:** R1 pidió hacer todo lo que falta salvo el documento, las slides, el video, el ensayo y
+  la entrega en Canvas, y dejar lo demás listo para seguir. Decidió con R1 el contenido del Release,
+  que Mathew corra la reproducción y despliegue la demo, y que los PR los mezcle R1.
+- **Resultado:** satisfactorio.
+- **Por qué:** al revisar EVA-08 apareció que la demo proponía la mejor corrida suelta de test
+  (DQN s4), no el mejor agente del protocolo; se cambió por el agente con mayor media de D,
+  mostrado con su semilla mediana (PPO s0). El release no podía recalcular el reporte en la CI,
+  porque los datos y los modelos no se versionan.
+- **Cómo se evaluó:** la demo se probó con las trayectorias reales y en un entorno que simula
+  Streamlit Community Cloud (solo `app/requirements.txt`, sin torch ni el paquete instalado). La
+  guía de reproducción se ensayó en un clon limpio y dio exactamente el PnL de PPO s0 en val del
+  reporte.
+- **Aporte:** EVA-08 (#36), la demo lista para publicar (EVA-09), `release.yml` y
+  `make release-modelos` (INF-09) y la guía de INF-10 en el README (#37).
+
 ## Plantilla
 
 ```markdown
