@@ -305,6 +305,21 @@ Code. El equipo lo revisa y completa.
 - **Aporte:** EVA-13: `app/views/`, `app/core.py`, `app/charts.py`, `app/selection.py`, el tema en
   `.streamlit/config.toml` y la muestra de mercados de `make demo-muestra`.
 
+### P20 — Ajustes de la demo con la skill de Streamlit
+
+- **Prompt:** R1 pidió barra lateral también en el inicio, quitar el aviso del pie por
+  sobreexplicado, arreglar la falta de simetría, poner "[DEMO]" en el nombre, validar con el MCP de
+  Chrome, aplicar el DESIGN.md y usar la skill `developing-with-streamlit` que instaló.
+- **Resultado:** satisfactorio.
+- **Por qué:** la skill marcó prácticas que la primera versión no seguía: páginas en `app_pages/`,
+  margen con `paddingTop` del tema en vez de CSS, `st.switch_page` en lugar de `st.page_link`,
+  `title=` en las alertas, `alt=` en gráficos y tablas, límites de caché y métricas con
+  `height="stretch"`. El CSS que queda es el que pide el DESIGN.md (superficie blanca de las
+  tarjetas y etiquetas en mono), apuntado a claves `card_*` como recomienda la skill.
+- **Cómo se evaluó:** con el MCP de Chrome se midió el alto de cada tarjeta y métrica: todas las
+  de una fila coinciden. Tests de la demo, suite completa y la copia que simula Community Cloud.
+- **Aporte:** EVA-13, PR #41.
+
 ## Plantilla
 
 ```markdown

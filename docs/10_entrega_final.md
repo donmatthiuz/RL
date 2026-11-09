@@ -87,7 +87,7 @@ Revisión del 31/10/2026, con las filas actualizadas el 09/11/2026:
 | Repositorio público | Cumple | Verificado el 31/10/2026 |
 | Secciones del documento | **Corregido hoy** | Las tareas `DOC-*` seguían otra estructura (introducción, metodología, discusión). Se alinearon con las secciones exigidas |
 | Herramientas no vistas en clase, en detalle | Pendiente (DOC-06) | Candidatas, a confirmar con las anotaciones del curso: APIs de Polymarket y Binance, Gymnasium, Stable-Baselines3, d3rlpy, pandera, uv y GitHub Actions |
-| Historial de prompts con evaluación | Al día (P1 a P19) | [ia/historial_prompts.md](ia/historial_prompts.md) |
+| Historial de prompts con evaluación | Al día (P1 a P20) | [ia/historial_prompts.md](ia/historial_prompts.md) |
 | Video | **No estaba en el plan; agregado** | DOC-11 |
 | Slides en HTML con PDF | **No estaba definido; agregado** | DOC-10 |
 | Bibliografía | **No era una sección; agregada** | DOC-09 |
