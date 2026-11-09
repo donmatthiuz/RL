@@ -1,0 +1,14 @@
+# Dependencias de la demo en Streamlit Community Cloud (EVA-09). Community Cloud usa primero el
+# archivo junto al entrypoint, así que este reemplaza a uv.lock, que instalaría torch, SB3 y d3rlpy
+# sin que la demo los use. El paquete se importa desde src/ (ver app/demo.py). Mismas versiones que
+# uv.lock.
+gymnasium==1.0.0
+matplotlib==3.11.2
+numpy==2.5.4
+pandas==3.1.0
+polymarket-client==0.14.0
+pyarrow==26.0.0
+pydantic==2.14.2
+python-dotenv==1.2.4
+pyyaml==6.0.3
+streamlit==1.66.1

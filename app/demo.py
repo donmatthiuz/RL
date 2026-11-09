@@ -3,13 +3,16 @@
 Lee los Parquet de `reports/trajectories/` (o de la carpeta que se elija), así que no necesita GPU
 ni red. Muestra un mercado a la vez: el precio YES con las compras y ventas, el valor de la cartera
 y el estado del paso elegido. Además compara otras políticas del mismo split en ese mercado y en el
-PnL acumulado; si existe el reporte del split, propone al mejor agente y al mejor baseline. Es
-funcional; el diseño visual se define al final del proyecto.
+PnL acumulado. Si existe la comparación del protocolo, abre el split de test (o el de val) con el
+mejor agente según la media de D, representado por su semilla mediana, frente a su baseline y en
+el primer mercado donde operó. Es funcional; el diseño visual se define al final del proyecto.
 
-Correr con `make demo`.
+Correr con `make demo`. Sin trayectorias en `reports/trajectories/` usa la muestra de test de
+`app/trayectorias/`, que es la que ve la demo publicada en Streamlit Community Cloud (EVA-09).
 """
 
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -17,17 +20,21 @@ import pandas as pd
 import streamlit as st
 from matplotlib.figure import Figure
 
-from polym4v.agents.base import Action
-from polym4v.env.reward import COMPONENTS
-from polym4v.evaluation.backtest import episode_results
-from polym4v.evaluation.metrics import capital_curve
-from polym4v.evaluation.report import STRICT_SUFFIX, parse_name
-from polym4v.utils.config import SimulatorConfig, load_config
-from polym4v.utils.paths import get_paths
+# En Community Cloud el paquete no se instala, porque arrastraría torch (app/requirements.txt).
+sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
+
+from polym4v.agents.base import Action  # noqa: E402
+from polym4v.env.reward import COMPONENTS  # noqa: E402
+from polym4v.evaluation.backtest import episode_results  # noqa: E402
+from polym4v.evaluation.metrics import capital_curve  # noqa: E402
+from polym4v.evaluation.report import STRICT_SUFFIX, parse_name  # noqa: E402
+from polym4v.utils.config import SimulatorConfig, load_config  # noqa: E402
+from polym4v.utils.paths import get_paths  # noqa: E402
 
 SPLITS = ("train", "val", "test")
 SIDES = {1: "YES", -1: "NO", 0: "sin posición"}
 PLAY_PAUSE_S = 0.4
+SAMPLE = Path(__file__).parent / "trayectorias"
 # Las corridas entrenadas son `<fecha>_<agente>_<recompensa>_s<semilla>`; lo demás, baselines.
 AGENT_LABEL = re.compile(r"^\d{8}-\d{6}_")
 
@@ -65,21 +72,37 @@ def split_of(name: str) -> str:
     return name.split(" · ")[1]
 
 
-def default_comparison(summary: Path, split: str, options: list[str]) -> list[str]:
-    """Mejor agente y mejor baseline del reporte del split, en modo normal, si están disponibles."""
-    if not summary.exists():
+def protocol_pick(reports: Path, split: str, options: list[str]) -> list[str]:
+    """Mejor agente del protocolo en el split y su baseline, en modo normal, si están disponibles.
+
+    El agente es el grupo con la mayor media de D en `comparison.csv`; se muestra su semilla mediana
+    según `summary.csv`, no la mejor, para no elegir una semilla con suerte.
+    """
+    comparison, summary = reports / split / "comparison.csv", reports / split / "summary.csv"
+    if not comparison.exists() or not summary.exists():
         return []
-    table = pd.read_csv(summary)
-    table = table[~table["strict"]].sort_values("mean_return", ascending=False)
-    is_agent = table["label"].map(lambda label: bool(AGENT_LABEL.match(label)))
-    picked = []
-    for rows in (table[is_agent], table[~is_agent]):
-        for label in rows["label"]:
-            name = file_name(label, split, False)
-            if name in options:
-                picked.append(name)
-                break
-    return picked
+    groups = pd.read_csv(comparison)
+    groups = groups[~groups["strict"] & (groups["role"] == "principal")]
+    if groups.empty:
+        return []
+    best = groups.sort_values("mean", ascending=False).iloc[0]
+    runs = pd.read_csv(summary)
+    runs = runs[~runs["strict"]]
+    pattern = AGENT_LABEL.pattern + re.escape(best["group"]) + r"_s\d+"
+    seeds = runs[runs["label"].str.fullmatch(pattern)]
+    picked = [file_name(best["baseline"], split, False)]
+    if len(seeds):
+        median = seeds.sort_values("mean_return")["label"].iloc[(len(seeds) - 1) // 2]
+        picked.insert(0, file_name(median, split, False))
+    return [name for name in picked if name in options]
+
+
+def first_traded(markets: dict[str, pd.DataFrame]) -> int:
+    """Posición del primer mercado con alguna orden ejecutada; 0 si no operó en ninguno."""
+    for position, steps in enumerate(markets.values()):
+        if (steps["order_status"] == "ejecutada").any():
+            return position
+    return 0
 
 
 def market_label(steps: pd.DataFrame) -> str:
@@ -255,7 +278,10 @@ config = load_config(paths.configs / "env.yaml", SimulatorConfig)
 initial_cash = config.env.initial_cash
 stake = initial_cash * config.env.stake_fraction
 
-folder = Path(st.sidebar.text_input("Carpeta de trayectorias", str(paths.reports / "trajectories")))
+default_folder = paths.reports / "trajectories"
+if not list_files(default_folder) and list_files(SAMPLE):
+    default_folder = SAMPLE
+folder = Path(st.sidebar.text_input("Carpeta de trayectorias", str(default_folder)))
 files = list_files(folder)
 if not files:
     st.info(
@@ -263,7 +289,14 @@ if not files:
     )
     st.stop()
 
-choice = st.sidebar.selectbox("Política y split", list(files), on_change=restart)
+picks = {split: protocol_pick(paths.reports, split, list(files)) for split in ("test", "val")}
+opening = next((pick[0] for pick in picks.values() if pick), None)
+choice = st.sidebar.selectbox(
+    "Política y split",
+    list(files),
+    index=list(files).index(opening) if opening else 0,
+    on_change=restart,
+)
 trajectories = load(str(files[choice]), files[choice].stat().st_mtime)
 markets = {
     market_id: steps.reset_index(drop=True)
@@ -272,6 +305,7 @@ markets = {
 market_id = st.sidebar.selectbox(
     "Mercado",
     list(markets),
+    index=first_traded(markets) if choice == opening else 0,
     format_func=lambda m: market_label(markets[m]),
     on_change=restart,
 )
@@ -283,7 +317,7 @@ options = [name for name in files if name != choice and split_of(name) == split]
 others = st.sidebar.multiselect(
     "Comparar con",
     options,
-    default=default_comparison(paths.reports / split / "summary.csv", split, options),
+    default=protocol_pick(paths.reports, split, options),
     key=f"compare_{choice}",
 )
 

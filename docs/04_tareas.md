@@ -28,17 +28,17 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 02/11/2026, de 67 tareas: 46 hechas, 1 en curso, 1 omitida y 19 sin empezar, casi todas del
-documento. Todos los PR (#1 a #35) están mezclados en `proyecto`, y test ya se evaluó.
+Al 09/11/2026, de 67 tareas: 47 hechas, 5 en curso, 1 omitida y 14 sin empezar, casi todas del
+documento. Todos los PR (#1 a #37) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-08, EVA-12 y DOC-01 | — | INF-09 e INF-10 |
+| R1 Josué | INF-01 a INF-08, EVA-12 y DOC-01 | INF-09 (falta el tag `v1.0`) e INF-10 (la corre Mathew) | — |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
-| R5 Carlos | EVA-01 a EVA-07 y EVA-11 | EVA-08 (falta el mejor agente en un mercado de test) | EVA-09 (P2) y EVA-10 |
-| Todos (documento) | DOC-01 | DOC-12, durante todo el proyecto | DOC-02 a DOC-11, DOC-13 y DOC-14 |
+| R5 Carlos | EVA-01 a EVA-08 y EVA-11 | EVA-09 (preparada; la despliega Mathew) | EVA-10 |
+| Todos (documento) | DOC-01 | DOC-04 (borrador de R3) y DOC-12, durante todo el proyecto | DOC-02, DOC-03, DOC-05 a DOC-11, DOC-13 y DOC-14 |
 
 AGT-01 (prototipo en CartPole) se omite: los adaptadores y el test de cordura de AGT-06 ya cubren
 lo que buscaba.
@@ -84,13 +84,16 @@ entrenamiento final y reporte de val (#33) y test (#34).
 
 **Lo que falta:**
 
-1. **EVA-08 (R5):** mostrar en la demo el mejor agente (PPO) frente a `NoTrade` en un mercado de
-   test.
-2. **Documento (todos):** DOC-02 a DOC-09, con Resultados y Conclusión (DOC-07 y DOC-08, R5) a
-   partir de `reports/val/` y `reports/test/`.
-3. **Slides y presentación (R1):** DOC-10, DOC-13 y DOC-14. **Video (R5):** DOC-11.
-4. **Cierre técnico (R1):** release `v1.0` con los artefactos (INF-09), reproducción por un tercero
-   (INF-10) y `proyecto` a `main`, para que corra el nightly.
+1. **Documento (todos):** DOC-02 a DOC-09, con Resultados y Conclusión (DOC-07 y DOC-08, R5) a
+   partir de `reports/val/` y `reports/test/`. DOC-04 tiene el borrador de R3 (03/11/2026); falta
+   la revisión de R1 como R4.
+2. **Slides y presentación (R1):** DOC-10 (con su `DESIGN.md`), DOC-13 y DOC-14. **Video (R5):**
+   DOC-11.
+3. **Cierre técnico (R1):** el tag `v1.0` sobre `proyecto`, que crea el Release (INF-09), y
+   `make release-modelos TAG=v1.0` para adjuntar los modelos y las trayectorias. `proyecto` no se
+   lleva a `main` (decisión del 09/11/2026; el PR #38 queda abierto).
+4. **Mathew (R2):** la reproducción de INF-10 con la guía del README, cuando exista el Release, y
+   el despliegue de la demo (EVA-09) con los pasos del README.
 
 ### Decisiones del 02/11/2026
 
@@ -169,9 +172,9 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | INF-05 | **Hecha el 31/10/2026.** `utils/`: `config.py` (pydantic), `seeding.py`, `logging.py`, `paths.py` | F1 | P0 | INF-01 | Tests unitarios. La misma semilla da resultados idénticos. |
 | INF-06 | **Hecha el 02/11/2026 (#1, #4 y #11).** Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
 | INF-07 | **Hecha el 02/11/2026 (#21)**, con `argparse`. CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
-| INF-08 | **Hecha el 02/11/2026 (#25)**; el nightly empieza a correr cuando `proyecto` llegue a `main`. Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
-| INF-09 | `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
-| INF-10 | Revisión de reproducibilidad: un integrante que no participó clona el repo y reproduce un resultado siguiendo el README | F4 | P0 | H3 | El resultado coincide dentro de la tolerancia (± IC) |
+| INF-08 | **Hecha el 02/11/2026 (#25)**; el nightly no corre en GitHub, porque `proyecto` no se lleva a `main` (09/11/2026): se corre en local con `make nightly`. Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
+| INF-09 | **Código mezclado el 09/11/2026 (#37); falta el tag `v1.0`.** El reporte no se recalcula en la CI, porque los datos y los modelos no se versionan: el Release publica `reports/` y R1 adjunta los modelos y las trayectorias con `make release-modelos` ([05_testing.md](05_testing.md), sección 6). `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
+| INF-10 | **Guía en el README (#37); la corre Mathew.** Ensayo de R1 el 09/11/2026 en un clon limpio: PPO s0 en val da exactamente el `total_pnl` del reporte (77,99 en 1 861 mercados). Revisión de reproducibilidad: un integrante que no participó clona el repo y reproduce un resultado siguiendo el README | F4 | P0 | H3 | El resultado coincide dentro de la tolerancia (± IC) |
 
 ### R2 — Ingeniero de datos
 
@@ -230,8 +233,8 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-05 | **Hecha el 02/11/2026 (#22).** `report.py` y `polym4v report`: tabla comparativa y figuras (curvas de capital, distribución del PnL, curvas de aprendizaje) | F2 | P0 | EVA-03 | Se genera `reports/val/` de forma automática con un solo comando |
 | EVA-06 | **Hecha el 02/11/2026 (#34), una sola vez:** [reports/test/](../reports/test/comparison.md). **Evaluación final en test** (una sola vez, con los modelos congelados de AGT-10) | F4 | P0 | AGT-10 | `reports/test/` con la tabla final e IC 95 % |
 | EVA-07 | **Hecha el 02/11/2026 (#24).** Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
-| EVA-08 | **Código mezclado el 02/11/2026 (#28, R5); falta mostrar el mejor agente en un mercado de test.** Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
-| EVA-09 | (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
+| EVA-08 | **Hecha el 09/11/2026 (#28 y #36).** La demo abre test con el mejor agente del protocolo (PPO, con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó. Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
+| EVA-09 | **Preparada el 09/11/2026 (#36); la despliega Mathew** con los pasos del README: `app/requirements.txt` sin torch y la muestra de test de `app/trayectorias/`. (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
@@ -246,7 +249,7 @@ documento vive en `entregas/final/informe/`.
 | DOC-01 | **Hecha el 31/10/2026.** Requisitos seleccionados en `docs/10_entrega_final.md` y estructura del documento con las secciones exigidas | R1 | F1 | — |
 | DOC-02 | Descripción del problema | R1 + R5 | F4 | DOC-01 |
 | DOC-03 | Análisis: datos, EDA, supuestos y riesgos | R2 | F4 | DAT-08 |
-| DOC-04 | Propuesta de solución: por qué RL, MDP y recompensa | R3 + R4 | F4 | ENV-08 |
+| DOC-04 | **Borrador de R3 el 03/11/2026; falta la revisión de R1 como R4.** Propuesta de solución: por qué RL, MDP y recompensa | R3 + R4 | F4 | ENV-08 |
 | DOC-05 | Descripción de la solución: datos, entorno, agentes, evaluación, ingeniería y proceso iterativo | Todos | F4 | AGT-10, INF-10 |
 | DOC-06 | Herramientas aplicadas: las no vistas en clase en detalle, los prompts de IA y la evolución de la idea | R1 | F4 | DOC-12 |
 | DOC-07 | Resultados (métricas) contra los baselines | R5 (con todos) | F4 | EVA-06 |
@@ -254,7 +257,7 @@ documento vive en `entregas/final/informe/`.
 | DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
 | DOC-10 | Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
 | DOC-11 | Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
-| DOC-12 | Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P18).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 
