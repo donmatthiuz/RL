@@ -61,12 +61,25 @@ make dataset
 # Ejecutar la EDA (notebooks/eda/), solo con train; las figuras quedan en docs/images/eda/
 make eda
 
+# Baselines y entrenamiento (configs/<agente>.yaml, todas sus semillas)
+make backtest POLICY=fair_value SPLIT=val
+make collect-offline AGENT=cql
+make train AGENT=ppo
+
+# Evaluar una corrida en val y armar el reporte del split (reports/val/)
+uv run polym4v evaluate --run models/ppo/<corrida> --split val
+make report SPLIT=val
+
+# Comportamiento de los agentes (EVA-12) y demo
+make behavior
+make demo
+
 # Generar el PDF de una entrega
 make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
-```
 
-> Los comandos de dataset, entrenamiento, evaluación y demo se agregan al `Makefile` a medida que
-> avanzan las tareas de [`docs/04_tareas.md`](docs/04_tareas.md).
+# Publicar los modelos y trayectorias en el Release de un tag (después del workflow release.yml)
+make release-modelos TAG=v1.0
+```
 
 ## Demo
 
@@ -84,6 +97,42 @@ lateral se elige cualquier otra política, mercado o paso. Lee las trayectorias 
 3. En las opciones avanzadas, Python 3.12. Las dependencias salen de
    [`app/requirements.txt`](app/requirements.txt), que deja afuera torch y las librerías de RL.
 4. Poner la URL en este apartado y marcar EVA-09 en el tablero.
+
+## Reproducir un resultado
+
+Guía de INF-10: alguien que no entrenó los agentes clona el repositorio y obtiene, con el modelo
+publicado, el mismo resultado de PPO en val que el reporte. Toma unas 3 horas, casi todas de
+descarga.
+
+1. **Entorno:** clonar el repositorio en la rama `proyecto` y correr `make setup`.
+2. **Datos:** seguir los pasos 1, 3, 4 y 5 de [docs/11_descarga_de_datos.md](docs/11_descarga_de_datos.md)
+   (`make capture`, `make capture-spot`, `make manifest` y `make dataset`). Los trades y ETH no
+   hacen falta. Al terminar, `data/processed/btc_updown_1h_v1/manifest.json` tiene que traer
+   estos hashes:
+
+   | Archivo | Filas | sha256 |
+   | --- | --- | --- |
+   | `markets.parquet` | 12 294 | `4a66bfea2ff0c776b664f685a294dc96ee6829b90f7419ca4d40c35888ad37e1` |
+   | `prices_raw.parquet` | 2 945 766 | `954bd5d4546765c588e38ad4bbe3bcbb3cbd36313af263525ca8ef9bfe3a29e6` |
+   | `spot_1m.parquet` | 750 000 | `e6cd2824b157b7d6300d22a49e787c4531cf4090ea56fbc481a1c2c6626cdbfe` |
+   | `steps.parquet` | 737 640 | `d7153cf44875afaf33af16e50e908324513851aa3e71eec5f9fa7f5bbdd17c9b` |
+
+3. **Modelo:** descargar `modelos-v1.0.zip` del Release `v1.0` del repositorio y descomprimirlo
+   en `models/`. Queda, por ejemplo, `models/ppo/20261102-152322_ppo_pnl_risk_s0/`.
+4. **Evaluar en val:**
+
+   ```bash
+   uv run polym4v evaluate --run models/ppo/20261102-152322_ppo_pnl_risk_s0 --split val
+   ```
+
+5. **Comparar:** el JSON que imprime tiene que dar `markets` 1861, `total_pnl` 77.99 y
+   `mean_return` 0.002095, la fila de esa corrida en
+   [reports/val/summary.csv](reports/val/summary.csv). Con los mismos hashes del paso 2 coincide
+   exactamente; si algún hash difiere, se anota cuál y la diferencia del resultado.
+6. **Registrar:** quién lo corrió, la fecha y lo obtenido, en la fila de INF-10 del
+   [tablero](docs/04_tareas.md).
+
+Test no se vuelve a evaluar (EVA-01): para reproducir se usa val.
 
 ## Mantenimiento de la documentación
 
