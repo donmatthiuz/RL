@@ -19,6 +19,7 @@ dataframeBorderColor = "#D7DEE8"
 showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "8px"
+paddingTop = "0.5rem"
 buttonRadius = "6px"
 greenColor = "#0E7C66"
 redColor = "#B42318"

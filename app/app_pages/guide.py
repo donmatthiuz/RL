@@ -5,11 +5,20 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from core import CLASS_COLOR, POLICIES, label_of, list_files, pretty, report, simulator, split_of
+from core import (
+    CLASS_COLOR,
+    POLICIES,
+    card,
+    label_of,
+    list_files,
+    pretty,
+    report,
+    simulator,
+    split_of,
+)
 from polym4v.env.execution import buy
 from polym4v.utils.config import SimulatorConfig, load_config
 from polym4v.utils.paths import get_paths
-from selection import folder_input
 
 config = load_config(get_paths().configs / "env.yaml", SimulatorConfig)
 initial_cash, stake = simulator()
@@ -35,7 +44,7 @@ with market:
             "Usamos 12 294 mercados horarios reales de mayo de 2025 a octubre de 2026, con su "
             "precio minuto a minuto y el precio de BTC del mismo minuto."
         )
-    with right, st.container(border=True):
+    with right, card("ejemplo"):
         st.markdown("**Ejemplo**")
         st.markdown(
             "A las 14:30, BTC está un poco arriba de la apertura y YES vale **0,60**.\n\n"
@@ -76,7 +85,12 @@ with environment:
             }
         )
     st.markdown(f"**Cuánto cuesta comprar con {stake:.0f} USDC**")
-    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    st.dataframe(
+        pd.DataFrame(rows),
+        hide_index=True,
+        alt="Costo de comprar con el monto fijo",
+        width="stretch",
+    )
     st.caption(
         "La última columna es el costo por acción: la fracción de veces que hay que acertar para "
         "no "
@@ -103,6 +117,7 @@ with actions:
             }
         ),
         hide_index=True,
+        alt="Acciones del agente",
         width="stretch",
     )
     st.markdown("**Qué le pasa a cada orden** (columna `order_status`)")
@@ -120,6 +135,7 @@ with actions:
             }
         ),
         hide_index=True,
+        alt="Estados de una orden",
         width="stretch",
     )
 
@@ -136,10 +152,12 @@ with policies:
     if activity is not None:
         habits = {row["policy"].split("_")[0]: row for _, row in activity.iterrows()}
     st.markdown("**Agentes de aprendizaje por refuerzo**")
-    cols = st.columns(2)
+    # Una fila de columnas por par de tarjetas, para que las de la misma fila midan lo mismo.
     for i, key in enumerate(("ppo", "dqn", "cql", "bc")):
+        if i % 2 == 0:
+            cols = st.columns(2)
         name, text = POLICIES[key]
-        with cols[i % 2], st.container(border=True):
+        with cols[i % 2], card(f"agente_{i}"):
             st.markdown(f"#### {name}")
             st.markdown(text)
             if key in verdict:
@@ -151,12 +169,13 @@ with policies:
                     f"{habit['median_minute']:.0f}, el {habit['favorite_share']:.0%} al favorito."
                 )
     st.markdown("**Baselines (reglas simples)**")
-    cols = st.columns(3)
     for i, key in enumerate(
         ("no_trade", "fair_value", "favorite", "momentum", "mean_reversion", "random")
     ):
+        if i % 3 == 0:
+            cols = st.columns(3)
         name, text = POLICIES[key]
-        with cols[i % 3], st.container(border=True):
+        with cols[i % 3], card(f"regla_{i}"):
             st.markdown(f"**{name}** · `{key}`")
             st.caption(text)
 
@@ -174,7 +193,6 @@ with data:
         "`app/trayectorias/` (PPO semilla 0, no operar y valor justo) más el precio de BTC de cada "
         "mercado (`make demo-muestra`)."
     )
-    folder_input()
     files = list_files(Path(st.session_state.folder))
     st.markdown(f"**Carpeta actual:** `{st.session_state.folder}` · {len(files)} archivos")
     if files:
@@ -191,6 +209,7 @@ with data:
                 }
             ),
             hide_index=True,
+            alt="Archivos de trayectorias de la carpeta",
             width="stretch",
         )
     st.markdown("**Columnas principales**")
@@ -230,5 +249,6 @@ with data:
             }
         ),
         hide_index=True,
+        alt="Columnas de una trayectoria",
         width="stretch",
     )

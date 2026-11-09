@@ -11,6 +11,7 @@ from typing import Literal
 
 import pandas as pd
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 # En Community Cloud el paquete no se instala, porque arrastraría torch (app/requirements.txt).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -37,48 +38,30 @@ BASELINE = "#64748B"
 POLICIES = {
     "ppo": (
         "PPO",
-        "Agente de RL en línea (Stable-Baselines3). Aprendió en train, mercado por mercado, una "
-        "red "
-        "que mira el precio, el spot de BTC y su cartera, y elige una de las cuatro acciones.",
+        "RL en línea (Stable-Baselines3). Mira el precio, BTC y su cartera, y elige una acción.",
     ),
-    "dqn": (
-        "DQN",
-        "Agente de RL en línea que estima el valor de cada acción y elige la mejor; explora al "
-        "principio y después actúa con lo aprendido.",
-    ),
+    "dqn": ("DQN", "RL en línea que estima el valor de cada acción y elige la mejor."),
     "cql": (
         "CQL",
-        "RL offline (d3rlpy): aprende solo de un dataset de trayectorias ya recolectadas, sin "
-        "volver a jugar, y penaliza las acciones que el dataset no respalda.",
+        "RL offline (d3rlpy): aprende de trayectorias grabadas y penaliza lo que no vio.",
     ),
-    "bc": (
-        "BC",
-        "Clonación de comportamiento: imita las acciones del dataset offline. Sirve de referencia "
-        "para saber cuánto agrega CQL.",
-    ),
-    "no_trade": (
-        "No operar",
-        "Nunca compra. Termina cada hora con 1000 USDC y es la referencia del protocolo: para que "
-        "un agente sirva, tiene que ganarle con un intervalo de confianza por encima de cero.",
-    ),
+    "bc": ("BC", "Imita las acciones del dataset offline; mide cuánto agrega CQL."),
+    "no_trade": ("No operar", "Nunca compra. Es la referencia del protocolo."),
     "fair_value": (
         "Valor justo",
-        "Calcula la probabilidad de que BTC cierre arriba con su distancia a la apertura y su "
-        "volatilidad, y compra el lado cuya ventaja supera los costos por un margen.",
+        "Estima la probabilidad con la distancia de BTC a la apertura y compra si la ventaja "
+        "supera los costos.",
     ),
-    "favorite": (
-        "Favorito",
-        "En el minuto 20 compra el lado con precio mayor a 0,5 y lo mantiene hasta el cierre.",
-    ),
+    "favorite": ("Favorito", "En el minuto 20 compra el lado favorito y lo mantiene al cierre."),
     "momentum": (
         "Momentum",
-        "Compra en la dirección del cambio reciente del precio y sale al ganar o perder lo fijado.",
+        "Sigue el cambio reciente del precio y sale con ganancia o pérdida fija.",
     ),
     "mean_reversion": (
         "Reversión a la media",
-        "Lo contrario de momentum: apuesta a que el cambio reciente del precio se revierte.",
+        "Apuesta a que el cambio reciente del precio se revierte.",
     ),
-    "random": ("Al azar", "Elige una de las cuatro acciones al azar. Sirve de piso."),
+    "random": ("Al azar", "Elige acciones al azar."),
 }
 
 ACTIONS = {
@@ -95,6 +78,14 @@ CLASS_COLOR: dict[str, BadgeColor] = {
     "inconcluso": "gray",
     "inferior": "red",
 }
+
+
+def card(name: str) -> DeltaGenerator:
+    """Tarjeta del DESIGN.md (9.3): borde, superficie blanca y el alto de su fila.
+
+    La clave `card_*` es la que usa el CSS de `demo.py` para pintar la superficie.
+    """
+    return st.container(border=True, key=f"card_{name}", height="stretch")
 
 
 def kind(label: str) -> str:
@@ -147,20 +138,20 @@ def default_folder() -> Path:
     return folder
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def load(path: str, mtime: float) -> pd.DataFrame:
     """Trayectorias de un archivo; `mtime` invalida la caché si el archivo se vuelve a generar."""
     return pd.read_parquet(path)
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def market_pnl(path: str, mtime: float, initial_cash: float, stake: float) -> pd.Series:
     """PnL de cada mercado, en orden cronológico, con la misma cuenta que el reporte."""
     results = episode_results(pd.read_parquet(path), initial_cash, stake)
     return results["final_value"] - initial_cash
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def markets(split: str) -> pd.DataFrame | None:
     """Pregunta, apertura, cierre, BTC por minuto y resultado de cada mercado del split.
 

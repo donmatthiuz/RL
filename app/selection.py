@@ -50,7 +50,7 @@ def _sync(widget: str, target: str) -> None:
     restart()
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def split_by_market(path: str, mtime: float) -> dict[str, pd.DataFrame]:
     frame = load(path, mtime)
     return {
@@ -59,7 +59,7 @@ def split_by_market(path: str, mtime: float) -> dict[str, pd.DataFrame]:
     }
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def traded(path: str, mtime: float) -> set[str]:
     frame = load(path, mtime)
     return set(frame.loc[frame["order_status"] == "ejecutada", "market_id"])
@@ -85,7 +85,6 @@ def policy_label(name: str) -> str:
 
 def select() -> Selection | None:
     """Dibuja la selección en la barra lateral; None si la carpeta no tiene trayectorias."""
-    folder_input()
     files = list_files(Path(st.session_state.folder))
     if not files:
         st.info(

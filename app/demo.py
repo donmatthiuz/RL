@@ -13,17 +13,22 @@ from pathlib import Path
 import streamlit as st
 
 from core import default_folder
+from selection import folder_input
 
 STATIC = Path(__file__).resolve().parent / "static"
-VIEWS = Path(__file__).resolve().parent / "views"
+PAGES = Path(__file__).resolve().parent / "app_pages"
 
-st.set_page_config(page_title="PolyRL", page_icon=str(STATIC / "polyrl.svg"), layout="wide")
+st.set_page_config(page_title="PolyRL [DEMO]", page_icon=str(STATIC / "polyrl.svg"), layout="wide")
 st.logo(str(STATIC / "polyrl_marca.svg"), icon_image=str(STATIC / "polyrl.svg"), size="large")
-# Cifras tabulares, para que las métricas no bailen mientras avanza la reproducción, y menos
-# margen arriba del contenido.
+# DESIGN.md 9.3: tarjetas y métricas sobre superficie blanca, etiquetas de métrica en mono y
+# mayúsculas, y cifras tabulares para que no bailen mientras avanza la reproducción.
 st.html(
-    "<style>[data-testid='stMetricValue']{font-variant-numeric:tabular-nums}"
-    "[data-testid='stMainBlockContainer']{padding-top:2.5rem}</style>"
+    "<style>"
+    "[class*='st-key-card_'],[data-testid='stMetric']{background:#FFFFFF}"
+    "[data-testid='stMetricValue']{font-variant-numeric:tabular-nums}"
+    "[data-testid='stMetricLabel'] p{font-family:'JetBrains Mono',monospace;"
+    "text-transform:uppercase;letter-spacing:.12em;font-size:11px}"
+    "</style>"
 )
 
 st.session_state.setdefault("folder", str(default_folder()))
@@ -34,17 +39,12 @@ st.session_state.setdefault("speed", "Normal")
 
 pages = st.navigation(
     [
-        st.Page(VIEWS / "home.py", title="Inicio", icon=":material/home:", default=True),
-        st.Page(VIEWS / "simulation.py", title="Simulación", icon=":material/play_circle:"),
-        st.Page(VIEWS / "comparison.py", title="Comparación", icon=":material/compare_arrows:"),
-        st.Page(VIEWS / "guide.py", title="Cómo funciona", icon=":material/menu_book:"),
+        st.Page(PAGES / "home.py", title="Inicio", icon=":material/home:", default=True),
+        st.Page(PAGES / "simulation.py", title="Simulación", icon=":material/play_circle:"),
+        st.Page(PAGES / "comparison.py", title="Comparación", icon=":material/compare_arrows:"),
+        st.Page(PAGES / "guide.py", title="Cómo funciona", icon=":material/menu_book:"),
     ],
     position="top",
 )
+folder_input()  # en todas las páginas, así la barra lateral existe y se puede contraer
 pages.run()
-
-st.divider()
-st.caption(
-    "Simulación con saldo ficticio sobre datos históricos. Polymarket solo se usa como fuente de "
-    "datos: el agente nunca opera en vivo ni con dinero real."
-)

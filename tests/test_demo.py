@@ -14,7 +14,9 @@ from polym4v.evaluation.backtest import run_backtest
 from polym4v.utils.config import SimulatorConfig, load_config
 
 APP = str(Path(__file__).parents[1] / "app" / "demo.py")
-SIMULATION, COMPARISON, GUIDE = "views/simulation.py", "views/comparison.py", "views/guide.py"
+SIMULATION = "app_pages/simulation.py"
+COMPARISON = "app_pages/comparison.py"
+GUIDE = "app_pages/guide.py"
 PPO = "20261101-000000_ppo_pnl_s{}"
 
 
@@ -98,7 +100,7 @@ def first_executed(frame):
 
 
 def test_every_page_opens_without_errors(app):
-    for page in (COMPARISON, GUIDE, "views/home.py"):
+    for page in (COMPARISON, GUIDE, "app_pages/home.py"):
         app.switch_page(page).run()
         assert not app.exception, page
 
@@ -141,7 +143,7 @@ def test_btc_and_the_question_come_from_the_dataset(app, frames):
     question = synthetic_frames(3, seed=5)[0].set_index("market_id").loc[market, "question"]
     assert app.markdown[0].value == f"## {question}"
     assert "frente a la apertura" in app.info[0].value
-    assert metric(app, "BTC vs apertura").delta == "+0.000%"
+    assert metric(app, "BTC").delta == "+0.000%"
 
 
 def test_buttons_move_one_minute_and_stay_inside_the_market(app):

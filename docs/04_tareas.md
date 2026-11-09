@@ -28,12 +28,12 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 09/11/2026, de 68 tareas: 48 hechas, 5 en curso, 1 omitida y 14 sin empezar, casi todas del
-documento. Todos los PR (#1 a #40, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
+Al 09/11/2026, de 68 tareas: 49 hechas, 4 en curso, 1 omitida y 14 sin empezar, casi todas del
+documento. Todos los PR (#1 a #41, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-08, EVA-12, EVA-13 y DOC-01 | INF-09 (falta el tag `v1.0`) e INF-10 (la corre Mathew) | — |
+| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13 y DOC-01 | INF-10 (la corre Mathew) | — |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
@@ -89,9 +89,9 @@ entrenamiento final y reporte de val (#33) y test (#34).
    la revisión de R1 como R4.
 2. **Slides y presentación (R1):** DOC-10 (con su `DESIGN.md`), DOC-13 y DOC-14. **Video (R5):**
    DOC-11.
-3. **Cierre técnico (R1):** el tag `v1.0` sobre `proyecto`, que crea el Release (INF-09), y
-   `make release-modelos TAG=v1.0` para adjuntar los modelos y las trayectorias. `proyecto` no se
-   lleva a `main` (decisión del 09/11/2026; el PR #38 queda abierto).
+3. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
+   trayectorias (09/11/2026). `proyecto` no se lleva a `main` (decisión del 09/11/2026; el PR #38
+   queda abierto).
 4. **Mathew (R2):** la reproducción de INF-10 con la guía del README, cuando exista el Release, y
    el despliegue de la demo (EVA-09) con los pasos del README.
 
@@ -173,7 +173,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | INF-06 | **Hecha el 02/11/2026 (#1, #4 y #11).** Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
 | INF-07 | **Hecha el 02/11/2026 (#21)**, con `argparse`. CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
 | INF-08 | **Hecha el 02/11/2026 (#25)**; el nightly no corre en GitHub, porque `proyecto` no se lleva a `main` (09/11/2026): se corre en local con `make nightly`. Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
-| INF-09 | **Código mezclado el 09/11/2026 (#37); falta el tag `v1.0`.** El reporte no se recalcula en la CI, porque los datos y los modelos no se versionan: el Release publica `reports/` y R1 adjunta los modelos y las trayectorias con `make release-modelos` ([05_testing.md](05_testing.md), sección 6). `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
+| INF-09 | **Hecha el 09/11/2026 (#37 y el tag `v1.0`):** el Release trae `reportes-v1.0.zip`, `modelos-v1.0.zip` y `trayectorias-v1.0.zip`. El reporte no se recalcula en la CI, porque los datos y los modelos no se versionan: el Release publica `reports/` y R1 adjunta los modelos y las trayectorias con `make release-modelos` ([05_testing.md](05_testing.md), sección 6). `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
 | INF-10 | **Guía en el README (#37); la corre Mathew.** Ensayo de R1 el 09/11/2026 en un clon limpio: PPO s0 en val da exactamente el `total_pnl` del reporte (77,99 en 1 861 mercados). Revisión de reproducibilidad: un integrante que no participó clona el repo y reproduce un resultado siguiendo el README | F4 | P0 | H3 | El resultado coincide dentro de la tolerancia (± IC) |
 
 ### R2 — Ingeniero de datos
@@ -238,7 +238,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
-| EVA-13 | **Hecha el 09/11/2026 (#40, R1).** Diseño de la demo con la identidad de `entregas/final/presentacion/DESIGN.md`: inicio, simulación minuto a minuto con BTC, precio YES, narración y botones de reproducción, comparación con el veredicto del protocolo y una guía del mercado, el entorno, las políticas y los datos | F4 | P1 | EVA-08 | La demo abre sin errores en local y con la muestra de Cloud, y sus tests cubren la reproducción, el cierre y la elección del protocolo |
+| EVA-13 | **Hecha el 09/11/2026 (#40 y #41, R1).** Diseño de la demo con la identidad de `entregas/final/presentacion/DESIGN.md`: inicio, simulación minuto a minuto con BTC, precio YES, narración y botones de reproducción, comparación con el veredicto del protocolo y una guía del mercado, el entorno, las políticas y los datos | F4 | P1 | EVA-08 | La demo abre sin errores en local y con la muestra de Cloud, y sus tests cubren la reproducción, el cierre y la elección del protocolo |
 
 ### Documento, slides y video (todos)
 
@@ -258,7 +258,7 @@ documento vive en `entregas/final/informe/`.
 | DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
 | DOC-10 | Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
 | DOC-11 | Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
-| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P19).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P20).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 

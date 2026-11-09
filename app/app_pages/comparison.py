@@ -8,6 +8,7 @@ from core import (
     AGENT_LABEL,
     CLASS_COLOR,
     POLICIES,
+    card,
     color,
     label_of,
     load,
@@ -26,10 +27,6 @@ if selection is None:
 initial_cash, stake = simulator()
 
 st.markdown("## Comparación")
-st.caption(
-    "Las mismas reglas, los mismos costos y los mismos mercados para todas las políticas. "
-    "La elegida en la barra lateral se compara con las de abajo."
-)
 chosen = st.multiselect(
     "Comparar con",
     others(selection),
@@ -79,13 +76,14 @@ inside = pd.concat(
     ]
 )
 left, right = st.columns([2, 1], gap="medium")
-with left, st.container(border=True):
+with left, card("mercado"):
     st.altair_chart(
         charts.pnl_by_minute(inside, {display[n]: colors[display[n]] for n in frames}),
         width="stretch",
         theme=None,
+        alt="PnL de cada política dentro del mercado",
     )
-with right, st.container(border=True):
+with right, card("mercado_cifras"):
     for name, frame in frames.items():
         steps = frame[frame["market_id"] == selection.market_id]
         done = steps[steps["order_status"] == "ejecutada"]
@@ -115,19 +113,17 @@ total = pd.concat(
     ]
 )
 left, right = st.columns([2, 1], gap="medium")
-with left, st.container(border=True):
+with left, card("total"):
     st.altair_chart(
         charts.cumulative(
             total, {display[n]: colors[display[n]] for n in frames}, start.tz_localize(None)
         ),
         width="stretch",
         theme=None,
+        alt="PnL acumulado de cada política en el split",
     )
-    st.caption(
-        f"La línea vertical marca el mercado elegido, el número {position} de "
-        f"{len(pnl[selection.choice])}."
-    )
-with right, st.container(border=True):
+    st.caption(f"Línea vertical: el mercado elegido ({position} de {len(pnl[selection.choice])}).")
+with right, card("total_cifras"):
     for name, series in pnl.items():
         traded = int((series != 0).sum())
         st.metric(
@@ -150,21 +146,21 @@ table["agente"] = table["group"].map(lambda g: POLICIES[g.split("_")[0]][0])
 table["clasificacion"] = table["classification"]
 table = table.sort_values("mean", ascending=False)
 left, right = st.columns([2, 1], gap="medium")
-with left, st.container(border=True):
-    st.altair_chart(charts.forest(table, DELTA_MIN), width="stretch", theme=None)
-    st.caption(
-        "Cada punto es la media de D: lo que el agente gana o pierde por mercado frente a no "
-        f"operar, como fracción del monto. La línea es su IC del 98,75 % y la banda, la zona de "
-        f"equivalencia de ±{DELTA_MIN:g} (1 % del monto)."
+with left, card("protocolo"):
+    st.altair_chart(
+        charts.forest(table, DELTA_MIN),
+        width="stretch",
+        theme=None,
+        alt="Media de D e intervalo de confianza por agente",
     )
-with right, st.container(border=True):
+    st.caption(
+        "Media de D frente a no operar con su IC del 98,75 %. Banda: equivalencia, ±1 % del monto."
+    )
+with right, card("protocolo_cifras"):
     for _, row in table.iterrows():
         st.markdown(f"**{row['agente']}** · media {row['mean']:+.4f}")
         st.badge(row["classification"], color=CLASS_COLOR.get(row["classification"], "gray"))
-    st.caption(
-        "Equivalente quiere decir que la diferencia con no operar cabe en ±0,01 del monto; no "
-        "quiere decir que gane."
-    )
+    st.caption("Equivalente no significa que gane.")
 
 payoff = report(
     selection.split, "inspection_payoff.csv" if selection.split == "test" else "behavior_payoff.csv"
@@ -176,10 +172,15 @@ if payoff is not None:
         name = POLICIES[best.split("_")[0]][0]
         st.markdown(f"### Por qué acertar no alcanza · {name}")
         left, right = st.columns([2, 1], gap="medium")
-        with left, st.container(border=True):
-            st.altair_chart(charts.payoff(rows), width="stretch", theme=None)
+        with left, card("aciertos"):
+            st.altair_chart(
+                charts.payoff(rows),
+                width="stretch",
+                theme=None,
+                alt="Aciertos frente al costo por acción, por tramo de precio",
+            )
         top = rows.iloc[-1]
-        with right, st.container(border=True):
+        with right, card("aciertos_cifras"):
             st.metric(
                 f"Aciertos a {top['price']}",
                 f"{top['side_won']:.2%}",
@@ -195,10 +196,5 @@ if payoff is not None:
                 delta_arrow="off",
             )
             st.metric("Resultado neto en ese tramo", f"{top['net']:+.2f} USDC", border=False)
-            st.caption(
-                "Comprar a más de 0,98 deja ganar menos de 2 centavos por acción; un solo error "
-                "pierde casi todo el monto. Por eso acertar casi siempre no alcanza."
-            )
-st.caption(
-    f"Fuentes: reports/{selection.split}/comparison.csv y el reporte de comportamiento del split."
-)
+            st.caption("A más de 0,98, un acierto gana centavos y un error pierde casi todo.")
+st.caption(f"Fuente: reports/{selection.split}/.")
