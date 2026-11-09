@@ -138,20 +138,20 @@ def default_folder() -> Path:
     return folder
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def load(path: str, mtime: float) -> pd.DataFrame:
     """Trayectorias de un archivo; `mtime` invalida la caché si el archivo se vuelve a generar."""
     return pd.read_parquet(path)
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def market_pnl(path: str, mtime: float, initial_cash: float, stake: float) -> pd.Series:
     """PnL de cada mercado, en orden cronológico, con la misma cuenta que el reporte."""
     results = episode_results(pd.read_parquet(path), initial_cash, stake)
     return results["final_value"] - initial_cash
 
 
-@st.cache_data
+@st.cache_data(max_entries=64)
 def markets(split: str) -> pd.DataFrame | None:
     """Pregunta, apertura, cierre, BTC por minuto y resultado de cada mercado del split.
 

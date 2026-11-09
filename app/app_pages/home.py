@@ -6,7 +6,7 @@ import streamlit as st
 
 from core import CLASS_COLOR, POLICIES, card, report
 
-VIEWS = Path(__file__).resolve().parent
+PAGES = Path(__file__).resolve().parent
 
 st.markdown("# Del dato histórico a la decisión")
 st.markdown(
@@ -24,7 +24,9 @@ facts = [
     ("Semillas", "5", "por agente"),
 ]
 for col, (label, value, note) in zip(cols, facts, strict=True):
-    col.metric(label, value, note, delta_color="off", delta_arrow="off", border=True)
+    col.metric(
+        label, value, note, delta_color="off", delta_arrow="off", border=True, height="stretch"
+    )
 
 st.markdown("### El resultado")
 left, right = st.columns([3, 2])
@@ -71,5 +73,8 @@ links = [
 ]
 for i, (col, (page, title, icon, text)) in enumerate(zip(st.columns(3), links, strict=True)):
     with col, card(f"explorar_{i}"):
-        st.page_link(str(VIEWS / page), label=title, icon=icon)
+        st.markdown(f"**{title}**")
         st.caption(text)
+        st.space("stretch")
+        if st.button("Abrir", key=f"open_{i}", icon=icon, width="stretch"):
+            st.switch_page(str(PAGES / page))

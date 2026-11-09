@@ -14,7 +14,9 @@ from polym4v.evaluation.backtest import run_backtest
 from polym4v.utils.config import SimulatorConfig, load_config
 
 APP = str(Path(__file__).parents[1] / "app" / "demo.py")
-SIMULATION, COMPARISON, GUIDE = "views/simulation.py", "views/comparison.py", "views/guide.py"
+SIMULATION = "app_pages/simulation.py"
+COMPARISON = "app_pages/comparison.py"
+GUIDE = "app_pages/guide.py"
 PPO = "20261101-000000_ppo_pnl_s{}"
 
 
@@ -98,7 +100,7 @@ def first_executed(frame):
 
 
 def test_every_page_opens_without_errors(app):
-    for page in (COMPARISON, GUIDE, "views/home.py"):
+    for page in (COMPARISON, GUIDE, "app_pages/home.py"):
         app.switch_page(page).run()
         assert not app.exception, page
 

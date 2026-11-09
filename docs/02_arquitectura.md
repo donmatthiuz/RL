@@ -429,7 +429,7 @@ RL/
 │   └── cli.py
 ├── app/
 │   ├── demo.py                 # entrada: tema, logo y navegación (EVA-13)
-│   ├── views/                  # inicio, simulación, comparación y cómo funciona
+│   ├── app_pages/              # inicio, simulación, comparación y cómo funciona
 │   ├── core.py  charts.py  selection.py  muestra.py
 │   ├── static/                 # monograma de PolyRL
 │   ├── requirements.txt        # dependencias de la demo publicada, sin torch (EVA-09)

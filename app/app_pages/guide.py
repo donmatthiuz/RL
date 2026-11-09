@@ -85,7 +85,12 @@ with environment:
             }
         )
     st.markdown(f"**Cuánto cuesta comprar con {stake:.0f} USDC**")
-    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    st.dataframe(
+        pd.DataFrame(rows),
+        hide_index=True,
+        alt="Costo de comprar con el monto fijo",
+        width="stretch",
+    )
     st.caption(
         "La última columna es el costo por acción: la fracción de veces que hay que acertar para "
         "no "
@@ -112,6 +117,7 @@ with actions:
             }
         ),
         hide_index=True,
+        alt="Acciones del agente",
         width="stretch",
     )
     st.markdown("**Qué le pasa a cada orden** (columna `order_status`)")
@@ -129,6 +135,7 @@ with actions:
             }
         ),
         hide_index=True,
+        alt="Estados de una orden",
         width="stretch",
     )
 
@@ -202,6 +209,7 @@ with data:
                 }
             ),
             hide_index=True,
+            alt="Archivos de trayectorias de la carpeta",
             width="stretch",
         )
     st.markdown("**Columnas principales**")
@@ -241,5 +249,6 @@ with data:
             }
         ),
         hide_index=True,
+        alt="Columnas de una trayectoria",
         width="stretch",
     )

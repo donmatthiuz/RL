@@ -16,7 +16,7 @@ from core import default_folder
 from selection import folder_input
 
 STATIC = Path(__file__).resolve().parent / "static"
-VIEWS = Path(__file__).resolve().parent / "views"
+PAGES = Path(__file__).resolve().parent / "app_pages"
 
 st.set_page_config(page_title="PolyRL [DEMO]", page_icon=str(STATIC / "polyrl.svg"), layout="wide")
 st.logo(str(STATIC / "polyrl_marca.svg"), icon_image=str(STATIC / "polyrl.svg"), size="large")
@@ -28,7 +28,6 @@ st.html(
     "[data-testid='stMetricValue']{font-variant-numeric:tabular-nums}"
     "[data-testid='stMetricLabel'] p{font-family:'JetBrains Mono',monospace;"
     "text-transform:uppercase;letter-spacing:.12em;font-size:11px}"
-    "[data-testid='stMainBlockContainer']{padding-top:2.5rem}"
     "</style>"
 )
 
@@ -40,10 +39,10 @@ st.session_state.setdefault("speed", "Normal")
 
 pages = st.navigation(
     [
-        st.Page(VIEWS / "home.py", title="Inicio", icon=":material/home:", default=True),
-        st.Page(VIEWS / "simulation.py", title="Simulación", icon=":material/play_circle:"),
-        st.Page(VIEWS / "comparison.py", title="Comparación", icon=":material/compare_arrows:"),
-        st.Page(VIEWS / "guide.py", title="Cómo funciona", icon=":material/menu_book:"),
+        st.Page(PAGES / "home.py", title="Inicio", icon=":material/home:", default=True),
+        st.Page(PAGES / "simulation.py", title="Simulación", icon=":material/play_circle:"),
+        st.Page(PAGES / "comparison.py", title="Comparación", icon=":material/compare_arrows:"),
+        st.Page(PAGES / "guide.py", title="Cómo funciona", icon=":material/menu_book:"),
     ],
     position="top",
 )

@@ -41,7 +41,7 @@ def why_invalid(action: Action, side: int, k: int, last: int) -> str:
 def narrate(steps: pd.DataFrame, k: int, info: pd.DataFrame | None, stake: float) -> str:
     """Qué pasa en el minuto `k`, en una frase para alguien que no conoce el entorno."""
     row = steps.iloc[k]
-    lead = f"**Minuto {k} · {clock(row['ts'])}.** YES vale {row['p_yes']:.4f}"
+    lead = f"YES vale {row['p_yes']:.4f}"
     if info is not None:
         spot, opening = info["spot"].iloc[k], info["spot_open"].iloc[0]
         lead += f" y BTC está {change(spot, opening):+.3%} frente a la apertura"
@@ -178,6 +178,7 @@ def kpis(steps: pd.DataFrame, k: int, info: pd.DataFrame | None, initial_cash: f
         delta_color="off",
         delta_arrow="off",
         border=True,
+        height="stretch",
     )
     if info is not None:
         spot, opening = info["spot"].iloc[k], info["spot_open"].iloc[0]
@@ -187,12 +188,17 @@ def kpis(steps: pd.DataFrame, k: int, info: pd.DataFrame | None, initial_cash: f
             f"{change(spot, opening):+.3%}",
             help="Cambio frente al precio de apertura de la hora.",
             border=True,
+            height="stretch",
         )
     else:
-        cols[1].metric("BTC", "sin datos", border=True)
+        cols[1].metric("BTC", "sin datos", border=True, height="stretch")
     moved = row["p_yes"] - steps.iloc[k - 1]["p_yes"] if k else None
     cols[2].metric(
-        "Precio YES", f"{row['p_yes']:.4f}", None if moved is None else f"{moved:+.4f}", border=True
+        "Precio YES",
+        f"{row['p_yes']:.4f}",
+        None if moved is None else f"{moved:+.4f}",
+        border=True,
+        height="stretch",
     )
     if k == last:
         side, detail = "liquidada", "al cierre"
@@ -200,13 +206,22 @@ def kpis(steps: pd.DataFrame, k: int, info: pd.DataFrame | None, initial_cash: f
         side, detail = SIDES[int(row["position_side"])], f"{row['position_size']:.2f} acciones"
     else:
         side, detail = "ninguna", "sin acciones"
-    cols[3].metric("Posición", side, detail, delta_color="off", delta_arrow="off", border=True)
+    cols[3].metric(
+        "Posición",
+        side,
+        detail,
+        delta_color="off",
+        delta_arrow="off",
+        border=True,
+        height="stretch",
+    )
     value = row["portfolio_value"]
     cols[4].metric(
         "Cartera (USDC)",
         f"{value:,.2f}",
         f"{value - initial_cash:+.2f}",
         border=True,
+        height="stretch",
     )
     cols[5].metric(
         "Comisiones",
@@ -215,6 +230,7 @@ def kpis(steps: pd.DataFrame, k: int, info: pd.DataFrame | None, initial_cash: f
         delta_color="off",
         delta_arrow="off",
         border=True,
+        height="stretch",
     )
 
 
@@ -286,7 +302,9 @@ def board(selection: Selection, initial_cash: float, stake: float) -> None:
             spot = selection.info[["k", "spot"]].reset_index(drop=True)
         opening = selection.info["spot_open"].iloc[0] if selection.info is not None else None
         for panel in charts.market(spot, steps, k, opening):
-            st.altair_chart(panel, width="stretch", theme=None)
+            st.altair_chart(
+                panel, width="stretch", theme=None, alt="Precio de BTC y precio YES con las órdenes"
+            )
     with log, card("registro"):
         st.markdown("**Registro**")
         lines = events(steps, k)
@@ -296,7 +314,11 @@ def board(selection: Selection, initial_cash: float, stake: float) -> None:
             st.markdown(f"**{text}**" if i == 0 else f":gray[{text}]")
 
     if k < last:
-        st.info(narrate(steps, k, selection.info, stake))
+        st.info(
+            narrate(steps, k, selection.info, stake),
+            title=f"Minuto {k} · {clock(steps.iloc[k]['ts'])}",
+            icon=":material/schedule:",
+        )
     else:
         closing(steps, selection.info, initial_cash, stake)
 
@@ -328,5 +350,10 @@ with st.expander("Qué recibió el agente como recompensa en este minuto"):
     k = min(st.session_state.step, len(steps) - 1)
     row = steps.iloc[k]
     parts = {name: row[f"r_{name}"] for name in ("pnl", "drawdown", "hold", "invalid", "terminal")}
-    st.altair_chart(charts.reward_parts(parts, color(label)), width="stretch", theme=None)
+    st.altair_chart(
+        charts.reward_parts(parts, color(label)),
+        width="stretch",
+        theme=None,
+        alt="Componentes de la recompensa del minuto",
+    )
     st.caption("`pnl_risk`: cambio del valor de la cartera menos la caída desde el máximo.")

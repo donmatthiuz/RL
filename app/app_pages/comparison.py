@@ -81,6 +81,7 @@ with left, card("mercado"):
         charts.pnl_by_minute(inside, {display[n]: colors[display[n]] for n in frames}),
         width="stretch",
         theme=None,
+        alt="PnL de cada política dentro del mercado",
     )
 with right, card("mercado_cifras"):
     for name, frame in frames.items():
@@ -119,6 +120,7 @@ with left, card("total"):
         ),
         width="stretch",
         theme=None,
+        alt="PnL acumulado de cada política en el split",
     )
     st.caption(f"Línea vertical: el mercado elegido ({position} de {len(pnl[selection.choice])}).")
 with right, card("total_cifras"):
@@ -145,7 +147,12 @@ table["clasificacion"] = table["classification"]
 table = table.sort_values("mean", ascending=False)
 left, right = st.columns([2, 1], gap="medium")
 with left, card("protocolo"):
-    st.altair_chart(charts.forest(table, DELTA_MIN), width="stretch", theme=None)
+    st.altair_chart(
+        charts.forest(table, DELTA_MIN),
+        width="stretch",
+        theme=None,
+        alt="Media de D e intervalo de confianza por agente",
+    )
     st.caption(
         "Media de D frente a no operar con su IC del 98,75 %. Banda: equivalencia, ±1 % del monto."
     )
@@ -166,7 +173,12 @@ if payoff is not None:
         st.markdown(f"### Por qué acertar no alcanza · {name}")
         left, right = st.columns([2, 1], gap="medium")
         with left, card("aciertos"):
-            st.altair_chart(charts.payoff(rows), width="stretch", theme=None)
+            st.altair_chart(
+                charts.payoff(rows),
+                width="stretch",
+                theme=None,
+                alt="Aciertos frente al costo por acción, por tramo de precio",
+            )
         top = rows.iloc[-1]
         with right, card("aciertos_cifras"):
             st.metric(
