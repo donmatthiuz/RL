@@ -21,6 +21,10 @@ SERIES ?= 10114
 RAW_DIR ?= data/raw
 PAUSE ?= 0.2
 
+# Release (INF-09): make release-reportes TAG=v1.0 (la CI) y make release-modelos TAG=v1.0 (R1)
+TAG ?= v1.0
+MODELS_FINAL ?= models/final
+
 # Entregables en PDF: make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
 ENTREGA ?= 2026-10-30
 PDF ?= Entregable.pdf
@@ -35,7 +39,8 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report behavior demo manifest entregable eda
+	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report behavior demo manifest entregable eda \
+	release-reportes release-modelos
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -134,6 +139,22 @@ eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make datas
 
 manifest: ## Recalcula el manifest con el hash de cada archivo crudo (RAW_DIR)
 	$(UV) run polym4v manifest --out $(RAW_DIR)
+
+## --- Release ---
+
+release-reportes: ## Empaqueta reports/ y arma las notas del Release en dist/ (TAG)
+	rm -rf dist && mkdir -p dist
+	zip -qr dist/reportes-$(TAG).zip reports -x 'reports/trajectories/*'
+	{ printf '%s\n\n' 'Tablas y figuras de val y test. Los modelos finales y las trayectorias se adjuntan con make release-modelos; cómo reproducir un resultado está en el README.'; \
+	  cat reports/test/comparison.md; } > dist/notas-$(TAG).md
+
+release-modelos: ## Sube al Release del tag los modelos finales y las trayectorias (TAG, MODELS_FINAL)
+	gh release view $(TAG) > /dev/null
+	mkdir -p dist
+	rm -f dist/modelos-$(TAG).zip dist/trayectorias-$(TAG).zip
+	cd $(MODELS_FINAL) && zip -qr $(CURDIR)/dist/modelos-$(TAG).zip */*/best.* */*/config.yaml */*/metrics.json
+	zip -qj dist/trayectorias-$(TAG).zip reports/trajectories/*.parquet
+	gh release upload $(TAG) dist/modelos-$(TAG).zip dist/trayectorias-$(TAG).zip --clobber
 
 ## --- Entregas ---
 
