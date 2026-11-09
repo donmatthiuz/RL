@@ -29,9 +29,16 @@ Code. El equipo lo revisa y completa.
 | P10 | 31/10/2026 | Perplexity | Comisión exacta de Polymarket | Satisfactorio, con vacíos |
 | P11 | 31/10/2026 | Subagente `academic-statistician` | Revisar el protocolo de evaluación | Satisfactorio: cuatro fallas graves |
 | P12 | 31/10/2026 | Claude Code | ¿Es realista S4 en un CLOB? | Satisfactorio: cambió la pregunta de S4 |
+| P13 | 01/11/2026 | Claude Code y Perplexity | Recompensa del entorno | Satisfactorio con reservas |
 | P14 | 01/11/2026 | Claude Code | Revisión de R3 de los PR del entorno | Satisfactorio: un hueco en la config de la ablación |
 | P15 | 02/11/2026 | Claude Code | Mezclar la pila, entrenar y evaluar en test | Satisfactorio: cuatro fallas encontradas en el camino |
 | P16 | 02/11/2026 | Claude Code | Qué aprendió cada agente (XAI) | Parcial: dos cifras y cinco afirmaciones corregidas |
+| P17 | 02/11/2026 | Claude Code | Explicar el agente y el avance del 02/11 | Parcial: corregidos el minuto 59, los redondeos y el signo del PDF |
+| P18 | 02/11/2026 | Claude Code | Cierre técnico | Satisfactorio |
+| P19 | 08/11/2026 | Claude Code | Diseño de la demo | Satisfactorio |
+| P20 | 09/11/2026 | Claude Code y MCP de Chrome | Ajustes de la demo con la skill de Streamlit | Satisfactorio |
+| P21 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Diseño de la presentación final | Satisfactorio: corrigió la sección 9 tras la nota de R1 |
+| P22 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Fuentes, referencias y registro de IA del diseño | Satisfactorio |
 
 ## Entradas
 
@@ -319,6 +326,50 @@ Code. El equipo lo revisa y completa.
 - **Cómo se evaluó:** con el MCP de Chrome se midió el alto de cada tarjeta y métrica: todas las
   de una fila coinciden. Tests de la demo, suite completa y la copia que simula Community Cloud.
 - **Aporte:** EVA-13, PR #41.
+
+### P21 — Diseño de la presentación final
+
+- **Prompt:** "quiero que usando esos agentes de diseño creemos un design md para la presentacion y
+  ademas relacionado con la web, sera 1 html la capacidad de que se convierta a pdf para enviar,
+  tomemos los agentes y usemoslo para diseño y toma de referencia como hice una presentacion
+  `Sentinel_Fase4_final.html` ... esta tiene otro branding otros integrantes asi que fijo cambiaraia,
+  es solo de referencia".
+- **Herramienta:** OpenCode con el modelo DeepSeek V4.1 Flash Free, sobre la rama `proyecto`.
+- **Resultado:** satisfactorio, con una corrección de fondo.
+- **Por qué:** los agentes de `.agents/` dieron los marcos que faltaban (Brand Guardian para la
+  identidad, UI Designer para los tokens, UX Architect para la retícula, Visual Storyteller para el
+  arco y UI Finish-Gate Reviewer para la compuerta). La referencia de Sentinel aportó la estructura
+  (lienzo 16:9, navegación por pasos, `?pdf`, `?guion` y el script de exportación), no su marca.
+  La primera versión describió la demo como si no tuviera diseño final; R1 corrigió esa premisa.
+- **Cómo se evaluó:** cada cifra se contrastó con un archivo del repositorio; la identidad se
+  revisó contra el tema real de `.streamlit/config.toml`; el Markdown se revisó con el skill
+  `markdown-style` y las tablas con su ancho.
+- **Corrección:** la sección 9 pasó de "propuesta de diseño" a "cómo quedó", con las cuatro páginas
+  reales, el tema en la raíz, los gráficos Altair y el CSS mínimo. Se corrigió el ejemplo falso de
+  la línea 57 sobre PPO en test.
+- **Aporte:** `entregas/final/presentacion/DESIGN.md` y la actualización de su `README.md`.
+
+### P22 — Fuentes, referencias y registro de IA del diseño
+
+- **Prompt:** dejar listo el diseño sin construir `index.html`: corregir la sección 9 con la demo
+  real, poner la ubicación exacta de cada referencia, agregar la tabla "Fuentes de cada slide",
+  definir la captura de la slide 10 y la regla de formato decimal, indicar el origen de los WOFF2,
+  actualizar los documentos de IA, pasar Ruff y la compuerta del UI Finish-Gate Reviewer.
+- **Herramienta:** OpenCode con el modelo DeepSeek V4.1 Flash Free, en la rama `docs/doc-10-design`.
+- **Resultado:** satisfactorio.
+- **Por qué:** la tarea obligó a leer el código real de la demo y los reportes, no a confiar en la
+  memoria. Aparecieron dos datos que la versión anterior tenía mal: el tema vive en la raíz y no en
+  `app/.streamlit/`, y los gráficos son Altair, no matplotlib. También se aclaró que
+  `Sentinel_Fase4_final.html` es del proyecto Sentinel del mismo autor, no de otro equipo.
+- **Cómo se evaluó:** se leyeron `app/demo.py`, `app/core.py`, `app/charts.py`, `app/selection.py`,
+  las cuatro páginas y `.streamlit/config.toml`; las cifras se sacaron de `manifest.json`,
+  `reports/val/comparison.csv`, `reports/test/comparison.csv`, `reports/test/summary.csv` y
+  `reports/test/inspection_payoff.csv`; se comprobó que el mercado 13/08/2026 12:00 UTC existe en
+  la trayectoria de PPO s0 en test y que el minuto 57 ejecuta la compra de YES.
+- **Corrección:** se reemplazó "pregúntale a R1 la ruta" por la ruta exacta del archivo y se corrigió
+  "entrega de otro equipo" por "proyecto Sentinel del mismo autor".
+- **Aporte:** `DESIGN.md` con la sección 9 real, la tabla de fuentes por slide, las referencias
+  ubicadas y los pendientes marcados; `README.md` de la presentación y este registro.
 
 ## Plantilla
 
