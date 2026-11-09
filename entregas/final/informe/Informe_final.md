@@ -1,8 +1,10 @@
 # PolyRL: aprendizaje por refuerzo en mercados horarios de predicción de Bitcoin
 
 **Informe final del proyecto de Aprendizaje por Refuerzo**
+
 **Fecha:** 9 de noviembre de 2026
-**Código y materiales reproducibles:** https://github.com/donmatthiuz/RL (rama `proyecto`)
+
+**Código y materiales reproducibles:** [https://github.com/donmatthiuz/RL/tree/proyecto](https://github.com/donmatthiuz/RL/tree/proyecto)
 
 ## Resumen
 
