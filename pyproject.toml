@@ -59,6 +59,10 @@ extend-exclude = [".skills", ".agents"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
 
+[tool.ruff.lint.isort]
+# Los módulos de app/ se importan por nombre, porque Streamlit agrega esa carpeta al path.
+known-first-party = ["polym4v", "core", "charts", "selection", "muestra"]
+
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true

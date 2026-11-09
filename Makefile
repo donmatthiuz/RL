@@ -40,7 +40,7 @@ KEYS := context7
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
 	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report behavior demo manifest entregable eda \
-	release-reportes release-modelos
+	release-reportes release-modelos demo-muestra
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -133,6 +133,9 @@ behavior: ## Comportamiento de los agentes en val y descripción de test, sin vo
 
 demo: ## Abre la demo de Streamlit con las trayectorias de reports/trajectories
 	$(UV) run streamlit run app/demo.py
+
+demo-muestra: ## Regenera la muestra de test de la demo publicada en app/trayectorias/
+	$(UV) run python app/muestra.py
 
 eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make dataset)
 	$(UV) run --group notebooks jupyter execute --inplace notebooks/eda/01_eda_btc_horario.ipynb
