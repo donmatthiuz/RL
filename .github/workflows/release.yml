@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - run: make install
+      # El commit del tag ya pasó la CI; se repiten los tests rápidos por si el tag es de otro commit.
+      - run: make test
+      # Los datos y los modelos no se versionan, así que el reporte no se recalcula aquí: se publican
+      # las tablas y figuras de reports/ tal como quedaron en el commit del tag. Los modelos y las
+      # trayectorias los sube R1 desde su máquina con `make release-modelos` (INF-09).
+      - name: Empaquetar reports/
+        run: make release-reportes TAG="$GITHUB_REF_NAME"
+      - name: Crear el Release con la comparación de test como notas
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/reportes-"$GITHUB_REF_NAME".zip \
+            --title "PolyRL $GITHUB_REF_NAME" \
+            --notes-file dist/notas-"$GITHUB_REF_NAME".md

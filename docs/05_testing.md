@@ -239,8 +239,9 @@ jobs:
 
 > **Implementado (INF-08):** `.github/workflows/nightly.yml` corre `make nightly` todos los días a
 > las 06:00 UTC y a mano. GitHub solo dispara `schedule` y `workflow_dispatch` con el workflow de la
-> rama por defecto, así que el nightly empieza a correr cuando `proyecto` llegue a `main`. Hasta
-> entonces, `make nightly` se corre en local. La CI suma el job `smoke-train` (`make smoke`).
+> rama por defecto (`main`), y el 09/11/2026 se decidió no llevar `proyecto` a `main`, así que
+> `make nightly` se corre en local. La CI suma el job `smoke-train` (`make smoke`). El release sí
+> funciona desde `proyecto`: un tag usa el `release.yml` del commit que marca.
 
 ```yaml
 name: Nightly
@@ -293,34 +294,17 @@ forma automática y reproducible:
 
 | Qué | Cuándo | Cómo |
 |-----|--------|------|
-| **GitHub Release** con el reporte (tablas y figuras), `metrics.json` y los modelos finales (`.zip`) | Al crear un tag `v*` (`v0.1` en H1, `v0.2` en H2, `v1.0` en la entrega) | `release.yml`: corre `polym4v report` y `softprops/action-gh-release` adjunta los archivos |
-| **Demo pública** (opcional, P2) | En cada push a `proyecto` | Streamlit Community Cloud, conectado al repo, despliega `app/demo.py` de forma automática |
+| **GitHub Release** con las tablas y figuras de `reports/`, los modelos finales y las trayectorias | Al crear un tag `v*` (`v1.0` en la entrega) | `release.yml` corre los tests rápidos, empaqueta `reports/` (`make release-reportes`) y crea el Release con la comparación de test como notas. R1 adjunta después los modelos y las trayectorias con `make release-modelos` |
+| **Demo pública** (opcional, P2) | En cada push a `proyecto` | Streamlit Community Cloud, conectado al repo, despliega `app/demo.py` con `app/requirements.txt` y la muestra de `app/trayectorias/` (EVA-09) |
 
-```yaml
-# release.yml (resumen)
-name: Release
-on:
-  push:
-    tags: ["v*"]
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: uv sync --all-extras --frozen
-      - run: uv run pytest -m "not slow and not network"
-      - run: uv run polym4v report --from models/final --out reports/release
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            reports/release/**
-```
+El plan inicial era que `release.yml` recalculara el reporte con `polym4v report`. No puede: los
+datos y los modelos no se versionan (`data/` y `models/` están en `.gitignore`), así que la CI no
+tiene con qué. Por eso el Release publica el reporte tal como quedó en el commit del tag, y los
+modelos (unos 2,5 MB: `best.*`, `config.yaml` y `metrics.json` de cada corrida final) y las
+trayectorias (unos 140 MB) se suben desde la máquina donde se entrenaron (INF-09, 09/11/2026).
 
-> Los modelos finales y las trayectorias que usa la demo deben ser **pequeños** (< 50 MB en total).
-> Si no lo son, se suben al Release y no al repo.
+> La muestra de trayectorias de la demo publicada es **pequeña** (unos 3 MB: PPO, `NoTrade` y
+> `fair_value` en test). El resto va al Release y no al repo.
 
 ---
 
