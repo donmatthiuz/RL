@@ -239,8 +239,9 @@ jobs:
 
 > **Implementado (INF-08):** `.github/workflows/nightly.yml` corre `make nightly` todos los días a
 > las 06:00 UTC y a mano. GitHub solo dispara `schedule` y `workflow_dispatch` con el workflow de la
-> rama por defecto, así que el nightly empieza a correr cuando `proyecto` llegue a `main`. Hasta
-> entonces, `make nightly` se corre en local. La CI suma el job `smoke-train` (`make smoke`).
+> rama por defecto (`main`), y el 09/11/2026 se decidió no llevar `proyecto` a `main`, así que
+> `make nightly` se corre en local. La CI suma el job `smoke-train` (`make smoke`). El release sí
+> funciona desde `proyecto`: un tag usa el `release.yml` del commit que marca.
 
 ```yaml
 name: Nightly

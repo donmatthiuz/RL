@@ -89,9 +89,9 @@ entrenamiento final y reporte de val (#33) y test (#34).
    la revisión de R1 como R4.
 2. **Slides y presentación (R1):** DOC-10 (con su `DESIGN.md`), DOC-13 y DOC-14. **Video (R5):**
    DOC-11.
-3. **Cierre técnico (R1):** `proyecto` a `main`, para que corra el nightly; el tag `v1.0` sobre
-   `main`, que crea el Release (INF-09), y `make release-modelos TAG=v1.0` para adjuntar los modelos
-   y las trayectorias.
+3. **Cierre técnico (R1):** el tag `v1.0` sobre `proyecto`, que crea el Release (INF-09), y
+   `make release-modelos TAG=v1.0` para adjuntar los modelos y las trayectorias. `proyecto` no se
+   lleva a `main` (decisión del 09/11/2026; el PR #38 queda abierto).
 4. **Mathew (R2):** la reproducción de INF-10 con la guía del README, cuando exista el Release, y
    el despliegue de la demo (EVA-09) con los pasos del README.
 
@@ -172,7 +172,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | INF-05 | **Hecha el 31/10/2026.** `utils/`: `config.py` (pydantic), `seeding.py`, `logging.py`, `paths.py` | F1 | P0 | INF-01 | Tests unitarios. La misma semilla da resultados idénticos. |
 | INF-06 | **Hecha el 02/11/2026 (#1, #4 y #11).** Definir los **contratos** como código: `schemas.py` (con R2), protocolo `Policy` (con R4) y claves de `info` (con R3) | F1 | P0 | INF-05 | Revisado y aceptado por R2, R3 y R4 antes de subirlo |
 | INF-07 | **Hecha el 02/11/2026 (#21)**, con `argparse`. CLI `typer` (`data build`, `train`, `collect-offline`, `evaluate`, `report`) y test de integración E2E sobre el mini-dataset | F2 | P0 | DAT-05, ENV-05, AGT-03, EVA-02 | `pytest -m integration` corre todo el pipeline en < 2 min |
-| INF-08 | **Hecha el 02/11/2026 (#25)**; el nightly empieza a correr cuando `proyecto` llegue a `main`. Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
+| INF-08 | **Hecha el 02/11/2026 (#25)**; el nightly no corre en GitHub, porque `proyecto` no se lleva a `main` (09/11/2026): se corre en local con `make nightly`. Job *smoke-train* en la CI y workflow `nightly.yml` (tests `slow` y backtest corto) | F3 | P1 | INF-07 | El nightly corre por `workflow_dispatch` y por cron |
 | INF-09 | **Código mezclado el 09/11/2026 (#37); falta el tag `v1.0`.** El reporte no se recalcula en la CI, porque los datos y los modelos no se versionan: el Release publica `reports/` y R1 adjunta los modelos y las trayectorias con `make release-modelos` ([05_testing.md](05_testing.md), sección 6). `release.yml` (CD): en un tag `v*` genera el reporte y adjunta las tablas, figuras y modelos finales al GitHub Release | F4 | P1 | EVA-06 | El tag `v1.0` produce un Release con sus artefactos |
 | INF-10 | **Guía en el README (#37); la corre Mathew.** Ensayo de R1 el 09/11/2026 en un clon limpio: PPO s0 en val da exactamente el `total_pnl` del reporte (77,99 en 1 861 mercados). Revisión de reproducibilidad: un integrante que no participó clona el repo y reproduce un resultado siguiendo el README | F4 | P0 | H3 | El resultado coincide dentro de la tolerancia (± IC) |
 
