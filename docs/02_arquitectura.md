@@ -368,6 +368,21 @@ dependencias `demo`, que `uv sync` instala por defecto pero no es una dependenci
   mejor, para no elegir una semilla con suerte; en test es PPO s0 frente a `NoTrade`.
 - Una política sin el mercado elegido se deja afuera, con un aviso.
 
+**v3 (EVA-13), con diseño:** cuatro páginas con `st.navigation` (inicio, simulación, comparación y
+cómo funciona) y la identidad de `entregas/final/presentacion/DESIGN.md`:
+
+- **Tema:** `.streamlit/config.toml` lleva los tokens de color, las fuentes (Space Grotesk, Inter y
+  JetBrains Mono) y la paleta de series; `app/core.py` repite los colores para los gráficos de
+  Altair, que reemplazan a matplotlib porque son interactivos y no parpadean al reproducir.
+- **Simulación:** el bloque que cambia con cada minuto es un `st.fragment` que se vuelve a dibujar
+  solo con `run_every` mientras se reproduce. Los botones (reproducir o pausar, minuto anterior y
+  siguiente, reiniciar, ir al cierre y la velocidad) cambian el estado con callbacks; no hay un
+  toggle. Al llegar al cierre se detiene sola.
+- **Datos del mercado:** la pregunta, el precio de BTC por minuto, la apertura, el cierre y el
+  resultado salen del dataset si está en la máquina y, si no, de `app/trayectorias/mercados_test.parquet`
+  (`make demo-muestra`, `app/muestra.py`).
+- La política y el mercado elegidos se comparten entre páginas (`app/selection.py`).
+
 **Publicada (EVA-09):** sin trayectorias en `reports/trajectories/`, la demo usa la muestra de test
 de `app/trayectorias/` (PPO s0, `NoTrade` y `fair_value`, unos 3 MB). En Streamlit Community Cloud
 las dependencias salen de `app/requirements.txt`, que deja afuera torch y las librerías de RL, y el
@@ -410,7 +425,10 @@ RL/
 │   ├── data/  features/  env/  agents/  evaluation/  utils/
 │   └── cli.py
 ├── app/
-│   ├── demo.py
+│   ├── demo.py                 # entrada: tema, logo y navegación (EVA-13)
+│   ├── views/                  # inicio, simulación, comparación y cómo funciona
+│   ├── core.py  charts.py  selection.py  muestra.py
+│   ├── static/                 # monograma de PolyRL
 │   ├── requirements.txt        # dependencias de la demo publicada, sin torch (EVA-09)
 │   └── trayectorias/           # muestra de test para la demo publicada
 ├── notebooks/                  # EDA y exploración (no es código de producción)

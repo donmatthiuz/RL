@@ -28,12 +28,12 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 09/11/2026, de 67 tareas: 47 hechas, 5 en curso, 1 omitida y 14 sin empezar, casi todas del
-documento. Todos los PR (#1 a #37) están mezclados en `proyecto`, y test ya se evaluó.
+Al 09/11/2026, de 68 tareas: 48 hechas, 5 en curso, 1 omitida y 14 sin empezar, casi todas del
+documento. Todos los PR (#1 a #40, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-08, EVA-12 y DOC-01 | INF-09 (falta el tag `v1.0`) e INF-10 (la corre Mathew) | — |
+| R1 Josué | INF-01 a INF-08, EVA-12, EVA-13 y DOC-01 | INF-09 (falta el tag `v1.0`) e INF-10 (la corre Mathew) | — |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
@@ -149,7 +149,7 @@ flowchart LR
 
 | Rol | F0 | F1 | F2 | F3 | F4 |
 | --- | --- | --- | --- | --- | --- |
-| R1 Infra | INF-01 a 04 | INF-05, 06 | INF-07 E2E | INF-08 | INF-09, 10, EVA-12 |
+| R1 Infra | INF-01 a 04 | INF-05, 06 | INF-07 E2E | INF-08 | INF-09, 10, EVA-12, 13 |
 | R2 Datos | DAT-01 (hecha) | DAT-02 a 06 | DAT-07, 08 | DAT-09 ETH (P2) | DOC |
 | R3 Entorno | ENV-01 | ENV-02 a 06 | ENV-07 | ENV-08 ablación | DOC |
 | R4 Agentes | AGT-01 | AGT-02, 03 | AGT-04 a 06 | AGT-07 a 10 | DOC |
@@ -238,6 +238,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
+| EVA-13 | **Hecha el 09/11/2026 (#40, R1).** Diseño de la demo con la identidad de `entregas/final/presentacion/DESIGN.md`: inicio, simulación minuto a minuto con BTC, precio YES, narración y botones de reproducción, comparación con el veredicto del protocolo y una guía del mercado, el entorno, las políticas y los datos | F4 | P1 | EVA-08 | La demo abre sin errores en local y con la muestra de Cloud, y sus tests cubren la reproducción, el cierre y la elección del protocolo |
 
 ### Documento, slides y video (todos)
 
@@ -257,7 +258,7 @@ documento vive en `entregas/final/informe/`.
 | DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
 | DOC-10 | Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
 | DOC-11 | Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
-| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P18).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P19).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 

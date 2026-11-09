@@ -86,6 +86,7 @@ def test_pipeline_from_raw_data_to_evaluated_agents(tmp_path, capsys, monkeypatc
     # 6. La demo abre las trayectorias del mini-dataset (criterio de EVA-07).
     demo = AppTest.from_file(str(Path(__file__).parents[1] / "app" / "demo.py"), default_timeout=30)
     demo.run()
+    demo.switch_page("views/simulation.py").run()
     assert not demo.exception
     assert len(demo.sidebar.selectbox[0].options) == 3
     assert len(demo.sidebar.selectbox[1].options) == 7

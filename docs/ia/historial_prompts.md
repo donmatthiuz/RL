@@ -284,6 +284,27 @@ Code. El equipo lo revisa y completa.
 - **Aporte:** EVA-08 (#36), la demo lista para publicar (EVA-09), `release.yml` y
   `make release-modelos` (INF-09) y la guía de INF-10 en el README (#37).
 
+### P19 — Diseño de la demo
+
+- **Prompt:** R1 pidió una demo más visual e interactiva dentro de los límites de Streamlit, con
+  marca, la simulación de la hora con BTC, el reloj y el precio, secciones separadas para comparar
+  y para explicar las políticas, el mercado y las trayectorias, botones en lugar del toggle, y que
+  los agentes de diseño orientaran el trabajo.
+- **Resultado:** satisfactorio.
+- **Por qué:** dos agentes de `.agents/` dieron la base. UX Architect propuso las cuatro páginas, el
+  reproductor con `st.fragment` y la narración de cada minuto. UI Designer propuso el sistema
+  visual. Su paleta cambiaba el azul y el ámbar del `DESIGN.md` que R1 estaba escribiendo para la
+  presentación; se mantuvo el `DESIGN.md` como fuente común y de su propuesta solo se tomó lo que
+  no choca (el color dice el lado y la forma, la acción; BTC en gris neutro).
+- **Cómo se evaluó:** tests con AppTest sobre mercados sintéticos (reproducir, pausar, cierre,
+  narración, elección del protocolo), capturas reales en Chrome con Playwright de cada página y
+  del reproductor, y una copia del repositorio con solo `app/requirements.txt` que simula
+  Streamlit Community Cloud. Las capturas mostraron métricas cortadas, un registro saturado de
+  pedidos inválidos y un gráfico que no llenaba su tarjeta; se corrigieron. La copia mostró que
+  las páginas no se encontraban con una ruta relativa al script.
+- **Aporte:** EVA-13: `app/views/`, `app/core.py`, `app/charts.py`, `app/selection.py`, el tema en
+  `.streamlit/config.toml` y la muestra de mercados de `make demo-muestra`.
+
 ## Plantilla
 
 ```markdown
