@@ -83,11 +83,23 @@ make release-modelos TAG=v1.0
 
 ## Demo
 
-`make demo` abre la demo de Streamlit. Empieza en test con el mejor agente del protocolo (PPO,
-con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó; desde la barra
-lateral se elige cualquier otra política, mercado o paso. Lee las trayectorias de
-`reports/trajectories/` y, si no hay, la muestra de test de [`app/trayectorias/`](app/trayectorias/)
-(PPO, `NoTrade` y `fair_value`).
+`make demo` abre la demo de Streamlit, con la identidad visual de
+[DESIGN.md](entregas/final/presentacion/DESIGN.md). Tiene cuatro páginas:
+
+- **Inicio:** qué es PolyRL y el resultado en test.
+- **Simulación:** una hora de mercado con un agente, minuto a minuto, con botones para reproducir,
+  pausar y avanzar. Muestra la hora, el precio de BTC contra la apertura, el precio YES, la
+  posición, la cartera, una narración de cada minuto, el registro de órdenes y el resultado al
+  cierre. Empieza en test con el mejor agente del protocolo (PPO, con su semilla mediana), en el
+  primer mercado donde operó.
+- **Comparación:** las políticas en el mismo mercado y en todo el split, el veredicto del protocolo
+  con sus intervalos y por qué acertar no alcanza.
+- **Cómo funciona:** el mercado, el entorno y los costos, las acciones, cada política y los datos.
+
+Lee las trayectorias de `reports/trajectories/` y, si no hay, la muestra de test de
+[`app/trayectorias/`](app/trayectorias/): PPO, `NoTrade`, `fair_value` y el precio de BTC de cada
+mercado, que se regenera con `make demo-muestra`. Reproduce trayectorias grabadas: no vuelve a
+correr ningún agente ni a evaluar test.
 
 **Versión publicada:** pendiente (EVA-09). Para publicarla en Streamlit Community Cloud:
 
@@ -96,7 +108,8 @@ lateral se elige cualquier otra política, mercado o paso. Lee las trayectorias 
 2. Repositorio `donmatthiuz/RL`, rama `proyecto` y archivo principal `app/demo.py`.
 3. En las opciones avanzadas, Python 3.12. Las dependencias salen de
    [`app/requirements.txt`](app/requirements.txt), que deja afuera torch y las librerías de RL.
-4. Poner la URL en este apartado y marcar EVA-09 en el tablero.
+4. El tema sale de `.streamlit/config.toml`, en la raíz, que es donde Community Cloud lo lee.
+5. Poner la URL en este apartado y marcar EVA-09 en el tablero.
 
 ## Reproducir un resultado
 
