@@ -68,6 +68,23 @@ make entregable ENTREGA=2026-10-30 PDF="Entregable 30.pdf"
 > Los comandos de dataset, entrenamiento, evaluación y demo se agregan al `Makefile` a medida que
 > avanzan las tareas de [`docs/04_tareas.md`](docs/04_tareas.md).
 
+## Demo
+
+`make demo` abre la demo de Streamlit. Empieza en test con el mejor agente del protocolo (PPO,
+con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó; desde la barra
+lateral se elige cualquier otra política, mercado o paso. Lee las trayectorias de
+`reports/trajectories/` y, si no hay, la muestra de test de [`app/trayectorias/`](app/trayectorias/)
+(PPO, `NoTrade` y `fair_value`).
+
+**Versión publicada:** pendiente (EVA-09). Para publicarla en Streamlit Community Cloud:
+
+1. Entrar a Community Cloud con la cuenta de GitHub dueña del repositorio y crear una app
+   desde un repositorio existente.
+2. Repositorio `donmatthiuz/RL`, rama `proyecto` y archivo principal `app/demo.py`.
+3. En las opciones avanzadas, Python 3.12. Las dependencias salen de
+   [`app/requirements.txt`](app/requirements.txt), que deja afuera torch y las librerías de RL.
+4. Poner la URL en este apartado y marcar EVA-09 en el tablero.
+
 ## Mantenimiento de la documentación
 
 - Los documentos son **vivos**: si cambia una decisión, el documento se actualiza en el mismo commit
