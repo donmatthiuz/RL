@@ -4,123 +4,72 @@ from pathlib import Path
 
 import streamlit as st
 
-from core import BLUE, CLASS_COLOR, POLICIES, report
+from core import CLASS_COLOR, POLICIES, card, report
 
-# data/processed/btc_updown_1h_v1/manifest.json: 12 294 mercados en total.
-SPLITS = {"train": 8682, "val": 1861, "test": 1751}
 VIEWS = Path(__file__).resolve().parent
 
-st.markdown(
-    f'<p style=\'font-family:"JetBrains Mono",monospace;letter-spacing:.14em;font-size:12px;'
-    f"color:{BLUE};margin-bottom:0'>APRENDIZAJE POR REFUERZO · UVG</p>",
-    unsafe_allow_html=True,
-)
 st.markdown("# Del dato histórico a la decisión")
 st.markdown(
-    "Cada hora, Polymarket pregunta si Bitcoin va a cerrar **arriba o abajo** de donde abrió. El "
-    "precio de **YES** es la probabilidad que el mercado le da a que suba. Entrenamos agentes de "
-    "aprendizaje por refuerzo para decidir, minuto a minuto, si **comprar YES, comprar NO, vender "
-    "o esperar**, y los comparamos con reglas simples, con los mismos costos y en mercados que "
-    "nunca vieron."
+    "Cada hora, Polymarket pregunta si Bitcoin cerrará **arriba o abajo** de su apertura. "
+    "Agentes de aprendizaje por refuerzo deciden cada minuto si **comprar YES, comprar NO, vender "
+    "o esperar**, y se comparan con reglas simples en mercados que nunca vieron."
 )
 
+# data/processed/btc_updown_1h_v1/manifest.json
 cols = st.columns(4)
-cols[0].metric(
-    "Mercados reales",
-    f"{sum(SPLITS.values()):,}".replace(",", " "),
-    "mayo 2025 a octubre 2026",
-    delta_color="off",
-    delta_arrow="off",
-    border=True,
-)
-cols[1].metric(
-    "Corte cronológico",
-    "70 / 15 / 15",
-    "train · val · test",
-    delta_color="off",
-    delta_arrow="off",
-    border=True,
-)
-cols[2].metric(
-    "Agentes", "4", "PPO · DQN · CQL · BC", delta_color="off", delta_arrow="off", border=True
-)
-cols[3].metric(
-    "Semillas por agente",
-    "5",
-    "para no depender de la suerte",
-    delta_color="off",
-    delta_arrow="off",
-    border=True,
-)
+facts = [
+    ("Mercados", "12 294", "mayo 2025 a octubre 2026"),
+    ("Corte cronológico", "70 / 15 / 15", "train · val · test"),
+    ("Agentes", "4", "PPO · DQN · CQL · BC"),
+    ("Semillas", "5", "por agente"),
+]
+for col, (label, value, note) in zip(cols, facts, strict=True):
+    col.metric(label, value, note, delta_color="off", delta_arrow="off", border=True)
 
 st.markdown("### El resultado")
-left, right = st.columns([3, 2], gap="medium")
-with left, st.container(border=True):
-    st.markdown(
-        "#### En test, ningún agente le gana a no operar.\n"
-        "PPO, el mejor, queda **equivalente**: su diferencia con no operar cabe dentro de ±1 % del "
-        "monto, pero no es positiva. Es un resultado válido: el protocolo se fijó antes de mirar "
-        "test y se reporta aunque no gane."
-    )
+left, right = st.columns([3, 2])
+with left, card("resultado"):
+    st.markdown("#### En test, ningún agente le gana a no operar.")
+    st.markdown("PPO, el mejor, queda **equivalente**: no se distingue de no operar.")
     groups = report("test", "comparison.csv")
     if groups is not None:
-        normal = groups[~groups["strict"] & (groups["role"] == "principal")].sort_values(
-            "mean", ascending=False
-        )
+        normal = groups[~groups["strict"] & (groups["role"] == "principal")]
         row = st.container(horizontal=True)
-        for _, item in normal.iterrows():
+        for _, item in normal.sort_values("mean", ascending=False).iterrows():
             name = POLICIES[item["group"].split("_")[0]][0]
             row.badge(
                 f"{name}: {item['classification']}",
                 color=CLASS_COLOR.get(item["classification"], "gray"),
             )
-with right, st.container(border=True):
+with right, card("aciertos"):
     payoff = report("test", "inspection_payoff.csv")
-    if payoff is not None:
-        top = payoff[(payoff["policy"] == "ppo_pnl_risk") & (payoff["price"] == "0.98-1")]
-        if len(top):
-            top = top.iloc[0]
-            st.metric(
-                "PPO acierta a más de 0,98",
-                f"{top['side_won']:.2%}",
-                f"{int(top['trades'])} compras en test",
-                delta_color="off",
-                delta_arrow="off",
-            )
-            st.metric(
-                "Necesita para no perder",
-                f"{top['cost']:.2%}",
-                f"neto {top['net']:+.2f} USDC",
-                delta_color="off",
-                delta_arrow="off",
-            )
-    st.caption("Acertar casi siempre no alcanza cuando cada acción cuesta 0,9988 y paga 1.")
+    rows = None if payoff is None else payoff[payoff["policy"] == "ppo_pnl_risk"]
+    if rows is not None and len(rows):
+        top = rows.iloc[-1]
+        hit, need = st.columns(2)
+        hit.metric(
+            "PPO acierta",
+            f"{top['side_won']:.2%}",
+            "a más de 0,98",
+            delta_color="off",
+            delta_arrow="off",
+        )
+        need.metric(
+            "Necesita",
+            f"{top['cost']:.2%}",
+            "para no perder",
+            delta_color="off",
+            delta_arrow="off",
+        )
+        st.caption(f"Neto en test: {top['net']:+.2f} USDC en {int(top['trades'])} compras.")
 
 st.markdown("### Explorar")
-cols = st.columns(3)
 links = [
-    (
-        "simulation.py",
-        "Simulación",
-        ":material/play_circle:",
-        "Una hora de mercado con un agente, minuto a minuto: el precio de BTC, el precio YES, sus "
-        "órdenes y el resultado.",
-    ),
-    (
-        "comparison.py",
-        "Comparación",
-        ":material/compare_arrows:",
-        "Las políticas en el mismo mercado y en todo test, y lo que dice el protocolo.",
-    ),
-    (
-        "guide.py",
-        "Cómo funciona",
-        ":material/menu_book:",
-        "El mercado, el entorno, los costos, las acciones, cada política y de dónde salen los "
-        "datos.",
-    ),
+    ("simulation.py", "Simulación", ":material/play_circle:", "Una hora de mercado, paso a paso."),
+    ("comparison.py", "Comparación", ":material/compare_arrows:", "Políticas frente a frente."),
+    ("guide.py", "Cómo funciona", ":material/menu_book:", "Mercado, costos, políticas y datos."),
 ]
-for col, (page, title, icon, text) in zip(cols, links, strict=True):
-    with col, st.container(border=True):
+for i, (col, (page, title, icon, text)) in enumerate(zip(st.columns(3), links, strict=True)):
+    with col, card(f"explorar_{i}"):
         st.page_link(str(VIEWS / page), label=title, icon=icon)
         st.caption(text)

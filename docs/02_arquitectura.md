@@ -382,6 +382,9 @@ cómo funciona) y la identidad de `entregas/final/presentacion/DESIGN.md`:
   resultado salen del dataset si está en la máquina y, si no, de `app/trayectorias/mercados_test.parquet`
   (`make demo-muestra`, `app/muestra.py`).
 - La política y el mercado elegidos se comparten entre páginas (`app/selection.py`).
+- **Tarjetas (DESIGN.md 9.3):** `card()` de `app/core.py` es un contenedor con borde y clave
+  `card_*`; el CSS de `app/demo.py` le da la superficie blanca y `height="stretch"` iguala el alto
+  de las tarjetas de una fila. La barra lateral (carpeta de trayectorias) está en todas las páginas.
 
 **Publicada (EVA-09):** sin trayectorias en `reports/trajectories/`, la demo usa la muestra de test
 de `app/trayectorias/` (PPO s0, `NoTrade` y `fair_value`, unos 3 MB). En Streamlit Community Cloud

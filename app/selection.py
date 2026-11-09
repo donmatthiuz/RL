@@ -85,7 +85,6 @@ def policy_label(name: str) -> str:
 
 def select() -> Selection | None:
     """Dibuja la selección en la barra lateral; None si la carpeta no tiene trayectorias."""
-    folder_input()
     files = list_files(Path(st.session_state.folder))
     if not files:
         st.info(

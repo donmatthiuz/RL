@@ -141,7 +141,7 @@ def test_btc_and_the_question_come_from_the_dataset(app, frames):
     question = synthetic_frames(3, seed=5)[0].set_index("market_id").loc[market, "question"]
     assert app.markdown[0].value == f"## {question}"
     assert "frente a la apertura" in app.info[0].value
-    assert metric(app, "BTC vs apertura").delta == "+0.000%"
+    assert metric(app, "BTC").delta == "+0.000%"
 
 
 def test_buttons_move_one_minute_and_stay_inside_the_market(app):
