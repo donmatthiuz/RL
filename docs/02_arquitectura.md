@@ -297,7 +297,8 @@ src/polym4v/evaluation/
 ├── backtest.py     # run_backtest(policy, env, markets) → DataFrame de trayectorias
 ├── metrics.py      # Métricas por episodio y agregadas
 ├── stats.py        # Bootstrap IC 95 %, test de diferencias pareadas
-└── report.py       # Tabla (CSV y Markdown) y figuras (matplotlib) de un split: polym4v report
+├── report.py       # Tabla (CSV y Markdown) y figuras (matplotlib) de un split: polym4v report
+└── behavior.py     # Comportamiento de los agentes (EVA-12, exploratorio): polym4v behavior
 ```
 
 **Reporte** (`make report SPLIT=train`): lee las trayectorias de `reports/trajectories/` y los
@@ -313,6 +314,13 @@ src/polym4v/evaluation/
 Todas las políticas tienen que cubrir los mismos mercados, porque la comparación es pareada. Test
 pide `--allow-test`, igual que `backtest` y `evaluate`. Los intervalos de confianza llegan con
 EVA-04 (`stats.py`).
+
+**Comportamiento** (`make behavior`, EVA-12): análisis exploratorio, fuera del protocolo de EVA-01,
+de qué aprendió cada agente. En val escribe `reports/val/behavior.md` con las operaciones por tramo
+de precio, el mapa de decisiones por minuto y precio del favorito, la calibración del precio y la
+importancia de las features por permutación, para la que vuelve a correr cada agente en val. En
+test solo describe las trayectorias que ya existen (`reports/test/inspection.md`), con las pérdidas
+grandes y el recorrido de BTC en esos mercados; no corre ninguna política.
 
 **Métricas:**
 

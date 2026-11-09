@@ -35,7 +35,7 @@ KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
-	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report demo manifest entregable eda
+	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report behavior demo manifest entregable eda
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -121,6 +121,10 @@ train: ## Entrena un agente con todas las semillas de su config (AGENT=ppo|dqn|c
 
 report: ## Tabla y figuras de un split con las trayectorias y corridas ya calculadas (SPLIT)
 	$(UV) run polym4v report --split $(SPLIT)
+
+behavior: ## Comportamiento de los agentes en val y descripción de test, sin volver a evaluar test (EVA-12)
+	OMP_NUM_THREADS=1 $(UV) run polym4v behavior --split val
+	$(UV) run polym4v behavior --split test --allow-test
 
 demo: ## Abre la demo de Streamlit con las trayectorias de reports/trajectories
 	$(UV) run streamlit run app/demo.py

@@ -28,12 +28,12 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 02/11/2026, de 66 tareas: 45 hechas, 1 en curso, 1 omitida y 19 sin empezar, casi todas del
-documento. Todos los PR (#1 a #34) están mezclados en `proyecto`, y test ya se evaluó.
+Al 02/11/2026, de 67 tareas: 46 hechas, 1 en curso, 1 omitida y 19 sin empezar, casi todas del
+documento. Todos los PR (#1 a #35) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-08 y DOC-01 | — | INF-09 e INF-10 |
+| R1 Josué | INF-01 a INF-08, EVA-12 y DOC-01 | — | INF-09 e INF-10 |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
@@ -56,9 +56,26 @@ baseline de referencia ([comparación](../reports/test/comparison.md)).
 | BC | −0,0014 | −0,0050 a −0,0000 | peor, pero no relevante | equivalente |
 
 - PPO y DQN aprendieron a operar en pocos mercados y quedan equivalentes a no operar, que es un
-  resultado válido según D1. CQL parecía el mejor en val (+0,0109) y en test es inferior: su
-  ventaja venía de elegir checkpoints en val. BC opera en 23 mercados y su IC no es confiable.
+  resultado válido según D1. CQL parecía el mejor en val (+0,0109) y en test es inferior. BC opera
+  en 23 mercados y su IC no es confiable.
 - Todas las heurísticas pierden; la mejor es `fair_value`, con −0,0214.
+- **Qué aprendió cada agente (EVA-12, exploratorio y fuera del protocolo):**
+  [comportamiento en val](../reports/val/behavior.md) e
+  [inspección posterior de test](../reports/test/inspection.md).
+  - PPO compra casi siempre el favorito cerca del final (minuto mediano 54), el 88 % de las veces a
+    más de 0,98. Desordenar las features del spot de Binance cambia el 96 % de sus compras, y
+    desordenar el precio de Polymarket, el 51 %: decide sobre todo con lo lejos que está BTC de la
+    apertura (`z`). Eso no demuestra que prediga mejor que el precio, que ya está calibrado en ese
+    tramo (en val, en el minuto 55, el favorito a más de 0,99 ganó los 753 mercados).
+  - Precisión no es rentabilidad: comprar a más de 0,98 cuesta 0,9988 por acción, así que hay que
+    acertar el 99,88 % para no perder. PPO acertó el lado en 907 de 907 compras de val (IC 95 % de
+    0,9958 a 1) y en 836 de 838 de test (0,9913 a 0,9993), con un neto de −27,23 USDC en test. Las
+    dos pérdidas grandes de test (−20 y −18,4 USDC) son el mismo mercado en dos semillas: BTC estaba
+    0,11 % bajo la apertura en el minuto 50 y terminó 0,03 % arriba.
+  - CQL ganó en val con apuestas a precios bajos (long shots): sus 10 mejores operaciones suman
+    +5 940 USDC, más que su total de +2 019. En test esas apuestas pierden −2 205 USDC. La caída es
+    compatible con una estrategia de alta varianza elegida en val, pero test no identifica la causa
+    por sí solo.
 - Test abarca 76 días, no los 73 que supuso el protocolo. Solo cambia la MDE, que queda un 2 % más
   grande (conservadora); se declara en el informe.
 
@@ -129,7 +146,7 @@ flowchart LR
 
 | Rol | F0 | F1 | F2 | F3 | F4 |
 | --- | --- | --- | --- | --- | --- |
-| R1 Infra | INF-01 a 04 | INF-05, 06 | INF-07 E2E | INF-08 | INF-09, 10 |
+| R1 Infra | INF-01 a 04 | INF-05, 06 | INF-07 E2E | INF-08 | INF-09, 10, EVA-12 |
 | R2 Datos | DAT-01 (hecha) | DAT-02 a 06 | DAT-07, 08 | DAT-09 ETH (P2) | DOC |
 | R3 Entorno | ENV-01 | ENV-02 a 06 | ENV-07 | ENV-08 ablación | DOC |
 | R4 Agentes | AGT-01 | AGT-02, 03 | AGT-04 a 06 | AGT-07 a 10 | DOC |
@@ -217,6 +234,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-09 | (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
+| EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
 
 ### Documento, slides y video (todos)
 
