@@ -1,4 +1,4 @@
-"""Demo de Streamlit (EVA-07), con trayectorias de mercados sintéticos y sin red."""
+"""Demo de Streamlit (EVA-07 a EVA-09), con trayectorias de mercados sintéticos y sin red."""
 
 from pathlib import Path
 
@@ -13,6 +13,10 @@ from polym4v.evaluation.backtest import run_backtest
 from polym4v.utils.config import SimulatorConfig, load_config
 
 APP = str(Path(__file__).parents[1] / "app" / "demo.py")
+
+
+def split_of(name):
+    return name.split(" · ")[1]
 
 
 @pytest.fixture(scope="module")
@@ -42,10 +46,21 @@ def first_executed(frame):
     return steps[steps["order_status"] == "ejecutada"].iloc[0]
 
 
-def test_without_trajectories_it_explains_how_to_create_them(tmp_path, monkeypatch):
+def test_without_trajectories_it_opens_the_test_sample(tmp_path, monkeypatch):
+    """La muestra de app/trayectorias/ es la que usa la demo publicada (EVA-09)."""
     monkeypatch.setenv("POLYM4V_REPORTS_DIR", str(tmp_path))
     at = AppTest.from_file(APP, default_timeout=30)
     at.run()
+    assert not at.exception
+    assert at.sidebar.text_input[0].value == str(Path(APP).parent / "trayectorias")
+    assert {split_of(name) for name in at.sidebar.selectbox[0].options} == {"test"}
+
+
+def test_an_empty_folder_explains_how_to_create_trajectories(tmp_path, monkeypatch):
+    monkeypatch.setenv("POLYM4V_REPORTS_DIR", str(tmp_path))
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    at.sidebar.text_input[0].set_value(str(tmp_path)).run()
     assert not at.exception
     assert "make backtest" in at.info[0].value
     assert not at.slider
@@ -147,27 +162,37 @@ def test_a_policy_without_the_market_is_left_out_with_a_warning(tmp_path, monkey
     assert not [title for title in at.subheader if title.value == "Comparación"]
 
 
-def test_the_report_proposes_the_best_agent_and_the_best_baseline(tmp_path, monkeypatch, frames):
-    """Criterio de EVA-08: el mejor agente frente al mejor baseline, de entrada."""
+def test_the_protocol_opens_the_median_seed_of_the_best_agent_against_its_baseline(
+    tmp_path, monkeypatch, frames
+):
+    """Criterio de EVA-08: el mejor agente frente al mejor baseline en un mercado de test."""
     reports = tmp_path / "reports"
     folder = reports / "trajectories"
     folder.mkdir(parents=True)
-    frames["random"].to_parquet(folder / "20261101-000000_ppo_pnl_s0_test.parquet")
-    frames["random"].to_parquet(folder / "20261101-000000_ppo_pnl_s1_test.parquet")
-    frames["favorite"].to_parquet(folder / "favorite_test.parquet")
-    frames["favorite"].to_parquet(folder / "no_trade_test.parquet")
-    frames["favorite"].to_parquet(folder / "momentum_test_estricto.parquet")
+    no_trade = frames["favorite"].assign(order_status="sin_orden")
+    for seed in range(3):
+        frames["favorite"].to_parquet(folder / f"20261101-000000_ppo_pnl_s{seed}_test.parquet")
+    frames["random"].to_parquet(folder / "20261101-000000_dqn_pnl_s0_test.parquet")
+    no_trade.to_parquet(folder / "no_trade_test.parquet")
+    frames["random"].to_parquet(folder / "momentum_test.parquet")
+    frames["favorite"].to_parquet(folder / "20261101-000000_ppo_pnl_s0_val.parquet")
     (reports / "test").mkdir()
     pd.DataFrame(
         {
-            "label": [
-                "momentum",
-                "20261101-000000_ppo_pnl_s1",
-                "no_trade",
-                "20261101-000000_ppo_pnl_s0",
-            ],
-            "strict": [True, False, False, False],
-            "mean_return": [0.9, 0.2, 0.0, -0.1],
+            "group": ["dqn_pnl", "ppo_pnl", "ppo_pnl"],
+            "strict": [False, False, True],
+            "role": ["principal"] * 3,
+            "baseline": ["no_trade"] * 3,
+            "mean": [-0.2, -0.1, 0.5],
+        }
+    ).to_csv(reports / "test" / "comparison.csv", index=False)
+    # La mejor corrida suelta es de DQN y la mejor semilla de PPO es s2: no se eligen.
+    pd.DataFrame(
+        {
+            "label": [f"20261101-000000_ppo_pnl_s{seed}" for seed in range(3)]
+            + ["20261101-000000_dqn_pnl_s0", "no_trade", "momentum"],
+            "strict": [False] * 6,
+            "mean_return": [0.1, -0.3, 0.4, 0.9, 0.0, 0.5],
         }
     ).to_csv(reports / "test" / "summary.csv", index=False)
     monkeypatch.setenv("POLYM4V_REPORTS_DIR", str(reports))
@@ -175,8 +200,40 @@ def test_the_report_proposes_the_best_agent_and_the_best_baseline(tmp_path, monk
     at.run()
     assert not at.exception
     assert at.sidebar.selectbox[0].value == "20261101-000000_ppo_pnl_s0 · test"
-    assert at.sidebar.multiselect[0].value == [
-        "20261101-000000_ppo_pnl_s1 · test",
-        "no_trade · test",
-    ]
+    assert at.sidebar.multiselect[0].value == ["no_trade · test"]
     assert [title.value for title in at.subheader][-1] == "Comparación"
+
+    favorite = frames["favorite"]
+    traded = favorite[favorite["order_status"] == "ejecutada"]["market_id"].iloc[0]
+    assert at.sidebar.selectbox[1].value == traded
+
+
+def test_another_split_compares_against_its_own_report(tmp_path, monkeypatch, frames):
+    reports = tmp_path / "reports"
+    folder = reports / "trajectories"
+    folder.mkdir(parents=True)
+    frames["favorite"].to_parquet(folder / "20261101-000000_ppo_pnl_s0_val.parquet")
+    frames["favorite"].to_parquet(folder / "no_trade_val.parquet")
+    frames["random"].to_parquet(folder / "random_val.parquet")
+    (reports / "val").mkdir()
+    pd.DataFrame(
+        {
+            "group": ["ppo_pnl"],
+            "strict": [False],
+            "role": ["principal"],
+            "baseline": ["no_trade"],
+            "mean": [0.1],
+        }
+    ).to_csv(reports / "val" / "comparison.csv", index=False)
+    pd.DataFrame(
+        {"label": ["20261101-000000_ppo_pnl_s0"], "strict": [False], "mean_return": [0.1]}
+    ).to_csv(reports / "val" / "summary.csv", index=False)
+    monkeypatch.setenv("POLYM4V_REPORTS_DIR", str(reports))
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    at.sidebar.selectbox[0].set_value("random · val").run()
+    assert not at.exception
+    assert at.sidebar.multiselect[0].value == [
+        "20261101-000000_ppo_pnl_s0 · val",
+        "no_trade · val",
+    ]
