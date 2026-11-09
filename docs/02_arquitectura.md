@@ -362,9 +362,16 @@ dependencias `demo`, que `uv sync` instala por defecto pero no es una dependenci
 
 - Dos gráficos: el PnL de cada una dentro del mercado y el PnL acumulado en orden cronológico, con
   el paso y el mercado actuales marcados. Una tabla resume el PnL y las órdenes ejecutadas.
-- Si existe `reports/<split>/summary.csv`, propone de entrada al mejor agente y al mejor baseline
-  en modo normal.
+- Si existe la comparación del protocolo (`reports/<split>/comparison.csv`), abre test (o val)
+  con el mejor agente según la media de D frente a su baseline, en modo normal y en el primer
+  mercado donde operó. El agente se muestra con su semilla mediana según `summary.csv`, no con la
+  mejor, para no elegir una semilla con suerte; en test es PPO s0 frente a `NoTrade`.
 - Una política sin el mercado elegido se deja afuera, con un aviso.
+
+**Publicada (EVA-09):** sin trayectorias en `reports/trajectories/`, la demo usa la muestra de test
+de `app/trayectorias/` (PPO s0, `NoTrade` y `fair_value`, unos 3 MB). En Streamlit Community Cloud
+las dependencias salen de `app/requirements.txt`, que deja afuera torch y las librerías de RL, y el
+paquete se importa desde `src/` sin instalarlo.
 
 ### 2.8 `utils/` y CLI (Rol 1)
 
@@ -391,7 +398,7 @@ RL/
 │   └── workflows/
 │       ├── ci.yml              # lint, mypy, tests con cobertura y smoke-train en cada push y PR
 │       ├── nightly.yml         # tests slow y network todos los días (INF-08), desde main
-│       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09, previsto)
+│       └── release.yml         # CD: en tag v* publica reporte y modelos (INF-09)
 ├── configs/
 │   ├── data.yaml
 │   ├── env.yaml
@@ -403,7 +410,9 @@ RL/
 │   ├── data/  features/  env/  agents/  evaluation/  utils/
 │   └── cli.py
 ├── app/
-│   └── demo.py
+│   ├── demo.py
+│   ├── requirements.txt        # dependencias de la demo publicada, sin torch (EVA-09)
+│   └── trayectorias/           # muestra de test para la demo publicada
 ├── notebooks/                  # EDA y exploración (no es código de producción)
 ├── tests/
 │   ├── unit/  integration/
