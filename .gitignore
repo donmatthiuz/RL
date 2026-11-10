@@ -239,3 +239,6 @@ keys/*
 
 # Trayectorias del backtest: se regeneran con make backtest
 /reports/trajectories/
+
+# Audios y archivos de trabajo locales (por ejemplo, la voz del video): no se versionan.
+/tmp/

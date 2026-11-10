@@ -43,6 +43,7 @@ Code. El equipo lo revisa y completa.
 | P24 | 09/11/2026 | Claude Code y Context7 | Publicar la demo en Cloud Run | Satisfactorio: imagen probada en local antes de desplegar |
 | P25 | 09/11/2026 | Claude Code | Revisar las slides de Mathew y cerrar el tablero | Satisfactorio: faltaban el script y el PDF de las slides |
 | P26 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Guion del video final | Satisfactorio: 7 escenas, 3:40 y cifras verificadas |
+| P27 | 09/11/2026 | Claude Code, MCP de Chrome y Playwright | Montar el video final | Satisfactorio: apareció y se corrigió una pausa sola en la demo |
 
 ## Entradas
 
@@ -477,6 +478,31 @@ Code. El equipo lo revisa y completa.
   cronometradas, lista de preparación, instrucciones de grabación y frases prohibidas; DOC-11
   marcada como guion listo. Se numera P26 para continuar la serie del tablero de cierre (P25), que
   vive en otra rama.
+
+### P27 — Montar el video final
+
+- **Prompt:** corregir qué mostrar en cada escena usando el MCP de Chrome DevTools sobre la demo,
+  dar el tramo de voz que faltaba para cubrir la implementación, grabar los clips en la versión
+  local, separar el audio por escenas y montarlo con Remotion.
+- **Herramienta:** Claude Code, con el MCP de Chrome DevTools, Playwright, `faster-whisper`
+  (transcripción con marcas de tiempo), Context7 (documentación de Remotion) y ffmpeg.
+- **Resultado:** satisfactorio, con un cambio de herramienta. El render de Remotion a media
+  resolución no terminó en 10 minutos y la entrega tenía hora; el montaje final se hizo con ffmpeg
+  en unos 30 segundos.
+- **Por qué:** recorrer la demo con el MCP mostró que la página Comparación ya tiene los resultados
+  y el hallazgo con las mismas cifras que las slides 7 y 8, así que el video no necesita las slides.
+  Al grabar apareció un error: en Cloud Run, y en local con la velocidad "Rápida", la reproducción
+  retrocedía un minuto y se pausaba sola. La causa era un valor viejo del slider que llegaba con el
+  siguiente tick y Streamlit trataba como un cambio del usuario.
+- **Cómo se evaluó:** se reprodujo el error con Playwright y 150 ms de latencia emulada, y se
+  comprobó el arreglo (PR #48) llegando al minuto 59. La voz se transcribió para ubicar cada frase;
+  la posición del slider en cada fotograma dio el segundo de cada minuto del clip, y la diferencia
+  entre fotogramas, el momento de cada clic. Se revisaron fotogramas de todas las escenas del video
+  final y el cambio a modo estricto en el instante en que la voz lo nombra.
+- **Corrección:** el primer montaje dejaba la pantalla en negro desde la escena de las políticas,
+  porque el audio nuevo (31 s) era más largo que su clip; se alargó el último fotograma.
+- **Aporte:** el video de 4:04 (<https://youtu.be/MVmoD3iCPr4>), el tramo de voz sobre los agentes,
+  la recompensa y los tests, y el arreglo de la reproducción.
 
 ## Plantilla
 
