@@ -1,17 +1,11 @@
 # Fuentes de la presentación
 
-Originales WOFF2 de las tres familias que usa `index.html`. El deck las embebe en base64, así que
-este directorio no se necesita para abrir la presentación; conserva los archivos para editar y
-documenta su origen.
+El HTML embebe los WOFF2 para funcionar sin red; esta carpeta conserva los originales editables y sus licencias.
 
-| Archivo | Familia | Origen | Licencia |
-| --- | --- | --- | --- |
-| `SpaceGrotesk.woff2` | Space Grotesk | `github.com/google/fonts`, carpeta `ofl/spacegrotesk` | SIL Open Font License 1.1 (`LICENSE-SpaceGrotesk.txt`) |
-| `Inter.woff2` | Inter | `github.com/google/fonts`, carpeta `ofl/inter` | SIL Open Font License 1.1 (`LICENSE-Inter.txt`) |
-| `JetBrainsMono.woff2` | JetBrains Mono | `github.com/google/fonts`, carpeta `ofl/jetbrainsmono` | SIL Open Font License 1.1 (`LICENSE-JetBrainsMono.txt`) |
+| Archivo | Uso actual | Licencia |
+| --- | --- | --- |
+| `JetBrainsMono.woff2` | Títulos, cifras, etiquetas y código; voz visual principal de Laboratorio nocturno | SIL Open Font License 1.1 (`LICENSE-JetBrainsMono.txt`) |
+| `Inter.woff2` | Explicaciones breves y notas del orador | SIL Open Font License 1.1 (`LICENSE-Inter.txt`) |
+| `SpaceGrotesk.woff2` | Fuente anterior, conservada para referencia; no se usa en el estilo actual | SIL Open Font License 1.1 (`LICENSE-SpaceGrotesk.txt`) |
 
-- Los tres son los subconjuntos `latin` que sirve Google Fonts; incluyen los signos de puntuación
-  del español que usa el deck.
-- Son fuentes variables: el `@font-face` de `index.html` declara el rango de pesos que usa cada
-  familia.
-- No se descargan en tiempo de ejecución: el HTML no pide red al abrirse.
+Las tres proceden de `github.com/google/fonts` y son subconjuntos latinos variables que incluyen la puntuación española usada en las diapositivas.

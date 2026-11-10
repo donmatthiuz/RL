@@ -8,7 +8,7 @@
 <style>
 /* ==========================================================================
    PolyRL — deck autocontenido
-   Tokens y reglas: entregas/final/presentacion/DESIGN.md, secciones 4 a 8.
+   Paleta y composición adaptadas de la propuesta 02, Laboratorio nocturno.
    Sin CDN, sin frameworks, sin imágenes externas.
    ========================================================================== */
 
@@ -585,27 +585,6 @@ table.datos tfoot td {
 }
 
 /* --------------------------------------------------------------------------
-   Plantilla demo-cierre: captura a 9 columnas, repo, make demo y cierre
-   -------------------------------------------------------------------------- */
-
-.slide--demo-cierre .demo {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
-  height: 100%;
-}
-.slide--demo-cierre .demo__captura {
-  grid-column: 1 / span 9;
-  min-width: 0;
-}
-.slide--demo-cierre .demo__cierre {
-  grid-column: 10 / span 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* --------------------------------------------------------------------------
    Contenido de la slide 2: mercado binario
    -------------------------------------------------------------------------- */
 
@@ -1144,6 +1123,219 @@ html.estatico *::after {
   body.guion .notas { display: block !important; }
   * { animation: none !important; transition: none !important; }
 }
+
+/* Laboratorio nocturno: paleta y tipografía de la propuesta 02. */
+:root {
+  --tinta: #06161c;
+  --papel: #06161c;
+  --papel-2: #0b2730;
+  --superficie: #09222a;
+  --linea: #28505b;
+  --texto: #e9fbf8;
+  --texto-2: #a6cbd0;
+  --texto-inv: #e9fbf8;
+  --texto-inv-2: #b0d6d9;
+  --azul: #67ddef;
+  --azul-claro: #67ddef;
+  --verde: #3bdcae;
+  --rojo: #f0776d;
+  --ambar: #ffc66b;
+  --ambar-texto: #ffc66b;
+  --fuente-display: "JetBrains Mono", ui-monospace, monospace;
+  --fuente-texto: "Inter", system-ui, sans-serif;
+  --fuente-mono: "JetBrains Mono", ui-monospace, monospace;
+  --margen-x: 82px;
+  --margen-y: 58px;
+  --t-h1: 60px;
+  --t-body: 22px;
+  --t-label: 20px;
+}
+html, body, #stage { background: var(--tinta); color: var(--texto); }
+:focus-visible { outline: 3px solid var(--verde); outline-offset: 4px; }
+.slide {
+  background-color: var(--tinta);
+  color: var(--texto);
+}
+.slide__cabecera { top: 59px; }
+.kicker {
+  margin-bottom: 22px;
+  font-size: 21px;
+  letter-spacing: .015em;
+  color: var(--accent, var(--verde));
+}
+.kicker::before { content: "> "; }
+.slide__titulo {
+  color: var(--texto);
+  font-family: var(--fuente-display);
+  font-weight: 700;
+  font-size: 58px;
+  line-height: 1.08;
+  letter-spacing: -.05em;
+}
+.slide__cuerpo { top: 249px; height: 535px; }
+.slide__pie {
+  border-top-color: var(--linea);
+  bottom: 31px;
+  height: 46px;
+}
+.pie__fuente, .pie__num, .monograma { color: var(--accent, var(--azul)); }
+.pie__fuente { font-size: 15px; }
+.pie__num { font-size: 17px; }
+.notas {
+  z-index: 9;
+  background: rgba(4, 18, 23, .97);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  padding: 14px 18px;
+  max-height: 170px;
+  bottom: 89px;
+  color: var(--texto);
+}
+body.notas-on .slide.activa .slide__cuerpo,
+body.guion .slide .slide__cuerpo { height: 535px; }
+
+/* La portada conserva la composición actual; cambian fondo, colores y fuentes. */
+.slide--portada {
+  --accent: var(--verde);
+  background-color: var(--tinta);
+}
+.slide--portada .kicker { color: var(--verde); }
+.slide--portada .slide__pie { border-top-color: var(--linea); }
+.slide--portada .pie__fuente,
+.slide--portada .pie__num,
+.slide--portada .monograma { color: var(--azul); }
+.portada__display { font-weight: 600; letter-spacing: -.055em; }
+.portada__lema { color: var(--texto); }
+.portada__bajada { color: var(--texto-inv-2); }
+.portada__bloque .label { color: var(--verde); }
+.portada__bloque .valor { color: var(--texto); }
+.portada__campo { opacity: .96; }
+.campo__curva { stroke: var(--verde); opacity: .42; }
+.portada__campo circle { fill: var(--azul); }
+.portada__campo circle:nth-child(3n) { fill: var(--verde); }
+
+/* Composiciones en la misma línea visual. */
+.lab-slide--mercado { --accent: var(--verde); }
+.lab-slide--datos { --accent: var(--azul); }
+.lab-slide--simulacion { --accent: var(--ambar); }
+.lab-slide--demo { --accent: var(--azul); }
+.lab-slide--agentes { --accent: var(--verde); }
+.lab-slide--resultados { --accent: var(--azul); }
+.lab-slide--cierre { --accent: var(--ambar); }
+.lab-panel {
+  margin: 0;
+  background: rgba(5, 28, 35, .94);
+  border: 1px solid var(--linea);
+  border-radius: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+.lab-panel--accent { border-color: var(--accent); }
+.lab-panel__label, .lab-tag {
+  font: 500 19px/1.3 var(--fuente-mono);
+  color: var(--accent);
+}
+.lab-figure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fbfb;
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+.lab-figure img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.lab-caption { margin: 0; font: 500 17px/1.35 var(--fuente-mono); color: var(--texto-2); }
+.lab-callout { color: var(--accent); font-family: var(--fuente-mono); }
+.lab-muted { color: var(--texto-2); }
+.lab-divider { width: 100%; height: 1px; background: var(--linea); }
+
+.mercado-layout { display: grid; grid-template-columns: 550px 1fr; gap: 24px; height: 100%; }
+.mercado-teoria { padding: 30px 34px; display: flex; flex-direction: column; }
+.mercado-teoria__pago { margin: 16px 0 0; font: 700 76px/1 var(--fuente-display); color: var(--verde); }
+.mercado-teoria__linea { margin: 22px 0 24px; height: 3px; background: var(--linea); position: relative; }
+.mercado-teoria__linea::before,
+.mercado-teoria__linea::after { content: ""; position: absolute; top: -7px; width: 17px; height: 17px; border-radius: 50%; background: var(--verde); }
+.mercado-teoria__linea::before { left: 0; }
+.mercado-teoria__linea::after { right: 0; }
+.mercado-teoria__marcas { display: flex; justify-content: space-between; font: 17px var(--fuente-mono); color: var(--texto-2); }
+.mercado-teoria__texto { margin: 30px 0 0; font-size: 24px; line-height: 1.35; }
+.mercado-teoria__texto strong { color: var(--verde); }
+.mercado-acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+.mercado-acciones code { border: 1px solid var(--linea); border-radius: 6px; padding: 9px 12px; font-size: 16px; color: var(--azul); }
+.mercado-acciones code:first-child { border-color: var(--verde); color: var(--verde); }
+.mercado-figura { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.mercado-figura .lab-figure { flex: 1; }
+
+.datos-layout { display: grid; grid-template-columns: 445px 1fr; gap: 25px; height: 100%; }
+.datos-numero { padding: 24px 28px; display: flex; flex-direction: column; }
+.datos-numero__total { margin: 9px 0 5px; color: var(--azul); font: 650 90px/1 var(--fuente-display); letter-spacing: -.07em; }
+.datos-numero__lista { display: grid; gap: 9px; margin-top: 15px; }
+.datos-numero__fila { display: flex; justify-content: space-between; border-top: 1px solid var(--linea); padding-top: 10px; font: 20px var(--fuente-mono); }
+.datos-numero__fila span:last-child { color: var(--azul); }
+.datos-numero__barra { display: flex; gap: 3px; height: 20px; margin-top: auto; }
+.datos-numero__barra span { display: block; background: var(--azul); }
+.datos-numero__barra span:nth-child(2) { background: var(--verde); }
+.datos-numero__barra span:nth-child(3) { background: var(--ambar); }
+.datos-chart { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.datos-chart .lab-figure { flex: 1; }
+.datos-chart__foot { color: var(--azul); font: 600 19px var(--fuente-mono); }
+
+.simulacion-layout { display: grid; grid-template-rows: 1fr 83px; gap: 16px; height: 100%; }
+.simulacion-imagenes { display: grid; grid-template-columns: 430px 1fr; gap: 16px; min-height: 0; }
+.simulacion-imagenes figure { margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.simulacion-imagenes .lab-figure { flex: 1; }
+.simulacion-imagenes figure:first-child .lab-figure { background: #071b23; }
+.simulacion-pasos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; align-items: stretch; }
+.simulacion-pasos span { display: grid; place-items: center; border: 1px solid var(--linea); background: rgba(7, 37, 43, .96); font: 19px var(--fuente-mono); }
+.simulacion-pasos span:nth-child(3) { color: var(--ambar); border-color: var(--ambar); }
+
+.demo-layout { display: grid; grid-template-columns: 1fr 420px; grid-template-rows: 1fr 94px; gap: 20px; height: 100%; }
+.demo-story { padding: 34px 38px; display: flex; flex-direction: column; }
+.demo-story__claim { margin: 22px 0 0; max-width: 780px; font: 600 44px/1.16 var(--fuente-display); letter-spacing: -.05em; }
+.demo-story__claim strong { color: var(--verde); }
+.demo-story__steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: auto; }
+.demo-story__step { border-top: 2px solid var(--linea); padding-top: 16px; font: 21px/1.3 var(--fuente-mono); }
+.demo-story__step b { display: block; margin-bottom: 8px; color: var(--azul); font-size: 17px; }
+.demo-qr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 18px; }
+.demo-qr img { display: block; width: 340px; height: 340px; object-fit: contain; border: 12px solid #fff; border-radius: 8px; background: #fff; }
+.demo-qr span { font: 18px var(--fuente-mono); color: var(--azul); }
+.demo-url { grid-column: 1 / -1; display: flex; align-items: center; gap: 26px; padding: 18px 26px; }
+.demo-url__label { flex: none; color: var(--verde); font: 19px var(--fuente-mono); }
+.demo-url a { color: var(--azul); font: 25px var(--fuente-mono); text-decoration-thickness: 2px; text-underline-offset: 5px; overflow-wrap: anywhere; }
+.demo-url a:hover { color: var(--verde); }
+
+.agentes-layout { display: grid; grid-template-rows: 1fr 173px; gap: 16px; height: 100%; }
+.agentes-diagrama, .agentes-cadena { margin: 0; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; }
+.agentes-diagrama .lab-figure, .agentes-cadena .lab-figure { flex: 1; }
+.agentes-cadena { flex-direction: row; align-items: center; }
+.agentes-cadena .lab-figure { width: 68%; height: 100%; }
+.agentes-cadena .lab-figure { background: #071b23; }
+.agentes-cadena figcaption { padding: 0 0 0 20px; font: 19px/1.35 var(--fuente-mono); color: var(--texto); }
+.agentes-cadena strong { color: var(--verde); }
+
+.resultados-layout { display: grid; grid-template-columns: 353px 1fr; gap: 22px; height: 100%; }
+.resultados-metrica { padding: 28px 22px; display: flex; flex-direction: column; }
+.resultados-metrica__numero { margin: 7px 0 0; font: 650 142px/.95 var(--fuente-display); letter-spacing: -.09em; color: var(--verde); }
+.resultados-metrica__frase { margin: 9px 0 24px; font: 600 25px/1.22 var(--fuente-texto); }
+.resultados-metrica__detalle { margin: 0; font: 18px/1.55 var(--fuente-mono); color: var(--texto-2); }
+.resultados-metrica__detalle strong { color: var(--azul); }
+.resultados-metrica__base { margin-top: auto; border-top: 1px solid var(--linea); padding-top: 15px; font: 16px/1.4 var(--fuente-mono); color: var(--ambar); }
+.resultados-grafica { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+.resultados-grafica .lab-figure { flex: 1; }
+
+.cierre-layout { display: grid; grid-template-columns: 435px 1fr; gap: 18px; height: 100%; }
+.cierre-numeros { padding: 28px 27px; display: flex; flex-direction: column; }
+.cierre-numeros__acierto { font: 650 75px/1 var(--fuente-display); letter-spacing: -.06em; color: var(--verde); margin: 11px 0 0; }
+.cierre-numeros__neto { font: 650 59px/1 var(--fuente-display); letter-spacing: -.06em; color: var(--ambar); margin: auto 0 0; }
+.cierre-numeros p { margin: 7px 0 0; font-size: 21px; line-height: 1.32; }
+.cierre-chart { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.cierre-chart .lab-figure { flex: 1; }
+
+body.notas-on .slide.activa .notas { box-shadow: 0 -15px 40px rgba(0,0,0,.55); }
+@media print { .slide { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
 </style>
 </head>
 <body>
@@ -1152,12 +1344,7 @@ html.estatico *::after {
 <div id="stage">
   <main id="deck" tabindex="-1" aria-label="Presentación PolyRL">
 
-    <!--
-      Plantillas de la sección 5.2 de DESIGN.md:
-      .slide--portada, .slide--declaracion, .slide--datos, .slide--diagrama,
-      .slide--comparacion, .slide--tabla y .slide--demo-cierre.
-      Las slides 1 a 3 usan portada, diagrama y tabla.
-    -->
+    <!-- Portada conservada; siete composiciones nuevas en la línea de Laboratorio nocturno. -->
 
     <!-- Slide 1: portada -->
     <section class="slide slide--portada activa" id="slide-1" data-titulo="PolyRL" data-pasos="0" aria-label="Slide 1: PolyRL">
@@ -1188,8 +1375,8 @@ html.estatico *::after {
       </div>
 
       <footer class="slide__pie">
-        <span class="pie__fuente">Fuente: DESIGN.md, sección 3</span>
-        <span class="pie__num" data-num>01 / 03</span>
+        <span class="pie__fuente">POLYRL // DATOS → DECISIÓN</span>
+        <span class="pie__num" data-num>01 / 08</span>
         <svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
           <line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/>
           <path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -1204,170 +1391,96 @@ html.estatico *::after {
       </aside>
     </section>
 
-    <!-- Slide 2: descripción del problema -->
-    <section class="slide slide--diagrama" id="slide-2" data-titulo="Una pregunta binaria cada hora" data-pasos="0" aria-label="Slide 2: Una pregunta binaria cada hora">
-      <header class="slide__cabecera">
-        <p class="kicker">Descripción del problema</p>
-        <h2 class="slide__titulo">Una pregunta binaria cada hora</h2>
-      </header>
-
-      <div class="slide__cuerpo">
-        <div class="diagrama">
-          <div class="diagrama__mercado">
-            <div class="mercado__cabecera">
-              <p class="label">Mercado binario</p>
-              <span class="mercado__hora">cada hora</span>
-            </div>
-
-            <div class="eje" role="img" aria-label="Eje de precio entre 0 y 1, con una marca en 0,5 y el precio YES señalado. Al cierre, el token ganador paga 1 y el perdedor paga 0.">
-              <div class="eje__linea"></div>
-              <span class="eje__marca" style="left: 0">0</span>
-              <span class="eje__marca" style="left: 50%">0,5</span>
-              <span class="eje__marca" style="left: 100%">1</span>
-              <div class="eje__punto" style="left: 61%"><span>p(YES)</span></div>
-              <div class="eje__resolucion">
-                <strong>Resolución</strong>
-                <span>El token ganador paga 1; el perdedor paga 0.</span>
-              </div>
-            </div>
-
-            <div class="tokens">
-              <div class="token token--yes">
-                <svg viewBox="0 0 28 28" aria-hidden="true" focusable="false">
-                  <path d="M14 4 L25 23 H3 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                </svg>
-                <div>
-                  <span class="token__nombre">YES</span>
-                  <span class="token__pago">paga 1 si gana</span>
-                </div>
-              </div>
-              <div class="token token--no">
-                <svg viewBox="0 0 28 28" aria-hidden="true" focusable="false">
-                  <path d="M14 24 L3 5 H25 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                </svg>
-                <div>
-                  <span class="token__nombre">NO</span>
-                  <span class="token__pago">paga 1 si gana</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="diagrama__acciones">
-            <p class="label">El agente decide</p>
-            <ul class="acciones">
-              <li><code>WAIT</code><span>Esperar o mantener la posición</span></li>
-              <li><code>BUY_YES</code><span>Abrir una posición en YES</span></li>
-              <li><code>BUY_NO</code><span>Abrir una posición en NO</span></li>
-              <li><code>SELL</code><span>Cerrar la posición abierta</span></li>
-            </ul>
-            <p class="nota">Todo en simulación, con saldo ficticio. El agente nunca opera en vivo.</p>
-          </div>
-        </div>
-      </div>
-
-      <footer class="slide__pie">
-        <span class="pie__fuente">Fuente: <code>docs/01_idea_general.md</code>, secciones 1 y 2</span>
-        <span class="pie__num" data-num>02 / 03</span>
-        <svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+<section class="slide lab-slide lab-slide--mercado" id="slide-2" data-titulo="Una pregunta binaria cada hora" data-pasos="0" aria-label="Slide 2: Una pregunta binaria cada hora">
+<header class="slide__cabecera"><p class="kicker">Descripción del problema</p><h2 class="slide__titulo">Una pregunta binaria cada hora</h2></header>
+<div class="slide__cuerpo"><div class="mercado-layout">
+  <div class="lab-panel lab-panel--accent mercado-teoria">
+    <div class="lab-panel__label">MERCADO_BINARIO / BTC_1H</div>
+    <p class="mercado-teoria__pago">YES / NO</p>
+    <div class="mercado-teoria__linea" aria-hidden="true"></div><div class="mercado-teoria__marcas"><span>0</span><span>precio p</span><span>1</span></div>
+    <p class="mercado-teoria__texto">Al cierre, el lado ganador paga <strong>1</strong> y el perdedor <strong>0</strong>.</p>
+    <div class="mercado-acciones"><code>WAIT</code><code>BUY_YES</code><code>BUY_NO</code><code>SELL</code></div>
+  </div>
+  <figure class="lab-panel mercado-figura"><div class="lab-figure"><img src="img/02_costo_de_operar.png" alt="Costo de operar como porcentaje del monto invertido, según precio y spread"></div><figcaption class="lab-caption">Acertar no basta: el precio de entrada cambia el margen.</figcaption></figure>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">FIG. 6 / INFORME FINAL · MERCADO HORARIO</span><span class="pie__num" data-num>02 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/><path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>Cada mercado se resuelve en una hora. El precio está entre cero y uno; el lado ganador paga uno y el perdedor cero. El agente puede esperar, comprar YES, comprar NO o vender.</p><p>Acertar el resultado no basta: el precio pagado y los costos determinan el retorno. Comprar casi a uno deja muy poco margen. Todo se simuló con saldo ficticio.</p></aside>
+</section>
+    <section class="slide lab-slide lab-slide--datos" id="slide-3" data-titulo="12 294 mercados, tres cortes" data-pasos="0" aria-label="Slide 3: 12 294 mercados, tres cortes">
+<header class="slide__cabecera"><p class="kicker">Análisis / datos y tiempo</p><h2 class="slide__titulo">12 294 mercados, tres cortes</h2></header>
+<div class="slide__cuerpo"><div class="datos-layout">
+  <div class="lab-panel lab-panel--accent datos-numero"><span class="lab-panel__label">MERCADOS_EVALUABLES</span><strong class="datos-numero__total">12 294</strong>
+    <div class="datos-numero__lista"><div class="datos-numero__fila"><span>train</span><span>8 682</span></div><div class="datos-numero__fila"><span>val</span><span>1 861</span></div><div class="datos-numero__fila"><span>test</span><span>1 751</span></div></div>
+    <div class="datos-numero__barra" role="img" aria-label="Corte cronológico 70 por ciento entrenamiento, 15 por ciento validación y 15 por ciento test"><span style="width:70%"></span><span style="width:15%"></span><span style="width:15%"></span></div>
+  </div>
+  <figure class="lab-panel datos-chart"><div class="lab-figure"><img src="img/03_desfase_precio_spot.png" alt="Correlación del cambio de precio de YES y del spot BTC por desfase en minutos; el máximo aparece a un minuto"></div><figcaption class="datos-chart__foot">PRECIO DISPONIBLE: 52 s DE ANTIGÜEDAD MEDIANA</figcaption></figure>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">MANIFEST DEL DATASET · EDA DE ENTRENAMIENTO</span><span class="pie__num" data-num>03 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/><path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>El corte fue cronológico: 8 682 mercados para entrenar, 1 861 para validar y 1 751 para test. Los mercados de test no se usaron para seleccionar modelos.</p><p>La figura muestra el desfase entre precio de mercado y BTC. En entrenamiento, el precio disponible tenía 52 segundos de antigüedad mediana. Una oportunidad aparente puede venir de comparar datos con relojes distintos.</p></aside>
+</section>
+    <section class="slide lab-slide lab-slide--simulacion" id="slide-4" data-titulo="Decidir no es ejecutar" data-pasos="0" aria-label="Slide 4: Decidir no es ejecutar">
+<header class="slide__cabecera"><p class="kicker">Simulación honesta</p><h2 class="slide__titulo">Decidir no es ejecutar</h2></header>
+<div class="slide__cuerpo"><div class="simulacion-layout">
+  <div class="simulacion-imagenes">
+    <figure class="lab-panel lab-panel--accent"><div class="lab-figure"><img src="img/04_bucle_decision_compacto.svg" alt="Bucle observar estado, decidir acción, actualizar cartera y avanzar al siguiente minuto"></div><figcaption class="lab-caption">WAIT también es una acción.</figcaption></figure>
+    <figure class="lab-panel"><div class="lab-figure"><img src="img/04_ventaja_aparente.png" alt="La ventaja medida con el precio actual desaparece al usar el precio siguiente y los costos"></div><figcaption class="lab-caption">El precio ejecutable cambia el resultado.</figcaption></figure>
+  </div>
+  <div class="simulacion-pasos" aria-label="Secuencia temporal de la simulación"><span>dato disponible</span><span>decisión t</span><span>t + 2 s</span><span>precio posterior</span></div>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">FIG. 5 / INFORME FINAL · ENTORNO DE SIMULACIÓN</span><span class="pie__num" data-num>04 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/><path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>El agente observa precio disponible, tiempo y cartera, y puede esperar, comprar o vender hasta 60 veces por mercado. Cada compra usa 20 USDC ficticios.</p><p>Una orden se simula después de dos segundos, al primer precio disponible, con spread y comisión. La ventaja que parecía existir al comprar al precio del mismo instante desaparece al ejecutar con un precio posterior.</p></aside>
+</section>
+    <section class="slide lab-slide lab-slide--demo" id="slide-5" data-titulo="Una decisión se puede inspeccionar" data-pasos="0" aria-label="Slide 5: Una decisión se puede inspeccionar">
+<header class="slide__cabecera"><p class="kicker">Demo / una trayectoria</p><h2 class="slide__titulo">Una decisión se puede inspeccionar</h2></header>
+<div class="slide__cuerpo"><div class="demo-layout">
+  <div class="lab-panel lab-panel--accent demo-story">
+    <span class="lab-panel__label">TRAYECTORIA / SALDO FICTICIO</span>
+    <p class="demo-story__claim">Del estado a la acción, <strong>paso a paso.</strong></p>
+    <div class="demo-story__steps" aria-label="Qué revisar en la demostración">
+      <div class="demo-story__step"><b>01 / ESTADO</b>Precio y tiempo</div>
+      <div class="demo-story__step"><b>02 / ACCIÓN</b>Comprar o esperar</div>
+      <div class="demo-story__step"><b>03 / CARTERA</b>Posición y resultado</div>
+    </div>
+  </div>
+  <a class="lab-panel demo-qr" href="https://polyrl-demo-248394644314.us-east1.run.app" target="_blank" rel="noopener noreferrer" aria-label="Abrir la demo de PolyRL en una pestaña nueva"><img src="img/05_demo_qr.svg" alt="Código QR que abre la demo de PolyRL"><span>ESCANEA PARA ABRIR</span></a>
+  <div class="lab-panel demo-url"><span class="demo-url__label">DEMO_EN_VIVO</span><a href="https://polyrl-demo-248394644314.us-east1.run.app" target="_blank" rel="noopener noreferrer">https://polyrl-demo-248394644314.us-east1.run.app</a></div>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">DEMO / DATOS HISTÓRICOS · SIMULACIÓN</span><span class="pie__num" data-num>05 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
           <line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/>
           <path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
           <path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
           <line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/>
-        </svg>
-      </footer>
+        </svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>Tras explicar el simulador, abrir una trayectoria de la demo y señalar el estado disponible, la acción del agente y cómo cambia la cartera. Es una forma de inspeccionar una decisión concreta.</p><p>Los datos son históricos y el saldo es ficticio. Invitar a escanear el QR si hay tiempo y volver después a la comparación de los cuatro agentes.</p></aside>
+</section>
+    <section class="slide lab-slide lab-slide--agentes" id="slide-6" data-titulo="Cuatro agentes, una misma prueba" data-pasos="0" aria-label="Slide 6: Cuatro agentes, una misma prueba">
+<header class="slide__cabecera"><p class="kicker">Método / evaluación compartida</p><h2 class="slide__titulo">Cuatro agentes, una misma prueba</h2></header>
+<div class="slide__cuerpo"><div class="agentes-layout">
+  <figure class="lab-panel lab-panel--accent agentes-diagrama"><div class="lab-figure"><img src="img/06_familias_agentes.svg" alt="PPO y DQN interactúan con el simulador; CQL aprende de transiciones fijas; BC imita acciones; todos usan mismos costos y test"></div><figcaption class="lab-caption">PPO · DQN | CQL | BC &nbsp;·&nbsp; cinco semillas por agente</figcaption></figure>
+  <figure class="lab-panel agentes-cadena"><div class="lab-figure"><img src="img/07_cadena_verificacion_compacta.svg" alt="Cadena de trabajo: validar datos, simular, entrenar, comprobar y mostrar"></div><figcaption>Referencia:<br><strong>NoTrade = WAIT siempre</strong><br>retorno cero</figcaption></figure>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">CONFIGS · REPORTS/TEST · CADENA DE VERIFICACIÓN</span><span class="pie__num" data-num>06 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/><path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>PPO y DQN interactúan con el simulador; CQL aprende de transiciones fijas y BC imita acciones observadas. Las configuraciones se eligieron en validación y el test se abrió una sola vez.</p><p>NoTrade no es un modelo entrenado: siempre elige WAIT y obtiene retorno cero. Todas las políticas se evalúan con los mismos datos y costos.</p></aside>
+</section>
+    <section class="slide lab-slide lab-slide--resultados" id="slide-7" data-titulo="Nadie superó a NoTrade" data-pasos="0" aria-label="Slide 7: Nadie superó a NoTrade">
+<header class="slide__cabecera"><p class="kicker">Evaluación final / test</p><h2 class="slide__titulo">Nadie superó a NoTrade</h2></header>
+<div class="slide__cuerpo"><div class="resultados-layout">
+  <div class="lab-panel lab-panel--accent resultados-metrica"><span class="lab-panel__label">RESULTADO</span><strong class="resultados-metrica__numero">0/4</strong><p class="resultados-metrica__frase">agentes superaron la referencia</p><p class="resultados-metrica__detalle"><strong>PPO y DQN</strong> equivalentes<br><strong>CQL</strong> inferior<br><strong>BC</strong> evidencia limitada</p><p class="resultados-metrica__base">NoTrade = esperar siempre · retorno 0</p></div>
+  <figure class="lab-panel resultados-grafica"><div class="lab-figure"><img src="img/08_intervalos_test.png" alt="Diferencias e intervalos ajustados de PPO, DQN, CQL y BC frente a NoTrade, en modo normal y estricto; nadie llega al umbral de mejora de uno por ciento"></div><figcaption class="lab-caption">IC ajustado 98,75 % · mejora mínima relevante +1 % · BC: 23 mercados informativos</figcaption></figure>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">FIG. 10 / INFORME FINAL · REPORTS/TEST/COMPARISON.CSV</span><span class="pie__num" data-num>07 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/><path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>En los 1 751 mercados de test, PPO y DQN obtuvieron diferencias pequeñas equivalentes a cero dentro del margen predefinido; CQL fue inferior. BC casi no operó y su intervalo es poco confiable.</p><p>Señalar primero la línea de cero y luego el umbral de más uno por ciento. Equivalente no significa idéntico a NoTrade. El modo estricto conserva la conclusión para PPO y CQL; DQN pasa a inconcluso.</p></aside>
+</section>
+    <section class="slide lab-slide lab-slide--cierre" id="slide-8" data-titulo="Acertar casi siempre aún puede perder" data-pasos="0" aria-label="Slide 8: Acertar casi siempre aún puede perder">
+<header class="slide__cabecera"><p class="kicker">Diagnóstico / cierre</p><h2 class="slide__titulo">Acertar casi siempre aún puede perder</h2></header>
+<div class="slide__cuerpo"><div class="cierre-layout">
+  <div class="lab-panel lab-panel--accent cierre-numeros"><span class="lab-panel__label">PPO / COMPRAS A 0,98–1</span><strong class="cierre-numeros__acierto">99,76 %</strong><p>de lados acertados</p><strong class="cierre-numeros__neto">−27,23 USDC</strong><p>netos en 838 compras</p></div>
+  <figure class="lab-panel cierre-chart"><div class="lab-figure"><img src="img/09_asimetria_ppo.png" alt="En compras de PPO a precio entre 0,98 y 1, ganancia media de 0,02 USDC frente a pérdida media de 2,14 USDC"></div><figcaption class="lab-caption">Muchas ganancias pequeñas; pocas pérdidas grandes.</figcaption></figure>
 
-      <aside class="notas" aria-label="Notas del orador">
-        <p>Cada mercado es una pregunta binaria que se resuelve en una hora. El precio entre 0 y 1 se lee como probabilidad implícita; al cerrar, el token ganador paga 1 y el perdedor 0.</p>
-        <p>El agente elige entre esperar, comprar YES, comprar NO o vender. No hay dinero real ni conexión a una wallet.</p>
-      </aside>
-    </section>
-
-    <!-- Slide 3: análisis del dataset -->
-    <section class="slide slide--tabla" id="slide-3" data-titulo="12 294 mercados, tres cortes" data-pasos="0" aria-label="Slide 3: 12 294 mercados, tres cortes">
-      <header class="slide__cabecera">
-        <p class="kicker">Análisis</p>
-        <h2 class="slide__titulo">12 294 mercados, tres cortes</h2>
-      </header>
-
-      <div class="slide__cuerpo">
-        <div class="tabla">
-          <div class="tabla__marco">
-            <table class="datos">
-              <caption>Mercados por corte cronológico</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Corte</th>
-                  <th scope="col" class="num">Mercados</th>
-                  <th scope="col" class="num">Proporción</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row">Entrenamiento</th>
-                  <td class="num">8 682</td>
-                  <td class="num">70 %</td>
-                </tr>
-                <tr>
-                  <th scope="row">Validación</th>
-                  <td class="num">1 861</td>
-                  <td class="num">15 %</td>
-                </tr>
-                <tr>
-                  <th scope="row">Prueba</th>
-                  <td class="num">1 751</td>
-                  <td class="num">15 %</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <th scope="row">Total</th>
-                  <td class="num">12 294</td>
-                  <td class="num"></td>
-                </tr>
-              </tfoot>
-            </table>
-
-            <div class="cortes__etiquetas" aria-hidden="true">
-              <span class="train">Entrenamiento</span>
-              <span class="val">Validación</span>
-              <span class="test">Prueba</span>
-            </div>
-            <div class="cortes__barra" role="img" aria-label="El 70 por ciento de los mercados es de entrenamiento, el 15 por ciento de validación y el 15 por ciento de prueba">
-              <span class="train">70 %</span>
-              <span class="val">15 %</span>
-              <span class="test">15 %</span>
-            </div>
-            <div class="cortes__fechas">
-              <span>2025-05-28</span>
-              <span>2026-10-30</span>
-            </div>
-          </div>
-
-          <div class="tabla__lado">
-            <p class="label">Por qué importa</p>
-            <p>El dataset se parte por fecha, no al azar: entrenamiento, validación y prueba no comparten mercados.</p>
-            <p>La prueba queda al final del periodo, como una simulación de lo que el agente vería después.</p>
-          </div>
-        </div>
-      </div>
-
-      <footer class="slide__pie">
-        <span class="pie__fuente">Fuente: <code>data/processed/btc_updown_1h_v1/manifest.json</code></span>
-        <span class="pie__num" data-num>03 / 03</span>
-        <svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-          <line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/>
-          <path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/>
-        </svg>
-      </footer>
-
-      <aside class="notas" aria-label="Notas del orador">
-        <p>El dataset tiene 12 294 mercados. El corte es cronológico: 8 682 para entrenar, 1 861 para validar y 1 751 para probar, con la proporción 70/15/15.</p>
-        <p>Cubre del 28 de mayo de 2025 al 30 de octubre de 2026. Ningún mercado de prueba se usó para entrenar.</p>
-      </aside>
-    </section>
+</div></div>
+<footer class="slide__pie"><span class="pie__fuente">INSPECCIÓN DE TEST</span><span class="pie__num" data-num>08 / 08</span><svg class="monograma" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width="2"/><path d="M8 22 L20 6 L32 22 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 26 L20 42 L32 26 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></footer>
+<aside class="notas" aria-label="Notas del orador"><p>En las 838 compras de PPO a precios entre 0,98 y uno, el lado fue correcto el 99,76 por ciento de las veces. Una ganancia media fue solo 0,02 USDC; una pérdida media, 2,14 USDC. Ese grupo perdió 27,23 USDC netos.</p><p>La inspección explica la asimetría, pero la conclusión principal viene de la prueba de la diapositiva anterior. Se limita a estos datos, costos y condiciones de simulación. Cerrar retomando la pregunta inicial y abrir preguntas.</p></aside>
+</section>
 
   </main>
 </div>
