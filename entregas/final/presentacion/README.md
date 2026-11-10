@@ -12,4 +12,4 @@ La presentación tiene **8 diapositivas** y sigue la propuesta visual [Laborator
 
 ## Uso
 
-Abrir `index.html` en un navegador moderno. Flechas, espacio, `PageDown` o `Enter` avanzan; flecha izquierda, `PageUp` o `Backspace` retroceden. `o` abre la vista general, `n` las notas, `p` pantalla completa y `r` repite la animación. `?pdf` muestra las ocho diapositivas seguidas para imprimir; `?guion` añade las notas. El enlace a la demo de la diapositiva 5 y su QR permiten abrirla durante la exposición.
+Abrir `index.html` en un navegador moderno. Flechas, espacio, `PageDown` o `Enter` avanzan; flecha izquierda, `PageUp` o `Backspace` retroceden. `o` abre la vista general, `n` las notas, `p` pantalla completa y `r` repite la animación. `?pdf` muestra las ocho diapositivas seguidas para imprimir; `?guion` añade las notas. `./generar_pdf.sh` imprime ese modo con Chrome o Chromium sin ventana y deja [presentacion.pdf](presentacion.pdf), el que se sube a Canvas. El enlace a la demo de la diapositiva 5 y su QR permiten abrirla durante la exposición.
