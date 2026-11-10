@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 430" role="img" aria-labelledby="title desc">
+  <title id="title">Herramientas por etapa del experimento</title>
+  <desc id="desc">Las fuentes y Pandera validan datos; Gymnasium define el entorno; Stable Baselines3 y d3rlpy entrenan; pytest y GitHub Actions verifican; Streamlit muestra las trayectorias. Las propuestas de IA pasan por fuentes, pruebas y decisión humana.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L9 4.5 L0 9 Z" fill="#1D4ED8"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="430" fill="#F7F8FA"/>
+  <g font-family="Inter,Arial,sans-serif" fill="#0B1220">
+    <text x="59" y="53" font-size="22" font-weight="700">Cada herramienta sostiene una comprobación</text>
+    <g fill="#FFFFFF" stroke="#D7DEE8" stroke-width="2">
+      <rect x="60" y="100" width="211" height="155" rx="12"/>
+      <rect x="298" y="100" width="211" height="155" rx="12"/>
+      <rect x="536" y="100" width="211" height="155" rx="12"/>
+      <rect x="774" y="100" width="211" height="155" rx="12"/>
+      <rect x="1012" y="100" width="211" height="155" rx="12"/>
+    </g>
+    <g font-size="19" font-weight="700">
+      <text x="82" y="147">Validar</text><text x="320" y="147">Simular</text>
+      <text x="558" y="147">Entrenar</text><text x="796" y="147">Comprobar</text>
+      <text x="1034" y="147">Mostrar</text>
+    </g>
+    <g font-size="16" fill="#5A6472">
+      <text x="82" y="185">APIs · Pandera</text><text x="320" y="185">Gymnasium</text>
+      <text x="558" y="185">SB3 · d3rlpy</text><text x="796" y="185">pytest · Actions</text>
+      <text x="1034" y="185">Streamlit</text>
+    </g>
+    <g stroke="#1D4ED8" stroke-width="3" marker-end="url(#arrow)">
+      <path d="M273 178 H292"/><path d="M511 178 H530"/>
+      <path d="M749 178 H768"/><path d="M987 178 H1006"/>
+    </g>
+    <rect x="60" y="293" width="1163" height="83" rx="12" fill="#EDF1F7"/>
+    <text x="83" y="326" font-size="16" font-weight="700" fill="#1D4ED8">REVISIÓN HUMANA</text>
+    <text x="83" y="355" font-size="19">Propuesta de IA → fuente o prueba → decisión; uv fija el entorno de ejecución.</text>
+  </g>
+</svg>

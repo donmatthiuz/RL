@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 430" role="img" aria-labelledby="title desc">
+  <title id="title">Bucle de decisión de un mercado horario</title>
+  <desc id="desc">El agente observa mercado, cartera y tiempo; elige esperar, comprar YES, comprar NO o vender; la cartera y los costos cambian antes del siguiente minuto.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#1D4ED8"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="430" fill="#F7F8FA"/>
+  <g font-family="Inter,Arial,sans-serif" fill="#0B1220">
+    <text x="75" y="54" font-size="22" font-weight="700">Una decisión por minuto, hasta resolver el mercado</text>
+    <g stroke="#D7DEE8" stroke-width="2" fill="#FFFFFF">
+      <rect x="75" y="95" width="315" height="224" rx="14"/>
+      <rect x="475" y="95" width="330" height="224" rx="14"/>
+      <rect x="890" y="95" width="315" height="224" rx="14"/>
+    </g>
+    <text x="103" y="139" font-size="16" font-weight="700" fill="#1D4ED8">OBSERVAR</text>
+    <text x="103" y="187" font-size="26" font-weight="700">Estado</text>
+    <text x="103" y="225" font-size="20">Precio disponible</text>
+    <text x="103" y="254" font-size="20">Cartera · tiempo restante</text>
+    <text x="503" y="139" font-size="16" font-weight="700" fill="#1D4ED8">DECIDIR</text>
+    <text x="503" y="187" font-size="26" font-weight="700">Acción</text>
+    <text x="503" y="225" font-size="20">WAIT · BUY_YES</text>
+    <text x="503" y="254" font-size="20">BUY_NO · SELL</text>
+    <text x="918" y="139" font-size="16" font-weight="700" fill="#1D4ED8">ACTUALIZAR</text>
+    <text x="918" y="187" font-size="26" font-weight="700">Cartera</text>
+    <text x="918" y="225" font-size="20">Posición · saldo</text>
+    <text x="918" y="254" font-size="20">Costo · recompensa</text>
+    <path d="M400 205 H457" stroke="#1D4ED8" stroke-width="4" marker-end="url(#arrow)"/>
+    <path d="M815 205 H872" stroke="#1D4ED8" stroke-width="4" marker-end="url(#arrow)"/>
+    <path d="M1048 335 V370 H230 V335" fill="none" stroke="#1D4ED8" stroke-width="4" marker-end="url(#arrow)"/>
+    <rect x="505" y="349" width="270" height="43" rx="21" fill="#EDF1F7"/>
+    <text x="640" y="377" text-anchor="middle" font-size="18" font-weight="600">Siguiente minuto</text>
+  </g>
+</svg>
