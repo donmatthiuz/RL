@@ -39,6 +39,8 @@ Code. El equipo lo revisa y completa.
 | P20 | 09/11/2026 | Claude Code y MCP de Chrome | Ajustes de la demo con la skill de Streamlit | Satisfactorio |
 | P21 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Diseño de la presentación final | Satisfactorio: corrigió la sección 9 tras la nota de R1 |
 | P22 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Fuentes, referencias y registro de IA del diseño | Satisfactorio |
+| P23 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Base de `index.html` y slides 1 a 3 | Satisfactorio: composición y accesibilidad corregidas |
+| P24 | 09/11/2026 | Claude Code y Context7 | Publicar la demo en Cloud Run | Satisfactorio: imagen probada en local antes de desplegar |
 
 ## Entradas
 
@@ -370,6 +372,56 @@ Code. El equipo lo revisa y completa.
   "entrega de otro equipo" por "proyecto Sentinel del mismo autor".
 - **Aporte:** `DESIGN.md` con la sección 9 real, la tabla de fuentes por slide, las referencias
   ubicadas y los pendientes marcados; `README.md` de la presentación y este registro.
+
+### P23 — Base de `index.html` y slides 1 a 3
+
+- **Prompt:** construir la base de `entregas/final/presentacion/index.html` según el `DESIGN.md`:
+  tokens, fuentes WOFF2, navegación, modos `?pdf` y `?guion`, las siete plantillas de la sección
+  5.2 y las slides 1 a 3 con contenido real y pie de fuente. Verificar en Chrome a 1920 $\times$
+  1080, 1280 $\times$ 720 y 1024 $\times$ 768, pasar el UI Finish-Gate Reviewer solo por esas tres
+  slides y abrir un PR hacia `proyecto`. No construir las slides 4 a 10 ni tocar `app/`, `src/`,
+  `tests/` o `reports/`.
+- **Herramienta:** OpenCode con el modelo DeepSeek V4.1 Flash Free, en la rama
+  `feat/doc-10-slides`.
+- **Resultado:** satisfactorio.
+- **Por qué:** el `DESIGN.md` ya tenía los tokens, la retícula, las plantillas y las fuentes de
+  cada cifra, así que la implementación no inventó contenido. Los fallos fueron de composición y
+  accesibilidad: a 1280 px el lienzo quedaba descentrado y se salía del viewport, la caja de
+  resolución de la slide 2 tapaba la marca del `1`, la barra 70/15/15 recortaba la etiqueta de
+  validación, la barra de controles desaparecía con foco y la vista general desbordaba a
+  1024 $\times$ 768.
+- **Cómo se evaluó:** capturas de las tres slides a 1920 $\times$ 1080, 1280 $\times$ 720 y
+  1024 $\times$ 768 con Chrome/Playwright; cero errores de consola y cero peticiones de red;
+  navegación con flechas, `Home`, `End`, `o` y `n`; `?pdf` y `?guion` exportados a tres páginas de
+  1600 $\times$ 900 px; ratios de contraste calculados sobre los tokens; fuentes en estado
+  `loaded`; prueba de foco con `Tab` y `Shift+Tab` en la vista general y en la barra de controles.
+- **Corrección:** el lienzo se centra con `translate(-50%, -50%) scale(s)`; la caja de resolución
+  se movió arriba del eje; la barra usa nombres sobre cada segmento y porcentajes dentro; los
+  controles se ocultan en `?estatico` pero no con `prefers-reduced-motion`; la barra permanece
+  visible con foco; la vista general atrapa el foco, inertiza el fondo y pasa a dos columnas por
+  debajo de 1156 px; el campo de la portada solo se anima en la primera carga o con `r`.
+- **Aporte:** `index.html` con la base, las siete plantillas y las slides 1 a 3; `fonts/` con los
+  WOFF2 y las licencias OFL; el `README.md` de la presentación actualizado.
+
+### P24 — Publicar la demo en Cloud Run
+
+- **Prompt:** "este proyecto lo subiremos a google cloud, ¿qué necesitamos?" y, con el proyecto de
+  gcloud ya iniciado, "dame lo que se necesita para poder desplegar la página y los artefactos
+  necesarios para su funcionamiento".
+- **Herramienta:** Claude Code, con la documentación de Cloud Run consultada en Context7.
+- **Resultado:** satisfactorio.
+- **Por qué:** la documentación oficial marcó tres requisitos que no son obvios: Cloud Run corta
+  los websockets de Streamlit al llegar al timeout, la afinidad de sesión evita que un usuario
+  cambie de instancia, y en proyectos nuevos la cuenta de Cloud Build necesita
+  `roles/run.builder` para construir desde el código. Leer `app/core.py` mostró que la demo también
+  lee `configs/` y los reportes versionados, no solo `app/`.
+- **Cómo se evaluó:** `make demo-imagen` construyó la imagen y la abrió en local; Playwright
+  recorrió las cuatro páginas sin excepciones ni errores. Se revisó por dentro que la imagen no
+  tuviera `keys/`, `.env`, `data/` ni `models/`, y `gcloud meta list-files-for-upload` confirmó
+  que solo se suben 147 archivos (6,3 MB) de `app/`, `src/`, `configs/`, `reports/` y `.streamlit/`.
+- **Corrección:** ninguna en el resultado. La CLI de Context7 falló por la clave y se usó su MCP.
+- **Aporte:** `Dockerfile`, `.dockerignore` y `.gcloudignore` como listas blancas, `make
+  demo-imagen` y `make deploy-gcp`, el ADR-018 y los pasos del README.
 
 ## Plantilla
 

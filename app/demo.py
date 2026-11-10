@@ -5,7 +5,7 @@ calculadas por `backtest` y `evaluate`, así que no necesita GPU ni red, y no vu
 La identidad visual sale de `entregas/final/presentacion/DESIGN.md` (tema en `.streamlit/`).
 
 Correr con `make demo`. Sin trayectorias en `reports/trajectories/` usa la muestra de test de
-`app/trayectorias/`, que es la que ve la demo publicada en Streamlit Community Cloud (EVA-09).
+`app/trayectorias/`, que es la que ve la demo publicada en Cloud Run (EVA-09).
 """
 
 from pathlib import Path

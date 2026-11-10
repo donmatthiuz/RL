@@ -34,13 +34,18 @@ FONT_DIR ?= .fonts-entregable
 NOTO_DIR ?= /usr/share/fonts/truetype/noto
 DEJAVU_DIR ?= /usr/share/fonts/truetype/dejavu
 
+# Demo en Cloud Run (EVA-09). El proyecto sale de gcloud config; Streamlit usa websockets, por eso
+# el timeout de una hora y la afinidad de sesión.
+GCP_SERVICE ?= polyrl-demo
+GCP_REGION ?= us-east1
+
 # Claves locales en keys/<nombre>.key. Para un servicio nuevo, agregar su nombre aquí.
 KEYS := context7
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install hooks keys-init lint format typecheck test coverage check \
 	pre-commit config capture capture-spot capture-trades dataset backtest collect-offline train report behavior demo manifest entregable eda \
-	release-reportes release-modelos demo-muestra
+	release-reportes release-modelos demo-muestra demo-imagen deploy-gcp
 
 help: ## Lista los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -136,6 +141,15 @@ demo: ## Abre la demo de Streamlit con las trayectorias de reports/trajectories
 
 demo-muestra: ## Regenera la muestra de test de la demo publicada en app/trayectorias/
 	$(UV) run python app/muestra.py
+
+demo-imagen: ## Construye y abre en local la imagen de la demo publicada (http://localhost:8080)
+	docker build -t $(GCP_SERVICE) .
+	docker run --rm -p 8080:8080 $(GCP_SERVICE)
+
+deploy-gcp: ## Despliega la demo en Cloud Run con el proyecto activo de gcloud (GCP_REGION, GCP_SERVICE)
+	gcloud run deploy $(GCP_SERVICE) --source . --region $(GCP_REGION) --allow-unauthenticated \
+		--port 8080 --memory 1Gi --cpu 1 --min-instances 0 --max-instances 2 \
+		--timeout 3600 --session-affinity
 
 eda: ## Ejecuta el notebook de EDA sobre el dataset procesado (antes: make dataset)
 	$(UV) run --group notebooks jupyter execute --inplace notebooks/eda/01_eda_btc_horario.ipynb
