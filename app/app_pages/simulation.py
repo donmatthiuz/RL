@@ -251,6 +251,10 @@ def play(last: int) -> None:
 
 
 def slid() -> None:
+    # Mientras avanza, el navegador puede devolver un valor viejo del slider con el siguiente tick;
+    # no es un cambio del usuario y, si se tomara, la reproducción retrocede y se pausa sola.
+    if st.session_state.playing:
+        return
     st.session_state.step = st.session_state.w_step
     stop()
 
