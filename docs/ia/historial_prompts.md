@@ -42,6 +42,7 @@ Code. El equipo lo revisa y completa.
 | P23 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Base de `index.html` y slides 1 a 3 | Satisfactorio: composición y accesibilidad corregidas |
 | P24 | 09/11/2026 | Claude Code y Context7 | Publicar la demo en Cloud Run | Satisfactorio: imagen probada en local antes de desplegar |
 | P25 | 09/11/2026 | Claude Code | Revisar las slides de Mathew y cerrar el tablero | Satisfactorio: faltaban el script y el PDF de las slides |
+| P26 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Guion del video final | Satisfactorio: 7 escenas, 3:40 y cifras verificadas |
 
 ## Entradas
 
@@ -438,8 +439,44 @@ Code. El equipo lo revisa y completa.
   con 8 páginas de 1600 $\times$ 900 px y se revisó página por página; los enlaces relativos de los
   documentos tocados quedaron sin rotos.
 - **Corrección:** ninguna en las slides.
-- **Aporte:** `generar_pdf.sh`, `PolyRL_presentacion.pdf`, `DESIGN.md` restaurado con una nota de
+- **Aporte:** `generar_pdf.sh`, `presentacion.pdf`, `DESIGN.md` restaurado con una nota de
   estado y el tablero con 59 tareas hechas.
+
+### P26 — Guion del video final
+
+- **Prompt:** escribir el guion del video final en `entregas/final/video/README.md` para la tarea
+  DOC-11: 3 a 4 minutos, con la solución funcionando, la implementación y los hallazgos. Usar los
+  agentes `design-visual-storyteller`, `academic-statistician` y `design-ui-finish-gate-reviewer`
+  de `.agents/`; tomar las cifras solo del informe final, `reports/test/comparison.csv` y
+  `reports/test/inspection_payoff.csv`; no tocar la demo, el código, los tests, los reportes ni el
+  informe. Registrar el prompt como P26, marcar DOC-11 como guion listo y abrir un PR con base
+  `proyecto` sin mergear.
+- **Herramienta:** OpenCode con el modelo DeepSeek V4.1 Flash Free, en la rama `docs/doc-11-video`.
+- **Resultado:** satisfactorio.
+- **Por qué:** el material ya existía y el trabajo fue seleccionar qué mostrar y qué callar. La
+  primera versión tenía cuatro problemas que los agentes detectaron: «explica el resultado»
+  atribuía causalidad a una sola observación; 838 compras y −27,23 USDC son agregados de las cinco
+  semillas, no de una corrida; «perdía cuando fallaba» confundía acertar el lado con tener una
+  operación rentable; y la fórmula no está dentro de la slide 7, además de que `make demo` bloquea
+  la terminal. El cálculo de 3:30 tampoco dejaba holgura para pausas y cambios de pantalla.
+- **Cómo se evaluó:** se leyeron las secciones 6.1 a 6.4 y 7 del informe, `comparison.csv` y
+  `inspection_payoff.csv`; se comprobaron 1 751 mercados, 76 días, cinco semillas, PPO −0,0005 con
+  IC 98,75 % [−0,0029; +0,0018], el umbral de +0,01 del stake, CQL inferior, DQN inconcluso en
+  estricto y las 838 compras con 99,76 % de acierto y −27,23 USDC netos. Se revisó la trayectoria
+  exportada de la demo para el mercado del 13/08/2026 12:00 UTC con PPO s0: el agente espera casi
+  toda la hora, compra YES cerca del cierre y termina prácticamente en cero. Se comparó el guion
+  con `GUION_DIAPOSITIVAS.md` para no repetir la presentación palabra por palabra. Los tres
+  agentes devolvieron HOLD con hallazgos concretos; tras corregirlos, el guion quedó en PASS.
+- **Corrección:** se cambió «explica» por «ilustra»; se añadió «sumando las cinco semillas»; se
+  reemplazó «perdía cuando fallaba» por la ganancia media de 0,02 USDC y la pérdida media de 2,14;
+  se precisó que la equivalencia exige todo el intervalo dentro del margen y que el umbral es 1 %
+  del stake; se aclaró que «equivalente» no es «idéntico» y que NoTrade no es un agente entrenado;
+  se añadió que BC operó muy poco; se pasó la duración objetivo a 3:40; se dejó la fórmula como
+  rótulo aparte y se prohibió ejecutar `make demo` en cámara.
+- **Aporte:** `entregas/final/video/README.md` con requisitos, las tres preguntas, siete escenas
+  cronometradas, lista de preparación, instrucciones de grabación y frases prohibidas; DOC-11
+  marcada como guion listo. Se numera P26 para continuar la serie del tablero de cierre (P25), que
+  vive en otra rama.
 
 ## Plantilla
 

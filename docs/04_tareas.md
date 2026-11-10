@@ -29,15 +29,15 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 ### Avance por rol
 
 Al 09/11/2026, de 68 tareas: 59 hechas, 4 en curso, 1 omitida y 4 sin empezar. Todos los PR
-(#1 a #45, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
+(#1 a #47, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13 y DOC-01 | INF-10 (la corre Mathew) | — |
+| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13 y DOC-01 | INF-10 (la corre Mathew) y DOC-11 (video) | — |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
-| R5 Carlos | EVA-01 a EVA-09 y EVA-11 | EVA-10 y DOC-11 (video, guion con OpenCode) | — |
+| R5 Carlos | EVA-01 a EVA-09 y EVA-11 | EVA-10 | — |
 | Todos (documento) | DOC-01 a DOC-10 | DOC-12, durante todo el proyecto | DOC-13 y DOC-14 |
 
 AGT-01 (prototipo en CartPole) se omite: los adaptadores y el test de cordura de AGT-06 ya cubren
@@ -87,10 +87,10 @@ entrenamiento final y reporte de val (#33) y test (#34).
 1. **Documento:** hecho. `Informe_final.pdf` (20 páginas, Mathew, 09/11/2026) cubre DOC-02 a
    DOC-09.
 2. **Slides:** hechas (DOC-10). Mathew dejó 8 slides, el guion y el reparto de la exposición; R1
-   agregó `generar_pdf.sh` y `PolyRL_presentacion.pdf`.
-3. **Falta:** el video (DOC-11, guion con OpenCode), el ensayo con
+   agregó `generar_pdf.sh` y `presentacion.pdf`.
+3. **Falta:** grabar el video y poner su enlace (DOC-11, Josué; guion en #47), el ensayo con
    `REPARTO_EXPOSICION.md` (DOC-13) y subir a Canvas `Informe_final.pdf` y
-   `PolyRL_presentacion.pdf` (DOC-14).
+   `presentacion.pdf` (DOC-14).
 4. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
    trayectorias (09/11/2026). `proyecto` no se lleva a `main` (decisión del 09/11/2026; el PR #38
    queda abierto).
@@ -258,9 +258,9 @@ documento vive en `entregas/final/informe/`.
 | DOC-07 | **Hecha el 09/11/2026 (Mathew).** Resultados (métricas) contra los baselines | R5 (con todos) | F4 | EVA-06 |
 | DOC-08 | **Hecha el 09/11/2026 (Mathew).** Conclusión | R5 (con todos) | F4 | DOC-07 |
 | DOC-09 | **Hecha el 09/11/2026 (Mathew).** Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
-| DOC-10 | **Hecha el 09/11/2026:** base y slides 1 a 3 (#42 y #43, R1); 8 slides en estilo Laboratorio nocturno, guion y reparto (Mathew); `generar_pdf.sh` y `PolyRL_presentacion.pdf` (R1). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
-| DOC-11 | **En curso:** guion corto con OpenCode en `entregas/final/video/`. Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
-| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P25).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-10 | **Hecha el 09/11/2026:** base y slides 1 a 3 (#42 y #43, R1); 8 slides en estilo Laboratorio nocturno, guion y reparto (Mathew); `generar_pdf.sh` y `presentacion.pdf` (#46 y #47). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
+| DOC-11 | **Guion listo el 09/11/2026 (#47); falta grabar y subir el enlace.** Video: funcionamiento, implementación y hallazgos | R1 (Josué) | F4 | EVA-08 |
+| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P26).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Reparto listo en `entregas/final/presentacion/REPARTO_EXPOSICION.md`. Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 

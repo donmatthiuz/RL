@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
-# PDF de las slides para Canvas (DOC-10 y DOC-14): imprime index.html?pdf con Chrome sin interfaz.
-# Uso: entregas/final/presentacion/generar_pdf.sh [salida.pdf]
+# Genera el PDF de las slides para Canvas: imprime index.html?pdf con Chrome o Chromium sin ventana.
+# El modo ?pdf y el @page de 1600x900 de index.html dejan una diapositiva por página.
+# Uso: ./generar_pdf.sh [salida.pdf]
 set -euo pipefail
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SALIDA="${1:-$DIR/PolyRL_presentacion.pdf}"
-CHROME="${CHROME:-$(command -v google-chrome || command -v chromium || command -v chromium-browser)}"
+cd "$(dirname "$0")"
+salida="$(realpath -m "${1:-presentacion.pdf}")"
 
-"$CHROME" --headless=new --disable-gpu --no-pdf-header-footer --virtual-time-budget=8000 \
-    --print-to-pdf="$SALIDA" "file://$DIR/index.html?pdf" 2>/dev/null
-
-if command -v pdfinfo > /dev/null; then
-    pdfinfo "$SALIDA" | grep -E '^(Pages|Page size):'
+for nombre in chromium chromium-browser google-chrome google-chrome-stable; do
+    if command -v "$nombre" >/dev/null; then
+        navegador=("$nombre")
+        break
+    fi
+done
+if [ -z "${navegador+x}" ]; then
+    if command -v nix >/dev/null; then
+        navegador=(nix shell nixpkgs#chromium -c chromium)
+    else
+        echo "Falta Chrome o Chromium en el PATH." >&2
+        exit 1
+    fi
 fi
-echo "PDF en $SALIDA"
+
+"${navegador[@]}" --headless=new --disable-gpu --no-sandbox --no-pdf-header-footer \
+    --run-all-compositor-stages-before-draw --virtual-time-budget=8000 \
+    --print-to-pdf="$salida" "file://$PWD/index.html?pdf" 2>/dev/null
+echo "PDF generado: $salida"
