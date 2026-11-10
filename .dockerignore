@@ -1,0 +1,12 @@
+# Lista blanca: solo entra al contexto lo que copia el Dockerfile. Así nunca viajan keys/, .env,
+# data/ (unos 2 GB), models/ ni las trayectorias completas.
+/*
+!/Dockerfile
+!/.streamlit/
+!/app/
+!/configs/
+!/reports/
+!/src/
+/reports/trajectories/
+**/__pycache__/
+**/*.py[cod]

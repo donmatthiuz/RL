@@ -1,0 +1,18 @@
+# Dataset de BTC Up or Down horario. Valores decididos en docs/08, ADR-008 y ADR-013.
+# Validar con: make config CONFIG=configs/data.yaml
+dataset_id: btc_updown_1h_v1
+series_id: 10114            # serie de Gamma (ADR-004)
+asset: BTC
+date_from: 2025-05-28
+date_to: 2026-10-30
+step_seconds: 60            # una decisión por minuto (S2)
+window_minutes: 60          # el episodio es la vela de una hora (ADR-008)
+context_minutes: 60         # historia previa para volatilidad y features
+quality:
+  min_points_in_window: 45
+  max_gap_seconds: 600
+split:                      # cronológico y por mercado (ADR-002)
+  train: 0.70
+  val: 0.15
+  test: 0.15
+test_exclusions: configs/test_exclusions.json   # mercados de los análisis previos (S11)

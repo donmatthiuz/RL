@@ -136,9 +136,11 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
 .venv
-env/
+/env/
 venv/
 ENV/
 env.bak/
@@ -209,7 +211,34 @@ __marimo__/
 # markdown lint
 .markdownlint.json
 context/
-.claude/
+# .claude: se versionan solo los enlaces a .skills/ y .agents/; la configuración local queda fuera
+.claude/*
+!.claude/skills
+!.claude/agents
 
 # graphify
 graphify-out
+
+# Datos crudos, procesados y modelos: se generan localmente (docs/11_descarga_de_datos.md).
+# De data/ solo se versiona la estructura de carpetas, con sus .gitkeep.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+/models/
+
+# Claves locales (cada integrante crea las suyas; nunca se versionan)
+keys/*
+!keys/.gitkeep
+
+# Fuentes enlazadas para generar los PDF de entregas (make entregable)
+.fonts-entregable/
+
+# Logs de TensorBoard y datasets offline (docs/06_flujo_trabajo.md)
+/runs/
+*.h5
+
+# Trayectorias del backtest: se regeneran con make backtest
+/reports/trajectories/
+
+# Audios y archivos de trabajo locales (por ejemplo, la voz del video): no se versionan.
+/tmp/

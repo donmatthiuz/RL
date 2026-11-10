@@ -1,0 +1,42 @@
+# Discrete CQL (AGT-08), entrenado solo con el dataset offline de AGT-07.
+# Hiperparámetros iniciales; se ajustan en val con AGT-09.
+# Validar con: make config CONFIG=configs/cql.yaml
+# env y reward tienen que ser iguales a configs/env.yaml (lo comprueba un test): los baselines y
+# los agentes se evalúan con el mismo simulador.
+dataset_id: btc_updown_1h_v1
+env:
+  initial_cash: 1000.0
+  stake_fraction: 0.02      # 20 USDC por orden (S4b)
+  latency_s: 2              # S4a, provisional hasta validar con trades (EVA-11)
+  tolerance_s: 60           # S4a; no puede superar el paso de la grilla
+  no_open_last_minutes: 2   # S10
+  normalize: true           # z-score de normalization.json, ajustado con train
+  costs:                    # S5 y ADR-009, los mismos valores que configs/costs.yaml
+    half_spread: 0.01       # sensibilidad con 0.02
+    fee_rate: 0.07          # 0.0 para la ablación sin comisión
+    fee_exponent: 1
+    fee_decimals: 5
+    min_fee: 0.00001
+    tick: 0.001
+reward:
+  name: pnl_risk            # ganadora de la ablación de ENV-08 en val (02/11/2026, reports/val)
+  base: pnl_mid
+  lambda_dd: 1.0
+  lambda_invalid: 0.0       # S6
+agent:
+  algo: cql
+  net_arch: [64, 64]
+  learning_rate: 1.0e-4
+  gamma: 0.999              # S9: cerca de 1
+  total_timesteps: 200000   # pasos de gradiente sobre el dataset offline
+  checkpoints: 10           # protocolo de EVA-01, sección 5
+  params:                   # propios de DiscreteCQLConfig; d3rlpy los valida
+    batch_size: 256
+    alpha: 1.0
+    target_update_interval: 2000
+offline:                    # AGT-07: dataset de transiciones sobre train
+  policies: [favorite, momentum, mean_reversion, fair_value, no_trade]
+  epsilon: 0.2              # docs/02, sección 2.5
+  seed: 0
+seeds: [0, 1, 2, 3, 4]
+eval_split: val             # se abre después de aprobar el protocolo de EVA-01 (#8)

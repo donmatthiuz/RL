@@ -1,0 +1,565 @@
+{
+  "date": "2026-11-02",
+  "group": "2",
+  "repository": "https://github.com/donmatthiuz/RL/tree/proyecto",
+  "branch": "proyecto",
+  "title": "PolyRL — Propuesta actualizada y evidencia de entrega",
+  "author": "Equipo del proyecto PolyRL · Grupo {{grupo}}",
+  "subject": "Actualización del {{fecha_larga}}; evidencia de envío y aprobación del 16 de octubre de 2026",
+  "pages": [
+    [
+      {
+        "type": "paragraph",
+        "style": "kicker",
+        "text": "EVIDENCIA DOCUMENTAL"
+      },
+      {
+        "type": "paragraph",
+        "style": "title",
+        "text": "Constancia de entrega<br/>y aprobación"
+      },
+      {
+        "type": "paragraph",
+        "style": "subtitle",
+        "text": "Propuesta de proyecto: Aprendizaje por Refuerzo en Polymarket"
+      },
+      {
+        "type": "paragraph",
+        "style": "body",
+        "text": "Se incorporan al inicio las capturas aportadas como evidencia de entrega oportuna de la propuesta original. En ellas constan el envío del <b>16 de octubre de 2026 a las 18:40</b> y la aprobación del profesor ese mismo día a las <b>22:29</b>."
+      },
+      {
+        "type": "paragraph",
+        "style": "h2",
+        "text": "1. Aprobación del profesor"
+      },
+      {
+        "type": "image",
+        "path": "docs/images/evidencias/aprobacion_tema.png"
+      },
+      {
+        "type": "spacer",
+        "height": 6
+      },
+      {
+        "type": "paragraph",
+        "style": "small",
+        "text": "<b>Luis Alberto Suriano Saravia · 16/10/2026, 22:29.</b> El mensaje confirma: «Aprobado». También indica que asume que el equipo corresponde al <b>grupo 2 del proyecto final</b>."
+      },
+      {
+        "type": "paragraph",
+        "style": "h2",
+        "text": "2. Envío de la propuesta"
+      },
+      {
+        "type": "image",
+        "path": "docs/images/evidencias/envio_propuesta.png"
+      },
+      {
+        "type": "spacer",
+        "height": 6
+      },
+      {
+        "type": "paragraph",
+        "style": "small",
+        "text": "<b>Jose Emanuel Say García a Luis Alberto Suriano Saravia · 16/10/2026, 18:40.</b> La captura muestra el correo de envío, el archivo adjunto y la referencia al proyecto de Aprendizaje por Refuerzo."
+      },
+      {
+        "type": "spacer",
+        "height": 8
+      },
+      {
+        "type": "box",
+        "text": "<b>Actualización de la propuesta: {{fecha_larga}}.</b><br/>Las páginas siguientes desarrollan la propuesta original e incorporan las decisiones, el código y los resultados registrados en el repositorio entre el 30 de octubre y el 2 de noviembre. Las capturas se conservan sin modificaciones.",
+        "style": "body"
+      }
+    ],
+    [
+      {
+        "type": "paragraph",
+        "text": "PROPUESTA ACTUALIZADA · {{fecha_mayusculas}}",
+        "style": "kicker"
+      },
+      {
+        "type": "paragraph",
+        "text": "PolyRL: aprendizaje por<br/>refuerzo en Polymarket",
+        "style": "title"
+      },
+      {
+        "type": "paragraph",
+        "text": "Datos históricos, decisiones secuenciales y operaciones con saldo ficticio.",
+        "style": "subtitle"
+      },
+      {
+        "type": "paragraph",
+        "text": "Idea y objetivo",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "Construir un agente que observe un mercado binario histórico y aprenda cuándo <b>comprar YES, comprar NO, vender o esperar</b>. El objetivo es comprobar si su política supera a estrategias simples en mercados que no se utilizaron para entrenarlo.",
+        "style": "body"
+      },
+      {
+        "type": "paragraph",
+        "text": "Polymarket funciona como fuente de datos. El entrenamiento y la evaluación se hacen en un simulador con <b>saldo ficticio</b>. El proyecto integra Deep Reinforcement Learning, datos reales, modelado de un entorno y evaluación estadística.",
+        "style": "body"
+      },
+      {
+        "type": "paragraph",
+        "text": "Cómo funciona",
+        "style": "h2"
+      },
+      {
+        "type": "bullet",
+        "text": "<b>1. Datos:</b> 12 294 mercados resueltos <i>Bitcoin Up or Down</i> horarios, de mayo de 2025 a octubre de 2026, con precio por minuto alineado con el spot de Binance. La extensión a ETH (P2) no se hizo."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>2. Simulación:</b> cada mercado es un episodio de 60 decisiones, con una posición a la vez de 20 USDC, costos y liquidación al conocerse el resultado."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>3. Aprendizaje:</b> PPO y DQN se entrenaron interactuando con el simulador; CQL y BC, con un conjunto fijo de transiciones de train."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>4. Comparación:</b> todas las políticas se jugaron en los mismos mercados de val y, una sola vez, en los de test, midiendo retorno, riesgo, operaciones y costos."
+      },
+      {
+        "type": "paragraph",
+        "text": "Técnicas utilizadas",
+        "style": "h2"
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Técnica",
+          "Aplicación"
+        ],
+        "rows": [
+          [
+            "<b>PPO</b>",
+            "Agente principal; actor-crítico de stable-baselines3, 5 semillas con la mejor configuración de val."
+          ],
+          [
+            "<b>DQN</b>",
+            "Agente de comparación; estima el valor de las cuatro acciones discretas. 5 semillas."
+          ],
+          [
+            "<b>Offline RL</b>",
+            "Discrete CQL de d3rlpy y Behavior Cloning como referencia, ambos sobre transiciones fijas de train."
+          ],
+          [
+            "<b>Backtesting y recompensa</b>",
+            "Reproducción histórica y ablación de la recompensa: ganó el PnL a precio medio con penalización de drawdown."
+          ]
+        ],
+        "widths": [
+          120,
+          "remaining"
+        ]
+      },
+      {
+        "type": "spacer",
+        "height": 9
+      },
+      {
+        "type": "box",
+        "text": "<b>Precisión conceptual incorporada:</b> usar precios históricos en un simulador no convierte por sí solo a PPO o DQN en Offline RL. Si el agente interactúa con el entorno, el entrenamiento es online. La variante offline aprende de transiciones ya recolectadas.",
+        "style": "small"
+      },
+      {
+        "type": "paragraph",
+        "text": "Resultado a la fecha",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "La demo local en Streamlit ya reproduce un mercado paso a paso con la acción, la posición y el saldo, y compara políticas con su PnL acumulado. En test ningún agente superó a no operar; el informe explicará este resultado negativo y sus causas.",
+        "style": "body"
+      }
+    ],
+    [
+      {
+        "type": "paragraph",
+        "text": "DISEÑO TÉCNICO",
+        "style": "kicker"
+      },
+      {
+        "type": "paragraph",
+        "text": "Datos, entorno y recompensa",
+        "style": "title"
+      },
+      {
+        "type": "paragraph",
+        "text": "Lo previsto en la propuesta, ya implementado y probado en el paquete polym4v.",
+        "style": "subtitle"
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Módulo",
+          "Estado y contenido"
+        ],
+        "rows": [
+          [
+            "<b>Datos</b>",
+            "<b>Implementado.</b> Crudo archivado con hashes; markets.parquet, steps.parquet y manifest.json. Split por fecha: 8 682 mercados de train, 1 861 de val y 1 751 de test."
+          ],
+          [
+            "<b>Entorno</b>",
+            "<b>Implementado.</b> PolymarketEnv sobre Gymnasium: ejecución al primer precio después de 2&nbsp;s, costos, liquidación e invariantes probadas con hypothesis."
+          ],
+          [
+            "<b>Agentes</b>",
+            "<b>Implementado.</b> Seis baselines, PPO y DQN (stable-baselines3), CQL y BC (d3rlpy) con una interfaz común; modelos finales con 5 semillas."
+          ],
+          [
+            "<b>Evaluación y demo</b>",
+            "<b>Implementado.</b> Backtest, métricas, prueba estadística, reportes de val y test, demo en Streamlit y análisis del comportamiento (EVA-12, PR #35)."
+          ]
+        ],
+        "widths": [
+          113,
+          "remaining"
+        ]
+      },
+      {
+        "type": "paragraph",
+        "text": "Datos verificados con la API real",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "Familia elegida: <b>BTC Up or Down horario</b>, que resuelve con la vela de 1 hora de Binance; el spot de Binance reproduce el resultado. El precio por minuto sale del endpoint CLOB <i>prices-history</i>, que solo guarda 1 minuto durante 7 días, por eso el crudo se archivó a tiempo. Desde el 06/03/2026 estos mercados cobran comisión taker de <b>0,07 × p × (1 - p)</b> por acción.",
+        "style": "body"
+      },
+      {
+        "type": "paragraph",
+        "text": "Formulación del entorno",
+        "style": "h2"
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Episodio:</b> la vela de 60 minutos, con una decisión por minuto (60 pasos); liquidación a 1 o 0 al cierre, sin comisión."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Tiempo:</b> cada dato guarda cuándo ocurrió y cuándo estuvo disponible; el agente solo ve lo disponible hasta el instante de decisión."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Acciones:</b> WAIT, BUY_YES, BUY_NO y SELL; una posición de 20 USDC a la vez y ninguna apertura en los últimos 2 minutos. Una acción inválida se ejecuta como WAIT."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Costos:</b> medio spread de 0,01 más la comisión oficial; cada ejecución se contrasta con los trades reales (modo estricto)."
+      },
+      {
+        "type": "box",
+        "text": "<b>Hallazgo que cambió el diseño:</b> con una grilla de 1 minuto, el precio guardado llega hasta 60 s tarde frente al spot y el agente podía \"ver el futuro\" (correlación de 0,90; alineando los tiempos baja a 0,22). Se resolvió con la ejecución al primer precio posterior a t&nbsp;+&nbsp;2&nbsp;s (ADR-017) y pruebas de no-fuga.",
+        "style": "small"
+      }
+    ],
+    [
+      {
+        "type": "paragraph",
+        "style": "kicker",
+        "text": "ORGANIZACIÓN Y PLAN DE TRABAJO"
+      },
+      {
+        "type": "paragraph",
+        "style": "title",
+        "text": "Equipo, fases y entregables"
+      },
+      {
+        "type": "paragraph",
+        "text": "Cinco roles documentados; asignaciones tomadas de docs/03_roles.md al {{fecha_corta}}.",
+        "style": "subtitle"
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Rol / integrante",
+          "Responsabilidad principal",
+          "Respaldo"
+        ],
+        "rows": [
+          [
+            "<b>R1 · Josué</b><br/>Líder técnico e integrador",
+            "Integración, contratos entre módulos, CLI, decisiones de diseño y coherencia de la documentación.",
+            "R4"
+          ],
+          [
+            "<b>R2 · Mathew</b><br/>Ingeniería de datos",
+            "APIs, dataset, features, split temporal y análisis exploratorio.",
+            "R5"
+          ],
+          [
+            "<b>R3 · Gustavo</b><br/>Entorno y recompensa",
+            "Simulador, cartera, costos, liquidación, invariantes y ablación de recompensa.",
+            "R4"
+          ],
+          [
+            "<b>R4 · Josué (desde el 02/11)</b><br/>Agentes RL",
+            "Baselines, PPO, DQN, dataset offline, CQL/BC y entrenamiento reproducible.",
+            "R3"
+          ],
+          [
+            "<b>R5 · Carlos</b><br/>Evaluación y demo",
+            "Backtesting, métricas, estadística, Streamlit, informe y presentación.",
+            "R2"
+          ]
+        ],
+        "widths": [
+          151,
+          291.27559055118115,
+          "remaining"
+        ],
+        "small": true
+      },
+      {
+        "type": "paragraph",
+        "text": "Fases e hitos",
+        "style": "h2"
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Fase",
+          "Hito de cierre y estado"
+        ],
+        "rows": [
+          [
+            "<b>F0 · Preparación</b>",
+            "APIs validadas, diseño decidido, crudo archivado y roles asignados. <b>Cerrada.</b>"
+          ],
+          [
+            "<b>F1 · Datos y entorno</b>",
+            "Dataset v1, entorno validado y un baseline con episodios completos sobre datos reales. <b>Cerrada.</b>"
+          ],
+          [
+            "<b>F2 · Agentes online</b>",
+            "PPO y DQN entrenados, prueba en entorno sintético y primera comparación en val. <b>Cerrada.</b>"
+          ],
+          [
+            "<b>F3 · Offline y ajuste</b>",
+            "CQL/BC, ablación de la recompensa, hiperparámetros y modelos finales con 5 semillas. <b>Cerrada.</b>"
+          ],
+          [
+            "<b>F4 · Entrega final</b>",
+            "Test evaluado una sola vez. <b>En curso:</b> faltan el informe, la presentación, el video y el release v1.0."
+          ]
+        ],
+        "widths": [
+          132,
+          "remaining"
+        ],
+        "small": true
+      },
+      {
+        "type": "paragraph",
+        "text": "De 67 tareas, 46 están hechas contando EVA-12 (PR #35 abierto), 1 en curso, 1 omitida y 19 sin empezar, casi todas del documento. La CI corre en GitHub Actions: lint, pruebas en Python 3.11 y 3.12 y un smoke de entrenamiento.",
+        "style": "small"
+      },
+      {
+        "type": "paragraph",
+        "style": "h2",
+        "text": "Colaboración y criterio de finalización"
+      },
+      {
+        "type": "paragraph",
+        "text": "El trabajo se concentra en la rama <b>proyecto</b>, con commits pequeños en formato convencional y pruebas por cada cambio de lógica. El 02/11, por tiempo, R1 mezcló los PR que esperaban revisión y lo dejó escrito en cada uno; lo que aparezca después irá en un PR de corrección. El uso de IA queda registrado: qué herramienta se usó, para qué y quién verificó el resultado.",
+        "style": "body"
+      }
+    ],
+    [
+      {
+        "type": "paragraph",
+        "text": "METODOLOGÍA Y CRITERIOS DE ÉXITO",
+        "style": "kicker"
+      },
+      {
+        "type": "paragraph",
+        "text": "Evaluación y calidad",
+        "style": "title"
+      },
+      {
+        "type": "paragraph",
+        "text": "El protocolo busca comprobar qué aprende el agente y bajo qué supuestos funciona.",
+        "style": "subtitle"
+      },
+      {
+        "type": "paragraph",
+        "text": "Comparación de estrategias",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "Los agentes se compararon con estrategias base: <b>aleatoria, no operar, favorito, momentum, reversión a la media y valor justo</b>. Todas pasan por el mismo entorno, costos y mercados. Los modelos se eligieron en val; test se usó una sola vez, con todo congelado.",
+        "style": "body"
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Métrica principal:</b> D, la diferencia de PnL por mercado frente al mejor baseline (no operar), con un umbral de relevancia del 1 % del monto; además retorno, drawdown, operaciones y costos."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Repeticiones:</b> 5 semillas por agente final; IC por bootstrap de días y semillas, al 98,75 % por la corrección de Bonferroni."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Análisis:</b> ablación de la recompensa, modo estricto con trades reales y un análisis exploratorio de lo que aprendió cada agente (EVA-12)."
+      },
+      {
+        "type": "paragraph",
+        "text": "Hipótesis y entregables evaluables",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "Se estudió si PPO supera al mejor baseline fuera de muestra, si penalizar el drawdown reduce el riesgo y si CQL iguala a las políticas que generaron sus datos. En test, PPO y DQN quedaron equivalentes a no operar, CQL inferior y BC peor sin diferencia relevante. <b>No superar los baselines es un resultado válido</b>, como se fijó antes.",
+        "style": "body"
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Entregable",
+          "Verificación"
+        ],
+        "rows": [
+          [
+            "<b>Dataset y entorno</b>",
+            "Reconstrucción con el mismo hash; check_env de Gymnasium; invariantes de cartera y saldo; pruebas de no-fuga. <b>Hecho.</b>"
+          ],
+          [
+            "<b>Agentes y comparación</b>",
+            "Checkpoints de PPO, DQN, CQL y BC; reportes de val y de test con 5 semillas e IC. <b>Hecho.</b>"
+          ],
+          [
+            "<b>Demo e informe</b>",
+            "Demo paso a paso y comparación de políticas <b>hechas</b>; falta el informe con resultados, ablación y limitaciones."
+          ],
+          [
+            "<b>Calidad y reproducibilidad</b>",
+            "367 pruebas aprobadas hoy; versiones fijadas en uv.lock; hash del crudo y del dataset; configuración, semilla y commit por corrida."
+          ]
+        ],
+        "widths": [
+          132,
+          "remaining"
+        ],
+        "small": true
+      },
+      {
+        "type": "paragraph",
+        "text": "Pruebas",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "Con respuestas simuladas y semillas fijas. Incluyen un mercado sintético donde el precio es el valor justo, en el que ninguna política puede ganar, la comprobación de que alterar datos futuros no cambia la observación y el pipeline completo por la CLI.",
+        "style": "body"
+      },
+      {
+        "type": "paragraph",
+        "text": "Riesgos y límites del diseño",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "El riesgo previsto se confirmó: cerca del cierre el precio ya está calibrado y ninguna estrategia gana después de costos. PPO acertó el lado en el 99,76 % de sus compras a más de 0,98 en test, pero necesitaba el 99,88 % para no perder. El simulador es price-taker, aproxima <b>p(NO) como 1 - p(YES)</b> y solo la mitad de las ejecuciones de PPO en test tiene un trade real que la respalde.",
+        "style": "body"
+      }
+    ],
+    [
+      {
+        "type": "paragraph",
+        "text": "CAMBIOS REGISTRADOS · {{fecha_mayusculas}}",
+        "style": "kicker"
+      },
+      {
+        "type": "paragraph",
+        "text": "Avances y estado actual",
+        "style": "title"
+      },
+      {
+        "type": "paragraph",
+        "text": "Resumen basado en el historial de Git, los PR, los archivos del proyecto y las pruebas ejecutadas.",
+        "style": "subtitle"
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Mezcla en proyecto",
+          "Cambio"
+        ],
+        "rows": [
+          [
+            "<b>01/11 19:59 · #6</b>",
+            "Modelo de costos con medio spread y comisión taker."
+          ],
+          [
+            "<b>02/11 06:27 · #1 a #10</b>",
+            "Contratos de datos, klines de Binance, split temporal, dataset, EDA, trades, features y protocolo de evaluación."
+          ],
+          [
+            "<b>02/11 06:31 · #11 a #29</b>",
+            "Entorno, baselines, backtest, validación con trades, métricas, entrenamiento de PPO, DQN, CQL y BC, reportes, demo y CI."
+          ],
+          [
+            "<b>02/11 07:54 · #30 a #33</b>",
+            "Ablación de la recompensa, umbrales de los baselines, hiperparámetros, modelos finales y reporte de val."
+          ],
+          [
+            "<b>02/11 09:58 · #34</b>",
+            "Evaluación final en test, una sola vez."
+          ],
+          [
+            "<b>02/11 17:47 · #35 (abierto)</b>",
+            "Análisis del comportamiento de los agentes (EVA-12), con la CI en verde."
+          ]
+        ],
+        "widths": [
+          133,
+          "remaining"
+        ],
+        "small": true
+      },
+      {
+        "type": "paragraph",
+        "text": "Implementado y comprobado",
+        "style": "h2"
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Resultado en test:</b> con no operar como mejor baseline, la media de D fue -0,0005 para PPO (IC de -0,0029 a +0,0018), -0,0018 para DQN, -0,0126 para CQL y -0,0014 para BC. CQL parecía el mejor en val (+0,0109)."
+      },
+      {
+        "type": "bullet",
+        "text": "<b>Qué aprendió PPO:</b> compra el favorito cerca del final (minuto mediano 54) y decide sobre todo con la distancia de BTC a la apertura. Cada acierto deja unos 0,02 USDC y un error cuesta 20: en test, -27,23 USDC netos en esas compras."
+      },
+      {
+        "type": "box",
+        "text": "<b>Verificación local:</b> <font face=\"Mono\" size=\"8\">uv run pytest -q</font><br/><b>Resultado: 367 pruebas aprobadas</b> y 10 lentas o de red excluidas por defecto. La CI del PR #35 pasó lint, pruebas en 3.11 y 3.12 y el smoke de entrenamiento.",
+        "style": "small"
+      },
+      {
+        "type": "paragraph",
+        "text": "Pendiente frente al plan",
+        "style": "h2"
+      },
+      {
+        "type": "paragraph",
+        "text": "Revisar y mezclar el PR #35; mostrar en la demo el mejor agente en un mercado de test (EVA-08); escribir el documento (DOC-02 a DOC-09), las slides, la presentación y el video; publicar el release v1.0 (INF-09), la reproducción por un tercero (INF-10) y pasar proyecto a main.",
+        "style": "body"
+      },
+      {
+        "type": "paragraph",
+        "text": "Fuentes: <b>README.md</b>, <b>docs/</b> (tablero en docs/04_tareas.md), <b>reports/val/</b>, <b>reports/test/</b>, <b>src/polym4v/</b>, <b>tests/</b> y el historial de Git.",
+        "style": "small"
+      }
+    ]
+  ]
+}

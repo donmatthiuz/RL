@@ -1,0 +1,18 @@
+{
+  "favorite": {
+    "entry_k": 20
+  },
+  "momentum": {
+    "threshold": 2.0,
+    "take_profit": 0.2,
+    "stop_loss": 0.2
+  },
+  "mean_reversion": {
+    "threshold": 2.0,
+    "take_profit": 0.2,
+    "stop_loss": 0.2
+  },
+  "fair_value": {
+    "margin": 0.1
+  }
+}

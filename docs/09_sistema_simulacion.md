@@ -1,0 +1,534 @@
+# 09 — Sistema de simulación
+
+Documentación oficial de las piezas que se reutilizan: [Gymnasium](https://gymnasium.farama.org),
+[stable-baselines3](https://stable-baselines3.readthedocs.io),
+[sb3-contrib MaskablePPO](https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html),
+[d3rlpy](https://d3rlpy.readthedocs.io),
+[pandas.merge_asof](https://pandas.pydata.org/docs/reference/api/pandas.merge_asof.html),
+[comisiones de Polymarket](https://docs.polymarket.com/trading/fees) y
+[klines de Binance](https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints).
+
+Este documento define **cómo se comporta el simulador**: qué ve el agente, cuándo y a qué precio
+se ejecuta una orden, qué cuesta y cómo termina un episodio. Nace de la decisión D6 de
+[decisiones_previas_al_diseno.md](notas/decisiones_previas_al_diseno.md): el atraso del precio de
+Polymarket mostró que el sistema no tenía un modelo de tiempo definido. La regla es **reutilizar
+prácticas y herramientas open source establecidas** en lugar de inventar.
+
+- **Estado (30/10/2026):** R1 aceptó S1, S2, S5, S6, S7, S8 y S11 con los ajustes de la revisión
+  independiente (sección 4), registradas en el ADR-013. S3, S4, S9 y S10 se reformularon como
+  preguntas en la sección 6. El 31/10/2026 R1 aceptó S3 y S9 (ADR-016), S10 y S4, esta última con
+  la condición de validar cada ejecución con trades reales (ADR-017).
+- **Base:** investigación de backtesters (backtrader, backtesting.py, zipline-reloaded, vectorbt,
+  NautilusTrader, hftbacktest, LEAN) y entornos de RL de trading (gym-anytrading,
+  Gym-Trading-Env, FinRL, TensorTrade, mbt_gym, ABIDES-gym), consultada el 30/10/2026.
+
+## 1. Comportamiento esperado
+
+### 1.1 Un paso del episodio
+
+```mermaid
+sequenceDiagram
+    participant B as Binance (klines)
+    participant P as Polymarket (precio YES)
+    participant S as Simulador
+    participant A as Agente
+    Note over S: Decisión en t = w0 + 60·k
+    S->>B: último dato disponible en t (open_time + intervalo ≤ t)
+    S->>P: último precio con ts ≤ t y su antigüedad
+    S->>A: observación(t)
+    A->>S: acción
+    alt BUY_YES, BUY_NO o SELL válida
+        S->>P: primer precio con ts > t + latencia (máximo 90 s)
+        alt hay precio
+            P-->>S: precio de ejecución
+            S->>S: medio spread y comisión taker
+        else no hay precio
+            S->>S: orden sin ejecutar (equivale a WAIT)
+        end
+    else WAIT o acción inválida
+        S->>S: sin operación
+    end
+    S->>A: recompensa y observación(t + 60 s)
+    Note over S: En w1 la posición se liquida a 1 o 0, sin comisión
+```
+
+### 1.2 Estados de la posición
+
+```mermaid
+stateDiagram-v2
+    [*] --> SinPosicion
+    SinPosicion --> LargoYES: BUY_YES
+    SinPosicion --> LargoNO: BUY_NO
+    LargoYES --> SinPosicion: SELL
+    LargoNO --> SinPosicion: SELL
+    SinPosicion --> Liquidado: fin de la vela (w1)
+    LargoYES --> Liquidado: w1, paga 1 si UP
+    LargoNO --> Liquidado: w1, paga 1 si DOWN
+    Liquidado --> [*]
+```
+
+Acciones inválidas: `BUY_*` con una posición abierta o `SELL` sin posición. El simulador las
+ejecuta como `WAIT` (decisión S6).
+
+### 1.3 Qué se reutiliza y qué se escribe
+
+```mermaid
+flowchart LR
+    subgraph Reutilizado
+        G["gymnasium.Env<br/>API del entorno"]
+        SB["stable-baselines3<br/>PPO y DQN"]
+        MP["sb3-contrib<br/>MaskablePPO"]
+        D3["d3rlpy<br/>CQL y BC"]
+        PD["pandas.merge_asof<br/>alineación point-in-time"]
+        NT["NautilusTrader<br/>validación de comisiones"]
+    end
+    subgraph Propio
+        ENV["PolymarketEnv<br/>paso, cartera, liquidación 0/1"]
+    end
+    PD --> ENV
+    G --> ENV
+    ENV --> SB
+    ENV --> MP
+    ENV --> D3
+    NT -. "valida una muestra" .-> ENV
+```
+
+Ningún entorno de RL existente modela un activo que liquida a 0 o 1, dos tokens (YES y NO) ni la
+comisión `p × (1 - p)`. Heredar de cualquiera obligaría a reescribir el paso, la cartera y los
+costos, que es casi todo el entorno. Por eso el entorno es propio y lo demás se reutiliza.
+
+## 2. Resumen de decisiones
+
+| # | Qué define | Recomendación | Práctica open source que la respalda | Estado |
+| --- | --- | --- | --- | --- |
+| S1 | Modelo de tiempo de los datos | Cada dato guarda cuándo ocurrió y cuándo estuvo disponible | `ts_event`/`ts_init` (NautilusTrader), `exch_ts`/`local_ts` (hftbacktest), `EndTime` (LEAN) | Aceptada con ajuste |
+| S2 | Reloj de decisión | Grilla fija de 1 minuto, 60 decisiones por episodio | Backtesters por barras y todos los entornos de RL revisados | Aceptada |
+| S3 | Qué ve el agente | Último dato disponible de cada fuente, más la antigüedad del precio | `merge_asof(direction="backward")`; regla de dato viejo de LEAN | Aceptada el 31/10/2026 (sección 6.1) |
+| S4 | Cuándo y a qué precio se ejecuta | Primer precio posterior a `t` + latencia; sin precio en 90 s, no hay ejecución | `trade_on_close=False` (backtesting.py), `coc=False` (backtrader), latencia constante (hftbacktest) | Aceptada con condición el 31/10/2026 (sección 6.2) |
+| S5 | Costos | Medio spread de 0,01 y comisión oficial con redondeo, igual para todos los mercados | `spread` (backtesting.py), bid/ask (mbt_gym), modelo de comisión de Polymarket (NautilusTrader) | Aceptada con ajuste |
+| S6 | Acciones inválidas | Se ejecutan como `WAIT`; el entorno expone `action_masks()` | MaskablePPO (sb3-contrib); Huang y Ontañón (2022) | Aceptada con ajuste |
+| S7 | Base del entorno | `gymnasium.Env` propio, gymnasium 1.0.0, patrones de entornos existentes | Restricciones de d3rlpy 2.8.1 y SB3 2.9.2 | Aceptada con ajuste |
+| S8 | Captura de datos | Descargar y archivar ya todo el historial de 1 minuto | Riesgo R15: la API nueva solo guarda 1 minuto durante 7 días | Aceptada con ajuste |
+
+## 3. Decisiones
+
+### S1 — Modelo de tiempo de los datos
+
+**Qué define:** cuándo un dato "existe" para el simulador. El error de D6 viene de no distinguir
+entre cuándo ocurrió algo y cuándo se pudo conocer.
+
+**Qué hacen los proyectos existentes:** NautilusTrader ordena todo por `ts_init` (disponibilidad)
+y guarda aparte `ts_event` (ocurrencia). hftbacktest exige `local_ts > exch_ts`. LEAN entrega la
+barra de 9:30 a 9:31 a las 9:31. backtrader usa `rightedge=True`.
+
+**Recomendación:** cada fila del dataset guarda `ts_event` y `ts_available`:
+
+- Kline de Binance: `ts_available = open_time + intervalo`. La kline de 1 minuto con
+  `open_time = t` contiene datos hasta `t + 59 s`.
+- Precio de Polymarket: `ts_available = ts` (más una latencia de feed opcional).
+- Toda consulta del simulador filtra por `ts_available <= t`.
+
+### S2 — Reloj de decisión
+
+**Opciones:**
+
+- **Grilla fija de 1 minuto** (60 decisiones). Es lo que usan los backtesters por barras y todos
+  los entornos de RL revisados. Encaja con SB3 y d3rlpy.
+- **Por eventos** (una decisión por cada punto de precio). Es lo que hacen NautilusTrader y
+  hftbacktest. Es más fiel, pero el número de pasos varía por episodio y complica el
+  entrenamiento.
+
+**Recomendación:** grilla fija. El atraso del precio se resuelve con S3 y S4, no con el reloj.
+
+### S3 — Qué ve el agente
+
+**Opciones:**
+
+- **A. Último dato disponible de cada fuente:** spot hasta `t` y precio de Polymarket con
+  `ts <= t`, más la antigüedad del precio como feature (`p_stale`). Es el as-of join estándar.
+- **B. Foto coherente:** todo tomado en el instante del último precio de Polymarket. Elimina la
+  diferencia de frescura, pero tira información del spot.
+
+**Recomendación:** A, siempre junto con S4. El agente puede "intuir" que el precio viejo se va a
+mover, pero como ejecuta en el precio siguiente (que ya se movió), esa intuición no se convierte en
+una ganancia falsa. Se implementa con `merge_asof(direction="backward", allow_exact_matches=True,
+tolerance=...)` sobre `ts_available`.
+
+### S4 — Cuándo y a qué precio se ejecuta
+
+**Opciones:**
+
+- **Al precio de `t`** (*cheat-on-close*). Ningún backtester lo usa por defecto, porque es
+  justamente el error de D6.
+- **Al precio del minuto siguiente de la grilla.** Si falta ese minuto, puede terminar ejecutando
+  a un precio viejo.
+- **Al primer precio con `ts > t + latencia`**, con un máximo de 90 s. Si no hay precio, la orden
+  no se ejecuta.
+
+**Recomendación:** la tercera, con
+`merge_asof(direction="forward", allow_exact_matches=False, tolerance=90 s)`. Latencia constante
+de 2 s como base, con análisis de sensibilidad a 15 y 30 s. La única medición pública encontrada da
+un rezago del libro de Polymarket frente a Binance de 0,3 s en la mediana y 8 s en el percentil
+99, así que 2 s es conservador.
+
+### S5 — Costos
+
+**Qué hacen los proyectos existentes:** backtesting.py y mbt_gym compran a medio más medio spread
+y venden a medio menos medio spread. NautilusTrader trae un modelo de comisión de Polymarket.
+
+**Fórmula oficial:** `comisión = acciones × 0,07 × p × (1 - p)`, solo taker, redondeada a 5
+decimales, con un mínimo de 0,00001 USDC. Los mercados horarios cobran desde el 06/03/2026 (solo
+los creados después de esa fecha).
+
+**Opciones:**
+
+- **A. Comisión vigente para todos los mercados** (ADR-009). Costos parejos en train y test, y se
+  usa todo el dataset.
+- **B. Comisión que tenía cada mercado.** Es más fiel al pasado, pero train (sin comisión) y test
+  (con comisión) quedan en condiciones distintas.
+- **C. Solo mercados desde el 06/03/2026.** Todo es consistente, pero quedan unos 5 700 mercados y
+  la evaluación solo detectaría diferencias de 8 % o más.
+
+**Recomendación:** A, con medio spread de 0,01 y una sensibilidad con 0,02. La comisión se copia de
+la documentación oficial y se valida contra el modelo de NautilusTrader con una muestra de órdenes.
+
+### S6 — Acciones inválidas
+
+**Qué hay disponible:** MaskablePPO (sb3-contrib) acepta un método `action_masks()` en el entorno.
+DQN de SB3 y d3rlpy no soportan máscaras. Huang y Ontañón (2022) muestran que enmascarar escala
+mejor que penalizar, y que una penalización grande frena la exploración.
+
+**Recomendación:** el entorno convierte una acción inválida en `WAIT`, con penalización nula o
+pequeña (`lambda_invalid` configurable), y expone `action_masks()`. PPO se entrena con y sin
+máscara, y DQN y d3rlpy sin máscara. El dataset offline guarda la acción **ejecutada**, no la
+pedida.
+
+### S7 — Base del entorno
+
+**Opciones:**
+
+- **A. `gymnasium.Env` propio**, copiando patrones de proyectos con licencia MIT: el historial de
+  pasos y la rotación entre varios datasets de Gym-Trading-Env, y el gráfico de operaciones de
+  gym-anytrading.
+- **B. Depender de Gym-Trading-Env.** Al importarse convierte todas las advertencias en errores, y
+  su `reset` no respeta la semilla.
+- **C. Construir todo sobre NautilusTrader.** Es un motor por eventos muy completo (y trae
+  integración con Polymarket), pero no está pensado para RL y su licencia es LGPL.
+
+**Recomendación:** A. Fijar `gymnasium==1.0.0`, porque d3rlpy 2.8.1 exige esa versión y SB3 2.9.2
+acepta de 0.29.1 a 2.0. Usar NautilusTrader solo para validar costos y resultados de una muestra.
+
+### S8 — Captura de datos
+
+**Qué se encontró:** desde el 04/09/2026, Polymarket tiene una API nueva de historial
+(`/v2/prices-history`) que guarda el detalle de 1 minuto solo durante 7 días. El endpoint antiguo
+(`/prices-history` del CLOB) todavía devuelve 1 minuto para mercados de 2025, pero puede retirarse
+sin aviso. La documentación oficial (consultada con Context7) lo confirma: en la API nueva, los
+datos de 1 minuto duran al menos 7 días, cualquier resolución menor a 3 horas cubre solo los
+últimos 30 días, y los rangos explícitos tienen un máximo de 15 días.
+
+**Estado:** la captura de BTC horario está en curso con `make capture` (`SERIES=10114`).
+
+**Recomendación:** descargar y archivar **ahora** el historial de 1 minuto de todos los mercados
+BTC horarios (unos 12 500 pedidos) y las klines de Binance, como datos crudos inmutables
+(`data/raw/`). Además, respaldar ese archivo fuera del repo. No depende de las demás decisiones.
+
+## 4. Revisión independiente (30/10/2026)
+
+Dos revisores independientes, con los agentes `specialized-master-plan-architect` (plan e
+ingeniería) y `specialized-model-qa` (validez de los resultados), evaluaron las consecuencias de
+aceptar S1 a S8. Ninguno rechaza una decisión. Casi todas necesitan un ajuste.
+
+### 4.1 Consecuencias por decisión
+
+| # | Ganamos | Perdemos | No perdemos (aunque parezca) | Ajuste que piden | Reversibilidad |
+| --- | --- | --- | --- | --- | --- |
+| S1 | Una regla única y testeable de "qué se sabe en `t`" | Solo disciplina: toda consulta pasa por `ts_available` | No obliga a un motor por eventos | Disponibilidad **por campo**: el `open` de una vela se conoce al abrir y el `close` al cerrar. `outcome` y `spot_close` solo existen en `w1` | Barata ahora, cara después |
+| S2 | Encaja con SB3 y d3rlpy; episodios de largo fijo | Cualquier ventaja de menos de 1 minuto | Fidelidad: el feed trae un punto por minuto | Ninguno. El informe dice que la conclusión vale "decidiendo cada minuto" | Baja, pero sin motivo para cambiar |
+| S3 | No se tira información del spot | `edge` mezcla spot fresco con precio viejo y mide el atraso del feed | La protección contra la ganancia falsa, si va junto con S4 | Los baselines reciben la misma información de frescura; agregar `edge` calculado en el instante del precio; marcar ADR-011 como reemplazada | Alta |
+| S4 | Se elimina la ejecución al precio viejo | La "latencia de 2 s" casi no cambia nada: el atraso real lo da el hueco hasta el punto siguiente | La igualdad de trato entre agente y baselines | **Tolerancia de 60 s o menos** (90 s filtra precios futuros); latencia base de unos 15 s según la medición propia; ejecución calculada en el entorno; reportar las órdenes sin ejecutar | Alta si se calcula en el entorno |
+| S5 | Mismo costo en todos los splits | Fidelidad histórica en train | Potencia: val y test ya tienen comisión, así que A y B dan lo mismo en la cifra principal | Un solo parámetro `half_spread`; reportar 0,01 y 0,02; testear la fórmula con los ejemplos oficiales, sin NautilusTrader | Alta |
+| S6 | Entorno robusto | PPO con y sin máscara duplica corridas y rompe la igualdad con DQN y CQL | El % de acciones inválidas, si se guarda la acción pedida | PPO principal **sin** máscara (MaskablePPO como P2); `lambda_invalid = 0`; guardar la acción pedida y la ejecutada | Alta |
+| S7 | Control de la liquidación 0/1 y de la comisión | La corrección depende de tests propios | Realismo: NautilusTrader aporta con libro de órdenes, que no tenemos | Sacar NautilusTrader del plan (P2 como mucho); fijar versiones con `uv lock`; evaluar cada mercado de test una vez y en orden fijo | Baja para la base, alta para versiones |
+| S8 | Cierra R15 y asegura la reproducibilidad | Cerca de un día de R2 | Libertad de diseño, si el crudo se guarda tal cual | Incluir el token NO (valida ADR-003) y ETH; ventana amplia; metadatos de cada petición; hash del crudo; esta semana | No hacerlo puede ser irreversible |
+
+### 4.2 Hallazgos que la propuesta no cubría
+
+- **Fuga por la tolerancia de 90 s.** Es mayor que el paso de 60 s: una orden ejecutada después de
+  `t + 60` mostraría un precio futuro en la observación siguiente.
+- **Latencia subestimada.** La medición propia (decisiones previas, sección 2.3) indica que cada
+  punto refleja el mercado de hasta 15 s antes de su fecha. Con 2 s de latencia, se compraría a
+  un precio anterior a la decisión.
+- **Ventaja fantasma.** Con spot fresco y precio viejo, `FairValuePolicy` opera sobre ventajas que
+  no existen y paga comisión. Un agente que aprenda a ignorarlas "le gana" por un defecto del
+  feed. Sin baselines con la misma información, un H1 positivo no se puede defender.
+- **Test contaminado.** Las muestras de 298, 40 y 70 mercados de los análisis previos incluyen el
+  periodo de test, y con ellas se fijaron umbrales y latencias.
+- **Huecos del sistema:** el precio con que se valora la posición (recompensa, PnL no realizado y
+  drawdown); las reglas de fin de episodio (desde qué minuto no se compra y qué pasa con un `SELL`
+  sin ejecutar); y la obligación de que los baselines corran por el mismo entorno.
+- **Calendario:** el modo de ejecución pasa de ENV-09 (F3, P2) a ENV-03/04 (F1, P0, ruta crítica);
+  el contrato INF-06 suma `ts_available` y una tabla de precios crudos; AGT-06 se redefine con un
+  retraso de 2 pasos o más.
+
+### 4.3 Decisiones nuevas que salieron de la revisión
+
+| # | Qué define | Recomendación | Estado |
+| --- | --- | --- | --- |
+| S9 | Precio con que se valora la posición abierta (recompensa, PnL no realizado y drawdown) | Lo que se obtendría al vender ahora: `p - half_spread` | Aceptada el 31/10/2026 (sección 6.3) |
+| S10 | Reglas de fin de episodio | No abrir posiciones en los últimos 2 minutos; un `SELL` sin ejecutar antes de `w1` deja la posición a la liquidación | Aceptada el 31/10/2026 (sección 6.4) |
+| S11 | Mercados de test usados en análisis previos | Excluir de test los mercados de las muestras de 298, 40 y 70; congelar la configuración antes de abrir test | Aceptada |
+
+Restricción que ya está acordada para cuando se decida S4: la tolerancia de ejecución no puede
+superar el paso de la grilla (60 s).
+
+### 4.4 Tests de no-fuga que piden los revisores
+
+- **Mercado nulo:** el precio es exactamente el valor justo del spot, con un punto por minuto.
+  Sin costos ninguna política gana de forma significativa; con costos todas pierden.
+- **Mercado nulo con fechas atrasadas 15 s:** con latencia menor al atraso aparece una ventaja, y
+  con latencia mayor o igual desaparece. Calibra la latencia.
+- **Control positivo (AGT-06):** con un retraso real de 2 minutos, el agente lo explota.
+- Alterar cualquier dato con `ts > t` (incluidos `outcome` y `spot_close`) no cambia la
+  observación en `t`.
+- Una orden ejecutada después de `t + 60` no aparece en la observación de `t + 60`.
+- El PnL de una política fija no sube al aumentar la latencia.
+
+## 5. Pendiente de verificar
+
+- Que `/prices-history` devuelva el punto medio y no el último trade. No está documentado; se puede
+  contrastar con los trades de la Data API.
+- **Resuelto el 31/10/2026:** la fecha desde la que rige la fórmula de comisiones. Desde el
+  06/03/2026 para los mercados creados desde esa fecha, con `crypto_fees_v2` desde la "Fee
+  Structure V2" del 30/03/2026 ([comisiones](ia/investigaciones/comisiones_polymarket.md)).
+- La única medición pública del rezago del mercado (0,3 s) viene de una sola fuente.
+
+## 6. Decisiones pendientes: qué se pregunta y qué no
+
+Reformulación del 31/10/2026 de S3, S4, S9 y S10. En cada una se separa lo que **no es una
+pregunta** (lo fija una buena práctica, una decisión ya tomada o la evidencia, y se resuelve en el
+código) de lo que **sí lo es**: una decisión de diseño del núcleo del proyecto, con varias opciones
+razonables, que cambia lo que el agente puede aprender o cómo se lo evalúa. Esas las decide una
+persona. Para cada pregunta hay una **pregunta clave**: según cómo se responda, corresponde una
+opción u otra.
+
+Las cuatro salen de la propuesta. Un agente decide en un simulador con datos históricos, sin
+información del futuro, y se compara con estrategias simples con los mismos costos. Para eso hay
+que definir el estado (S3), la transición (S4), la recompensa (S9) y el final del episodio (S10)
+del MDP.
+
+Evidencia nueva de la EDA (DAT-08, solo train):
+
+- En cada minuto de decisión, el último precio tiene una antigüedad mediana de 52 s.
+- Los puntos de precio llegan cerca del segundo 8 de cada minuto: el 50 % antes del segundo 8 y el
+  95 % antes del 40.
+- Comprar al precio de `t` siguiendo `edge` gana de 0,03 a 0,16 USDC por acción después de costos.
+  Comprando al precio siguiente, pierde.
+
+### 6.1 S3 — Qué ve el agente
+
+**No es pregunta:**
+
+- Solo se ven datos con `ts_available <= t` (S1, aceptada).
+- La consulta es un *as-of* hacia atrás sobre `ts_available`, como en todos los backtesters
+  revisados.
+- `p_stale` (la antigüedad del precio) entra en la observación: es información disponible en `t`
+  y sin ella el agente no puede saber que el precio va atrasado.
+- Los baselines ven exactamente lo mismo que el agente. La propuesta los compara, y la comparación
+  solo es justa con la misma información.
+
+**S3a. Pregunta clave:** ¿el agente debe decidir con todo lo que se sabe en `t`, aunque cada
+fuente tenga una antigüedad distinta, o con una foto de todas las fuentes en el mismo instante?
+
+- **Tipo:** diseño del núcleo. Define el estado del MDP.
+- **Por qué decide una persona:** no hay una respuesta técnica única. Es un compromiso entre usar
+  toda la información y mantener la observación coherente.
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Todo lo que se sabe en `t`" | **A. Último dato de cada fuente** (recomendada) | Usa el spot al día, que es información legítima en `t` | Mezcla antigüedades distintas. Lo compensan `p_stale` y S4 |
+| "Una foto coherente" | B. Todo en el instante del último precio | Ninguna fuente va adelantada respecto de otra | Descarta hasta un minuto de spot que ya estaba disponible |
+
+**S3b. Pregunta clave:** ¿la ventaja (`edge = p_fair - p_yes`) se mide contra el precio que se ve
+ahora o contra el valor justo del instante en que se registró ese precio?
+
+- **Tipo:** diseño de las features (D7). La EDA mostró que el `edge` actual mide sobre todo el
+  atraso del precio.
+- **Por qué decide una persona:** cambia qué señal persigue el agente y qué hace el baseline
+  `FairValue`.
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Lo que se ve ahora" | Solo el `edge` actual | Anticipa hacia dónde se moverá el precio | Agente y baseline persiguen una ventaja que S4 elimina: más operaciones y más costos |
+| "Solo el desacuerdo real" | Solo el `edge` en el instante del precio | Señal limpia del desacuerdo entre mercado y valor justo | No anticipa el próximo movimiento |
+| "Las dos, y que el agente aprenda" | **Ambas** (recomendada), con `FairValue` usando la del instante del precio | El agente puede aprender a descontar el atraso, y el baseline usa la señal limpia | Una feature más. La ablación de D7 dirá si sirven |
+
+**Decisión (31/10/2026, R1): S3a = A y S3b = ambas.** A usa toda la información realmente
+disponible sin datos del futuro, siempre que S4 respete los tiempos de decisión y de ejecución. Si
+el último precio tiene, por ejemplo, 4 minutos, `p_stale` se lo dice al agente, y S4 evita suponer
+que todavía puede comprar a ese precio.
+
+### 6.2 S4 — Cuándo y a qué precio se ejecuta
+
+**No es pregunta:**
+
+- Nunca se ejecuta al precio de `t`. Es el error de D6, ningún backtester lo hace por defecto y en
+  la EDA regala de 0,03 a 0,16 USDC por acción.
+- La tolerancia no pasa de 60 s (restricción ya acordada): una ejecución posterior al siguiente
+  instante de decisión filtraría precios futuros a la observación.
+- Si no hay precio dentro de la tolerancia, la orden se cancela y se reporta. El agente vuelve a
+  decidir en el minuto siguiente.
+- La ejecución se calcula en el entorno, igual para el agente y para los baselines.
+
+**S4a. Pregunta clave:** ¿la orden se cumple al primer precio que llega después de decidir (casi
+siempre unos 8 s después), aunque ese punto refleje el mercado de algunos segundos antes, o solo a
+un precio que seguro ya incorpora todo lo que el agente sabía, aunque casi nunca llegue dentro del
+minuto?
+
+- **Tipo:** diseño del núcleo. Define la transición del MDP y si el agente puede operar.
+- **Por qué decide una persona:** hay un compromiso real entre fidelidad y ejecutabilidad. La
+  medición previa dice que cada punto refleja el spot de 0 a 15 s antes de su fecha. Esos 15 s son
+  el atraso interno del punto, no la latencia de una orden.
+- **Medido en train:** porcentaje de órdenes que encuentran precio, según la latencia:
+  - 0 s: 99,6 %
+  - 2 s: 94,5 %
+  - 5 s: 71,1 %
+  - 15 s: 23,1 %
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Al primer precio que llega" | **A. Latencia de 2 s y tolerancia de 60 s** (recomendada) | Se ejecuta el 94,5 % de las órdenes. Es el mejor reflejo histórico del precio real al momento de operar | Puede quedar un desfase de pocos segundos a favor del agente. En la EDA no alcanza a cubrir los costos. Lo vigilan el test de mercado nulo (ENV-10) y la sensibilidad a la latencia (EVA-01) |
+| "Solo un precio que ya lo incorpora todo" | B. Latencia de 15 s y tolerancia de 60 s | Elimina el desfase | Se ejecuta el 23 % de las órdenes: el resultado lo dominaría la mecánica, no la política |
+| "Fidelidad, aunque cueste complejidad" | C. Latencia de 15 s y orden pendiente hasta 75 s | Se ejecuta el 95 % sin desfase | El entorno tiene que manejar órdenes que se cumplen después del paso siguiente sin mostrarlas antes de tiempo. Choca con S6 y S10 |
+
+#### Revisión contra el CLOB (31/10/2026)
+
+R1 preguntó si el modelo es correcto en un CLOB. El precio del historial podría ser el último trade
+y no un precio ejecutable, y el modelo no considera profundidad, liquidez ni ejecuciones parciales.
+Se midió con los trades taker públicos de 60 mercados de train repartidos en el tiempo (131 960
+trades), con [analisis.py](../notebooks/s4_ejecucion_clob/analisis.py).
+
+**Qué datos hay:**
+
+| Dato | ¿Lo tenemos? | Para qué sirve |
+| --- | --- | --- |
+| Historial de precios por minuto (`prices-history`) | Sí, en el crudo | Observación y precio de referencia |
+| Trades taker públicos: lado, precio, tamaño y segundo | En la API (`list_trades` del SDK), no en el crudo | Precio realmente pagado y flujo negociado |
+| Libro de órdenes histórico: bid, ask y profundidad | No: las APIs públicas que usamos solo dan el libro actual | — |
+| Foto final de Gamma: mejor bid y ask, y spread | Sí, pero es posterior a la resolución | Nada para la simulación |
+
+**Qué se encontró:**
+
+- **El historial no es el último trade.** Coincide con él en el 6,7 % de los puntos y con el medio
+  entre la última compra y la última venta en el 22,3 %. Además, el 5,1 % de sus puntos cae en
+  medio tick, algo que en los trades casi no pasa. Se comporta más como un punto medio, que es lo
+  que supone `p ± half_spread`.
+- **En promedio el modelo es conservador.** El precio real se mide como el VWAP de los primeros
+  100 USDC de trades taker del mismo lado, entre `t + 2 s` y `t + 60 s`. Le resulta al agente
+  0,005 USDC por acción mejor que el modelo (`p_next ± 0,01`), y 0,004 en los minutos en que la
+  regla de `edge` operaría. El modelo no inventa ganancias en promedio.
+- **La cola es optimista.** En el 10 % de los minutos la realidad es de 2,5 a 3 centavos peor que
+  el modelo. Lo cubre la sensibilidad con medio spread de 0,02 (EVA-01).
+- **La liquidez no siempre alcanza para 100 USDC.** Hay trades del lado en el 90 % de los minutos,
+  pero solo en el 53 % a 58 % se negociaron 100 USDC o más; la mediana es de unos 120 a 135 USDC
+  por minuto. Una orden de 100 USDC supone liquidez que en casi la mitad de los minutos no se vio.
+
+**S4b. Pregunta clave:** ¿con qué precio y qué liquidez se ejecuta una orden, sin inventar
+ganancias ni liquidez que no podemos verificar?
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Lo más simple que no invente ganancias" | A1. Modelo actual: `p_next ± 0,01` y órdenes de 100 USDC | Medido como conservador en promedio | Supone 100 USDC de liquidez por minuto, que no siempre existió |
+| "Simple, pero sin suponer liquidez que no se vio" | **A2. Modelo actual, órdenes de 20 USDC y validación con trades reales en val y test** (recomendada) | 20 USDC son cerca del 15 % del flujo mediano y superan el mínimo de 5 acciones. La validación detecta si el modelo regala ganancias | Capturar los trades de val y test: unos 3 600 mercados, cerca de 3 h. El retorno se mide sobre el stake, así que el tamaño no cambia la escala de los resultados |
+| "Ejecutar siempre con lo que realmente se negoció" | B. Trades reales en entrenamiento y evaluación: VWAP del flujo observado y ejecución parcial si no alcanza | Lo más fiel sin inventar liquidez | Capturar los trades de los 12 300 mercados (unas 10 h), con un contrato y un entorno más complejos y un entrenamiento más lento |
+| "Simular el libro completo" | C. Profundidad, cola y ejecuciones parciales con el libro | — | **Descartada:** no hay libros históricos, habría que inventar la liquidez |
+
+**Decisión (31/10/2026, R1):**
+
+- **S4a, provisional:** latencia de 2 s y tolerancia de 60 s, con una condición. El riesgo principal
+  no es la latencia, sino simular una compra a un precio al que no se habría podido comprar. Que el
+  modelo sea conservador en promedio no garantiza que cada ejecución sea válida.
+- **S4b:** A2, con órdenes de 20 USDC y validación con trades reales en val y test.
+
+**La condición, medida en la misma muestra:** una ejecución simulada se considera *verificable* si
+un taker real operó del mismo lado a ese precio o mejor, por al menos 20 USDC, dentro de la
+ventana. Lo son el 58 % de las ejecuciones con la ventana de 60 s (59 % en los minutos en que
+opera la regla de `edge`) y el 31 % con 15 s. La falta de un trade no prueba que no hubiera
+liquidez en el libro, pero tampoco permite confirmarla.
+
+Por eso, en val y test cada ejecución se clasifica como verificable o no, y la evaluación se repite
+en **modo estricto**, donde las ejecuciones no verificables cuentan como no ejecutadas. Si la
+conclusión cambia entre los dos modos, el resultado depende de liquidez no verificable y se
+reporta así (EVA-01).
+
+**Entrenamiento (31/10/2026, R1):** los trades de train también se capturan, y si el agente se
+entrena en modo estricto se decide después, comparando los dos modos en train (actualización de
+ADR-017).
+
+### 6.3 S9 — Con qué precio se valora una posición abierta
+
+**No es pregunta:**
+
+- Se valora con el último precio disponible en `t`, por coherencia con S3.
+- Al final del episodio todas las opciones dan el mismo PnL: la elección cambia **cuándo** recibe
+  el agente la señal y cómo se miden el drawdown y el PnL no realizado, no el resultado final.
+
+**Pregunta clave:** si el agente tiene una posición abierta, ¿cuánto vale ahora: lo que recibiría
+si la vendiera ya, o el precio del mercado?
+
+- **Tipo:** diseño del núcleo. Define la recompensa paso a paso y la feature `upnl`.
+- **Por qué decide una persona:** es un compromiso entre una señal honesta y una señal que no
+  desanime a operar (riesgo R5, que el agente aprenda a no operar).
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Lo que recibiría si vendo ya" | **Valor de liquidación** (recomendada): `p - half_spread`, menos la comisión de vender | La recompensa muestra el costo de entrar en el mismo paso y el drawdown es realista | Cada compra da una recompensa negativa inmediata, que puede empujar a no operar |
+| "El precio del mercado" | Precio medio `p` | Señal más suave al entrar | La posición parece valer más de lo que vale y el drawdown se subestima |
+| "Solo cuenta al cerrar" | Sin valoración intermedia | Sin ambigüedad | Señal escasa. Ya existe como la recompensa `terminal` de ENV-05 |
+
+**Decisión (31/10/2026, R1): valor de liquidación.** Se distinguen dos cosas:
+
+- **Cuánto vale la posición ahora:** el valor de liquidación. Se usa en `upnl`, en el drawdown y
+  en el valor de la cartera.
+- **Qué tan buena fue la decisión, por sus consecuencias:** el agente tiene que juzgar una compra
+  por su resultado económico, no por la pérdida inmediata del spread. Ejemplo: compra YES a 0,60,
+  vender en ese momento le daría 0,58 y ve una pérdida temporal; después el precio sube a 0,80 y
+  vende con ganancia. Comprar fue una buena decisión.
+
+Consecuencias para el entorno y el entrenamiento:
+
+- La recompensa `pnl` es el cambio del valor de la cartera. La suma de las recompensas del episodio
+  es el PnL final, así que **los costos se cuentan una sola vez**. La comisión de venta que incluye
+  la valoración se "devuelve" al liquidar si la posición se mantiene hasta `w1`. ENV-05 ya lo pide
+  como test.
+- Para no castigar la entrada artificialmente, el descuento `γ` tiene que quedar cerca de 1. Con
+  `γ = 0,99`, un resultado 60 pasos después pesa 0,55 frente al costo inmediato de entrar. Queda
+  como requisito para las configs de AGT-04 a AGT-08.
+
+### 6.4 S10 — Cómo termina el episodio
+
+**No es pregunta:**
+
+- En `w1` la posición se liquida a 1 o 0 según `outcome`, sin comisión. El pago de 1 USDC por
+  acción ganadora está confirmado y no se encontró ninguna comisión por cobrarlo
+  ([comisiones](ia/investigaciones/comisiones_polymarket.md)).
+- Un `SELL` que no se ejecuta antes de `w1` deja la posición hasta la liquidación: después de `w1`
+  no hay precios.
+- Un `BUY` en los minutos bloqueados es una acción inválida y se ejecuta como `WAIT` (S6).
+
+**Pregunta clave:** ¿hasta qué minuto de la vela puede el agente abrir posiciones?
+
+- **Tipo:** diseño del núcleo. Define el espacio de acción útil y la zona donde el simulador es
+  menos confiable.
+- **Por qué decide una persona:** al final de la vela el resultado está casi decidido y el atraso
+  del precio pesa más. En la EDA, en el minuto 55 los resultados son más extremos de lo que dice
+  el precio. Recortar protege la validez, pero quita decisiones.
+
+| Si la respuesta es... | Opción | Qué se gana | Qué se pierde |
+| --- | --- | --- | --- |
+| "Mientras se pueda ejecutar" | Hasta el minuto 59 | No recorta acciones | El agente puede aprender a comprar "lo casi seguro" justo donde el simulador es menos fiable |
+| "Dejar un margen corto" | **No abrir en los últimos 2 minutos** (recomendada) | Quita la zona más sensible al atraso; `SELL` sigue permitido | 2 de las 60 decisiones de entrada |
+| "Dejar un margen amplio" | No abrir en los últimos 5 minutos | Más margen | Pierde entradas legítimas cerca de precios extremos, donde operar es más barato |
+
+**Decisión (31/10/2026, R1): no abrir posiciones en los últimos 2 minutos.** `SELL` sigue
+permitido hasta el final.

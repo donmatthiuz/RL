@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [proyecto]
+  # Todos los PR, también los apilados sobre la rama de otro PR.
+  pull_request: {}
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      # Los mismos targets del Makefile que se usan en local.
+      - run: make install
+      - run: make lint typecheck
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+      - run: make install
+      - name: Tests con cobertura (sin slow ni network)
+        run: make coverage
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-py${{ matrix.python-version }}
+          path: coverage.xml
+
+  smoke-train:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - run: make install
+      - name: Cada config real de agente entrena unos 2 000 pasos
+        run: make smoke
