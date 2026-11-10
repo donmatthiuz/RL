@@ -101,7 +101,7 @@ Lee las trayectorias de `reports/trajectories/` y, si no hay, la muestra de test
 mercado, que se regenera con `make demo-muestra`. Reproduce trayectorias grabadas: no vuelve a
 correr ningún agente ni a evaluar test.
 
-**Versión publicada:** pendiente (EVA-09). Se publica en Google Cloud Run (ADR-018) con la imagen
+**Versión publicada:** <https://polyrl-demo-248394644314.us-east1.run.app> (EVA-09). Corre en Google Cloud Run (ADR-018) con la imagen
 del [`Dockerfile`](Dockerfile): la app, el paquete, `configs/`, el tema de `.streamlit/` y los
 reportes versionados, con las dependencias de [`app/requirements.txt`](app/requirements.txt), que
 deja afuera torch y las librerías de RL. `.gcloudignore` y `.dockerignore` son listas blancas: nunca
@@ -123,7 +123,7 @@ suben `keys/`, `.env`, `data/`, `models/` ni las trayectorias completas.
 4. **Desplegar:** `make deploy-gcp`, desde `proyecto` actualizado. La primera vez pregunta si crea
    el repositorio `cloud-run-source-deploy` de Artifact Registry: responder que sí. Al final imprime
    la URL. Cada despliegue nuevo es el mismo comando.
-5. Poner la URL en este apartado y marcar EVA-09 en el tablero.
+5. Si la URL cambia, actualizarla en este apartado.
 
 El servicio escala a cero (`--min-instances 0`), así que sin visitas no cobra y la primera visita
 tarda unos segundos en arrancar; `--max-instances 2` pone tope al costo. Streamlit usa websockets,
