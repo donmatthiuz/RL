@@ -28,17 +28,17 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 09/11/2026, de 68 tareas: 50 hechas, 4 en curso, 1 omitida y 13 sin empezar, casi todas del
-documento. Todos los PR (#1 a #44, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
+Al 09/11/2026, de 68 tareas: 59 hechas, 4 en curso, 1 omitida y 4 sin empezar. Todos los PR
+(#1 a #47, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13 y DOC-01 | INF-10 (la corre Mathew) | — |
+| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13 y DOC-01 | INF-10 (la corre Mathew) y DOC-11 (video) | — |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
-| R5 Carlos | EVA-01 a EVA-09 y EVA-11 | — | EVA-10 |
-| Todos (documento) | DOC-01 | DOC-04 (borrador de R3), DOC-10 (slides 1 a 3, #42 y #43) y DOC-12, durante todo el proyecto | DOC-02, DOC-03, DOC-05 a DOC-09, DOC-11, DOC-13 y DOC-14 |
+| R5 Carlos | EVA-01 a EVA-09 y EVA-11 | EVA-10 | — |
+| Todos (documento) | DOC-01 a DOC-10 | DOC-12, durante todo el proyecto | DOC-13 y DOC-14 |
 
 AGT-01 (prototipo en CartPole) se omite: los adaptadores y el test de cordura de AGT-06 ya cubren
 lo que buscaba.
@@ -84,15 +84,17 @@ entrenamiento final y reporte de val (#33) y test (#34).
 
 **Lo que falta:**
 
-1. **Documento (todos):** DOC-02 a DOC-09, con Resultados y Conclusión (DOC-07 y DOC-08, R5) a
-   partir de `reports/val/` y `reports/test/`. DOC-04 tiene el borrador de R3 (03/11/2026); falta
-   la revisión de R1 como R4.
-2. **Slides y presentación (R1):** DOC-10 (con su `DESIGN.md`), DOC-13 y DOC-14. **Video (R5):**
-   DOC-11.
-3. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
+1. **Documento:** hecho. `Informe_final.pdf` (20 páginas, Mathew, 09/11/2026) cubre DOC-02 a
+   DOC-09.
+2. **Slides:** hechas (DOC-10). Mathew dejó 8 slides, el guion y el reparto de la exposición; R1
+   agregó `generar_pdf.sh` y `presentacion.pdf`.
+3. **Falta:** grabar el video y poner su enlace (DOC-11, Josué; guion en #47), el ensayo con
+   `REPARTO_EXPOSICION.md` (DOC-13) y subir a Canvas `Informe_final.pdf` y
+   `presentacion.pdf` (DOC-14).
+4. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
    trayectorias (09/11/2026). `proyecto` no se lleva a `main` (decisión del 09/11/2026; el PR #38
    queda abierto).
-4. **Mathew (R2):** la reproducción de INF-10 con la guía del README. La demo ya está publicada en
+5. **Mathew (R2):** la reproducción de INF-10 con la guía del README. La demo ya está publicada en
    Cloud Run (EVA-09, ADR-018).
 
 ### Decisiones del 02/11/2026
@@ -235,7 +237,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-07 | **Hecha el 02/11/2026 (#24).** Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
 | EVA-08 | **Hecha el 09/11/2026 (#28 y #36).** La demo abre test con el mejor agente del protocolo (PPO, con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó. Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
 | EVA-09 | **Hecha el 09/11/2026 (#36 y #44):** publicada en Cloud Run (ADR-018) en <https://polyrl-demo-248394644314.us-east1.run.app>, con `make deploy-gcp` desde `proyecto`. Revisada en la nube: las cuatro páginas abren sin errores y la reproducción responde. (CD) Desplegar la demo pública desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
-| EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
+| EVA-10 | **En curso:** informe y slides listos; faltan video, ensayo y Canvas. Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
 | EVA-13 | **Hecha el 09/11/2026 (#40 y #41, R1).** Diseño de la demo con la identidad de `entregas/final/presentacion/DESIGN.md`: inicio, simulación minuto a minuto con BTC, precio YES, narración y botones de reproducción, comparación con el veredicto del protocolo y una guía del mercado, el entorno, las políticas y los datos | F4 | P1 | EVA-08 | La demo abre sin errores en local y con la muestra de Cloud, y sus tests cubren la reproducción, el cierre y la elección del protocolo |
@@ -248,18 +250,18 @@ documento vive en `entregas/final/informe/`.
 | ID | Tarea | Responsable | Fase | Depende de |
 | ---- | ------- | ------------- | ------ | ------------ |
 | DOC-01 | **Hecha el 31/10/2026.** Requisitos seleccionados en `docs/10_entrega_final.md` y estructura del documento con las secciones exigidas | R1 | F1 | — |
-| DOC-02 | Descripción del problema | R1 + R5 | F4 | DOC-01 |
-| DOC-03 | Análisis: datos, EDA, supuestos y riesgos | R2 | F4 | DAT-08 |
-| DOC-04 | **Borrador de R3 el 03/11/2026; falta la revisión de R1 como R4.** Propuesta de solución: por qué RL, MDP y recompensa | R3 + R4 | F4 | ENV-08 |
-| DOC-05 | Descripción de la solución: datos, entorno, agentes, evaluación, ingeniería y proceso iterativo | Todos | F4 | AGT-10, INF-10 |
-| DOC-06 | Herramientas aplicadas: las no vistas en clase en detalle, los prompts de IA y la evolución de la idea | R1 | F4 | DOC-12 |
-| DOC-07 | Resultados (métricas) contra los baselines | R5 (con todos) | F4 | EVA-06 |
-| DOC-08 | Conclusión | R5 (con todos) | F4 | DOC-07 |
-| DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
-| DOC-10 | **En curso desde el 09/11/2026:** `DESIGN.md` (#42) y base del deck con las slides 1 a 3 (#43). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
-| DOC-11 | **Guion listo el 09/11/2026; falta grabar y subir el enlace.** Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
+| DOC-02 | **Hecha el 09/11/2026 (Mathew, `Informe_final.md`).** Descripción del problema | R1 + R5 | F4 | DOC-01 |
+| DOC-03 | **Hecha el 09/11/2026 (Mathew).** Análisis: datos, EDA, supuestos y riesgos | R2 | F4 | DAT-08 |
+| DOC-04 | **Hecha el 09/11/2026:** borrador de R3 (03/11/2026) integrado por Mathew en el informe final. Propuesta de solución: por qué RL, MDP y recompensa | R3 + R4 | F4 | ENV-08 |
+| DOC-05 | **Hecha el 09/11/2026 (Mathew).** Descripción de la solución: datos, entorno, agentes, evaluación, ingeniería y proceso iterativo | Todos | F4 | AGT-10, INF-10 |
+| DOC-06 | **Hecha el 09/11/2026 (Mathew).** Herramientas aplicadas: las no vistas en clase en detalle, los prompts de IA y la evolución de la idea | R1 | F4 | DOC-12 |
+| DOC-07 | **Hecha el 09/11/2026 (Mathew).** Resultados (métricas) contra los baselines | R5 (con todos) | F4 | EVA-06 |
+| DOC-08 | **Hecha el 09/11/2026 (Mathew).** Conclusión | R5 (con todos) | F4 | DOC-07 |
+| DOC-09 | **Hecha el 09/11/2026 (Mathew).** Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
+| DOC-10 | **Hecha el 09/11/2026:** base y slides 1 a 3 (#42 y #43, R1); 8 slides en estilo Laboratorio nocturno, guion y reparto (Mathew); `generar_pdf.sh` y `presentacion.pdf` (#46 y #47). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
+| DOC-11 | **Guion listo el 09/11/2026 (#47); falta grabar y subir el enlace.** Video: funcionamiento, implementación y hallazgos | R1 (Josué) | F4 | EVA-08 |
 | DOC-12 | **En curso; al día al 09/11/2026 (P1 a P26).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
-| DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
+| DOC-13 | Reparto listo en `entregas/final/presentacion/REPARTO_EXPOSICION.md`. Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 
 ---

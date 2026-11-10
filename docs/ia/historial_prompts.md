@@ -41,6 +41,7 @@ Code. El equipo lo revisa y completa.
 | P22 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Fuentes, referencias y registro de IA del diseño | Satisfactorio |
 | P23 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Base de `index.html` y slides 1 a 3 | Satisfactorio: composición y accesibilidad corregidas |
 | P24 | 09/11/2026 | Claude Code y Context7 | Publicar la demo en Cloud Run | Satisfactorio: imagen probada en local antes de desplegar |
+| P25 | 09/11/2026 | Claude Code | Revisar las slides de Mathew y cerrar el tablero | Satisfactorio: faltaban el script y el PDF de las slides |
 | P26 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Guion del video final | Satisfactorio: 7 escenas, 3:40 y cifras verificadas |
 
 ## Entradas
@@ -423,6 +424,23 @@ Code. El equipo lo revisa y completa.
 - **Corrección:** ninguna en el resultado. La CLI de Context7 falló por la clave y se usó su MCP.
 - **Aporte:** `Dockerfile`, `.dockerignore` y `.gcloudignore` como listas blancas, `make
   demo-imagen` y `make deploy-gcp`, el ADR-018 y los pasos del README.
+
+### P25 — Revisar las slides de Mathew y cerrar el tablero
+
+- **Prompt:** "revisemos si le faltó algo a Mathew, si no complementémoslo", actualizar el tablero
+  y dar un prompt para que OpenCode escriba el guion del video.
+- **Herramienta:** Claude Code.
+- **Resultado:** satisfactorio.
+- **Por qué:** al comparar las slides con los requisitos de la sección 4 de
+  `docs/10_entrega_final.md` faltaban el script `.sh` y el PDF para Canvas. También se había
+  borrado `DESIGN.md`, que la demo y la documentación citan.
+- **Cómo se evaluó:** las cifras de las 8 slides se cotejaron con `reports/test/comparison.csv`,
+  `docs/08_datos_y_entrada_modelo.md` y el informe; el PDF se generó con `generar_pdf.sh`, salió
+  con 8 páginas de 1600 $\times$ 900 px y se revisó página por página; los enlaces relativos de los
+  documentos tocados quedaron sin rotos.
+- **Corrección:** ninguna en las slides.
+- **Aporte:** `generar_pdf.sh`, `presentacion.pdf`, `DESIGN.md` restaurado con una nota de
+  estado y el tablero con 59 tareas hechas.
 
 ### P26 — Guion del video final
 
