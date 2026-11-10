@@ -40,6 +40,7 @@ Code. El equipo lo revisa y completa.
 | P21 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Diseño de la presentación final | Satisfactorio: corrigió la sección 9 tras la nota de R1 |
 | P22 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Fuentes, referencias y registro de IA del diseño | Satisfactorio |
 | P23 | 09/11/2026 | OpenCode (DeepSeek V4.1 Flash Free) | Base de `index.html` y slides 1 a 3 | Satisfactorio: composición y accesibilidad corregidas |
+| P24 | 09/11/2026 | Claude Code y Context7 | Publicar la demo en Cloud Run | Satisfactorio: imagen probada en local antes de desplegar |
 
 ## Entradas
 
@@ -401,6 +402,26 @@ Code. El equipo lo revisa y completa.
   debajo de 1156 px; el campo de la portada solo se anima en la primera carga o con `r`.
 - **Aporte:** `index.html` con la base, las siete plantillas y las slides 1 a 3; `fonts/` con los
   WOFF2 y las licencias OFL; el `README.md` de la presentación actualizado.
+
+### P24 — Publicar la demo en Cloud Run
+
+- **Prompt:** "este proyecto lo subiremos a google cloud, ¿qué necesitamos?" y, con el proyecto de
+  gcloud ya iniciado, "dame lo que se necesita para poder desplegar la página y los artefactos
+  necesarios para su funcionamiento".
+- **Herramienta:** Claude Code, con la documentación de Cloud Run consultada en Context7.
+- **Resultado:** satisfactorio.
+- **Por qué:** la documentación oficial marcó tres requisitos que no son obvios: Cloud Run corta
+  los websockets de Streamlit al llegar al timeout, la afinidad de sesión evita que un usuario
+  cambie de instancia, y en proyectos nuevos la cuenta de Cloud Build necesita
+  `roles/run.builder` para construir desde el código. Leer `app/core.py` mostró que la demo también
+  lee `configs/` y los reportes versionados, no solo `app/`.
+- **Cómo se evaluó:** `make demo-imagen` construyó la imagen y la abrió en local; Playwright
+  recorrió las cuatro páginas sin excepciones ni errores. Se revisó por dentro que la imagen no
+  tuviera `keys/`, `.env`, `data/` ni `models/`, y `gcloud meta list-files-for-upload` confirmó
+  que solo se suben 147 archivos (6,3 MB) de `app/`, `src/`, `configs/`, `reports/` y `.streamlit/`.
+- **Corrección:** ninguna en el resultado. La CLI de Context7 falló por la clave y se usó su MCP.
+- **Aporte:** `Dockerfile`, `.dockerignore` y `.gcloudignore` como listas blancas, `make
+  demo-imagen` y `make deploy-gcp`, el ADR-018 y los pasos del README.
 
 ## Plantilla
 

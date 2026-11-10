@@ -13,7 +13,7 @@ import pandas as pd
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-# En Community Cloud el paquete no se instala, porque arrastraría torch (app/requirements.txt).
+# En Cloud Run el paquete no se instala, porque arrastraría torch (app/requirements.txt).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from polym4v.agents.base import Action  # noqa: E402

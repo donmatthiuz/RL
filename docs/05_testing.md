@@ -295,7 +295,7 @@ forma automática y reproducible:
 | Qué | Cuándo | Cómo |
 |-----|--------|------|
 | **GitHub Release** con las tablas y figuras de `reports/`, los modelos finales y las trayectorias | Al crear un tag `v*` (`v1.0` en la entrega) | `release.yml` corre los tests rápidos, empaqueta `reports/` (`make release-reportes`) y crea el Release con la comparación de test como notas. R1 adjunta después los modelos y las trayectorias con `make release-modelos` |
-| **Demo pública** (opcional, P2) | En cada push a `proyecto` | Streamlit Community Cloud, conectado al repo, despliega `app/demo.py` con `app/requirements.txt` y la muestra de `app/trayectorias/` (EVA-09) |
+| **Demo pública** (opcional, P2) | A mano, con `make deploy-gcp` desde `proyecto` | Cloud Run construye la imagen del `Dockerfile` (`app/demo.py` con `app/requirements.txt` y la muestra de `app/trayectorias/`) y la publica (EVA-09, ADR-018) |
 
 El plan inicial era que `release.yml` recalculara el reporte con `polym4v report`. No puede: los
 datos y los modelos no se versionan (`data/` y `models/` están en `.gitignore`), así que la CI no

@@ -254,6 +254,21 @@ ADR-XXX*.
   conectar el verificador al entrenamiento y más horas de cómputo, y la pregunta que importa (si
   la conclusión depende de liquidez no verificable) ya la responde la evaluación en los dos modos.
 
+### ADR-018 — La demo se publica en Google Cloud Run
+
+- **Estado:** Aceptada el 09/11/2026 (R1). Cambia la plataforma de EVA-09.
+- **Contexto:** EVA-09 iba a publicar la demo en Streamlit Community Cloud. El equipo tiene un
+  proyecto de Google Cloud y prefiere publicarla ahí.
+- **Decisión:** la demo corre en Cloud Run, construida desde el código con `gcloud run deploy
+  --source` y el `Dockerfile` de la raíz (`make deploy-gcp`). La imagen lleva solo `app/`, `src/`,
+  `configs/`, `.streamlit/` y los reportes versionados; usa la muestra de `app/trayectorias/`.
+  `.gcloudignore` y `.dockerignore` son listas blancas. El servicio escala a cero, con un máximo
+  de 2 instancias, timeout de 3 600 s y afinidad de sesión, porque Streamlit usa websockets.
+- **Consecuencias:** el despliegue es manual (`make deploy-gcp`), no en cada push. Hace falta una
+  cuenta de facturación, las APIs de Cloud Run, Cloud Build y Artifact Registry, y el rol
+  `roles/run.builder` para la cuenta de Cloud Build. `make demo-imagen` prueba la misma imagen en
+  local.
+
 <!-- Plantilla para nuevas decisiones:
 ### ADR-00X — Título
 - **Estado:** Propuesta | Aceptada | Reemplazada por ADR-XXX
