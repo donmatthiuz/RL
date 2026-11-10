@@ -28,8 +28,8 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 09/11/2026, de 68 tareas: 49 hechas, 4 en curso, 1 omitida y 14 sin empezar, casi todas del
-documento. Todos los PR (#1 a #43, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
+Al 09/11/2026, de 68 tareas: 50 hechas, 4 en curso, 1 omitida y 13 sin empezar, casi todas del
+documento. Todos los PR (#1 a #44, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
@@ -37,8 +37,8 @@ documento. Todos los PR (#1 a #43, salvo #38, que queda abierto) están mezclado
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
-| R5 Carlos | EVA-01 a EVA-08 y EVA-11 | EVA-09 (preparada; la despliega Mathew) | EVA-10 |
-| Todos (documento) | DOC-01 | DOC-04 (borrador de R3) y DOC-12, durante todo el proyecto | DOC-02, DOC-03, DOC-05 a DOC-11, DOC-13 y DOC-14 |
+| R5 Carlos | EVA-01 a EVA-09 y EVA-11 | — | EVA-10 |
+| Todos (documento) | DOC-01 | DOC-04 (borrador de R3), DOC-10 (slides 1 a 3, #42 y #43) y DOC-12, durante todo el proyecto | DOC-02, DOC-03, DOC-05 a DOC-09, DOC-11, DOC-13 y DOC-14 |
 
 AGT-01 (prototipo en CartPole) se omite: los adaptadores y el test de cordura de AGT-06 ya cubren
 lo que buscaba.
@@ -92,8 +92,8 @@ entrenamiento final y reporte de val (#33) y test (#34).
 3. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
    trayectorias (09/11/2026). `proyecto` no se lleva a `main` (decisión del 09/11/2026; el PR #38
    queda abierto).
-4. **Mathew (R2):** la reproducción de INF-10 con la guía del README, cuando exista el Release, y
-   el despliegue de la demo (EVA-09) en Cloud Run con los pasos del README (ADR-018).
+4. **Mathew (R2):** la reproducción de INF-10 con la guía del README. La demo ya está publicada en
+   Cloud Run (EVA-09, ADR-018).
 
 ### Decisiones del 02/11/2026
 
@@ -234,7 +234,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-06 | **Hecha el 02/11/2026 (#34), una sola vez:** [reports/test/](../reports/test/comparison.md). **Evaluación final en test** (una sola vez, con los modelos congelados de AGT-10) | F4 | P0 | AGT-10 | `reports/test/` con la tabla final e IC 95 % |
 | EVA-07 | **Hecha el 02/11/2026 (#24).** Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
 | EVA-08 | **Hecha el 09/11/2026 (#28 y #36).** La demo abre test con el mejor agente del protocolo (PPO, con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó. Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
-| EVA-09 | **Preparada el 09/11/2026 (#36); pasa a Cloud Run (ADR-018).** `Dockerfile`, listas blancas y `make deploy-gcp`, con los pasos del README; imagen probada en local con `make demo-imagen`. (CD) Desplegar la demo pública desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
+| EVA-09 | **Hecha el 09/11/2026 (#36 y #44):** publicada en Cloud Run (ADR-018) en <https://polyrl-demo-248394644314.us-east1.run.app>, con `make deploy-gcp` desde `proyecto`. Revisada en la nube: las cuatro páginas abren sin errores y la reproducción responde. (CD) Desplegar la demo pública desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
@@ -256,7 +256,7 @@ documento vive en `entregas/final/informe/`.
 | DOC-07 | Resultados (métricas) contra los baselines | R5 (con todos) | F4 | EVA-06 |
 | DOC-08 | Conclusión | R5 (con todos) | F4 | DOC-07 |
 | DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
-| DOC-10 | Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
+| DOC-10 | **En curso desde el 09/11/2026:** `DESIGN.md` (#42) y base del deck con las slides 1 a 3 (#43). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
 | DOC-11 | Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
 | DOC-12 | **En curso; al día al 09/11/2026 (P1 a P20).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
