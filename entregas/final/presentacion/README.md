@@ -5,6 +5,8 @@ La presentación tiene **8 diapositivas** y sigue la propuesta visual [Laborator
 ## Archivos
 
 - [index.html](index.html): presentación navegable en el navegador. Las fuentes están embebidas; las figuras se leen desde `img/`.
+- [generar_pdf.sh](generar_pdf.sh): genera `PolyRL_presentacion.pdf`, el PDF de las slides para Canvas, con Chrome sin interfaz (`index.html?pdf`, 8 páginas de 1600 × 900 px).
+- [DESIGN.md](DESIGN.md): diseño de las slides 1 a 3 y la identidad de la demo de Streamlit.
 - [REPARTO_EXPOSICION.md](REPARTO_EXPOSICION.md): quién explica cada diapositiva, las ideas clave y los relevos entre personas.
 - [img/](img/): gráficos del informe, diagramas y marca utilizados por el guion.
 - [fonts/](fonts/): archivos WOFF2 originales y licencias. JetBrains Mono se usa en títulos y datos; Inter, en explicación breve. Space Grotesk queda archivada como fuente anterior.
