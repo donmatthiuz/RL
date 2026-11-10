@@ -257,8 +257,8 @@ documento vive en `entregas/final/informe/`.
 | DOC-08 | Conclusión | R5 (con todos) | F4 | DOC-07 |
 | DOC-09 | Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
 | DOC-10 | **En curso desde el 09/11/2026:** `DESIGN.md` (#42) y base del deck con las slides 1 a 3 (#43). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
-| DOC-11 | Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
-| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P20).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-11 | **Guion listo el 09/11/2026; falta grabar y subir el enlace.** Video: funcionamiento, implementación y hallazgos | R5 | F4 | EVA-08 |
+| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P26).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 
