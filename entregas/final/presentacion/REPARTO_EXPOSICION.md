@@ -1,13 +1,14 @@
 # Reparto de la exposición
 
-Este reparto sigue las ocho diapositivas del [guion](GUION_DIAPOSITIVAS.md) y las responsabilidades de [roles](../../../docs/03_roles.md). Es una guía de ideas y relevos: cada persona puede explicarlas con sus propias palabras, sin leer la pantalla.
+Este reparto sigue las ocho diapositivas del [guion](GUION_DIAPOSITIVAS.md) y las áreas de trabajo descritas en [roles](../../../docs/03_roles.md). Ese archivo todavía no identifica a José; este reparto incorpora la corrección del equipo. Es una guía de ideas y relevos: cada persona puede explicarlas con sus propias palabras, sin leer la pantalla.
 
 Josué presentará la **diapositiva 5, la demo**. Por eso no se le asignan otras diapositivas en este reparto.
 
 | Persona | Diapositivas | Tiempo aproximado | Parte del relato |
 | --- | --- | --- | --- |
 | **Mathew — datos** | 1, 2 y 3 | 3:30 | La pregunta, el mercado y los datos disponibles |
-| **Gustavo — entorno y simulación** | 4 y 6 | 3:10 | Cómo se decide y cómo se comparan las políticas |
+| **Gustavo — entorno y simulación** | 4 | 1:40 | Cómo se toma y ejecuta una decisión |
+| **José — agentes** | 6 | 1:30 | Qué agentes se comparan y bajo qué condiciones |
 | **Carlos — evaluación** | 7 y 8 | 3:50 | Qué ocurrió en test y por qué |
 
 ## Mathew — planteamiento y datos (diapositivas 1–3)
@@ -20,11 +21,15 @@ Josué presentará la **diapositiva 5, la demo**. Por eso no se le asignan otras
 
 **Relevo a Gustavo:** «Con esos datos, había que construir un entorno que respetara el tiempo real de cada decisión».
 
-## Gustavo — simulación y comparación (diapositivas 4 y 6)
+## Gustavo — simulación (diapositiva 4)
 
 **4. Decidir no es ejecutar.** Recorrer el bucle observar → decidir → actualizar cartera. Explicar que la orden se simula con dos segundos de latencia y el primer precio posterior disponible, además de spread y comisión. Usar la figura de la ventaja aparente para mostrar por qué el precio del mismo instante daba una impresión engañosa. Recordar que esperar también es una acción.
 
 **Relevo a Josué para la diapositiva 5:** «Ahora veamos una trayectoria concreta en la demo: qué observó el agente, qué eligió y qué pasó con la cartera».
+
+## José — agentes (diapositiva 6)
+
+**Entrada después de la demo:** «Ya vimos una decisión paso a paso. Ahora comparemos las distintas formas de aprender a tomarla».
 
 **6. Cuatro agentes, una misma prueba.** Retomar la historia después de la demo. Identificar brevemente PPO y DQN como agentes que interactúan con el simulador, CQL como aprendizaje con transiciones fijas y BC como imitación. Destacar lo que hace justa la comparación: mismo entorno, costos y test; cinco semillas por agente. Explicar NoTrade como la referencia que siempre espera y obtiene retorno cero. La explicación de los algoritmos debe ser breve; aquí interesa preparar la lectura de resultados.
 
@@ -38,4 +43,4 @@ Josué presentará la **diapositiva 5, la demo**. Por eso no se le asignan otras
 
 ## Relevos y ritmo
 
-El orden al hablar es **Mathew → Gustavo → Josué (demo) → Gustavo → Carlos**. La demo ocupa aproximadamente 0:45; con ella, el tiempo estimado de exposición es **11:15**, más preguntas. Dejar una pausa breve al cambiar de persona y evitar repetir lo que acaba de explicarse. Si la demo tarda en cargar, Josué puede señalar en la diapositiva el recorrido **estado → acción → cartera** y devolver la palabra a Gustavo sin romper el hilo.
+El orden al hablar es **Mathew → Gustavo → Josué (demo) → José → Carlos**. La demo ocupa aproximadamente 0:45; con ella, el tiempo estimado de exposición es **11:15**, más preguntas. Dejar una pausa breve al cambiar de persona y evitar repetir lo que acaba de explicarse. Si la demo tarda en cargar, Josué puede señalar en la diapositiva el recorrido **estado → acción → cartera** y devolver la palabra a José sin romper el hilo.
