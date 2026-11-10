@@ -28,12 +28,12 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 
 ### Avance por rol
 
-Al 09/11/2026, de 68 tareas: 59 hechas, 4 en curso, 1 omitida y 4 sin empezar. Todos los PR
+Al 09/11/2026, de 68 tareas: 60 hechas, 3 en curso, 1 omitida y 4 sin empezar. Todos los PR
 (#1 a #47, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
-| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13 y DOC-01 | INF-10 (la corre Mathew) y DOC-11 (video) | — |
+| R1 Josué | INF-01 a INF-09, EVA-12, EVA-13, DOC-01 y DOC-11 | INF-10 (la corre Mathew) | DOC-14 (Canvas) |
 | R2 Mathew | DAT-01 a DAT-08, DAT-10 y DAT-11 | — | DAT-09 (P2) |
 | R3 Gustavo | ENV-01 a ENV-08 y ENV-10 | — | ENV-09 (P2) |
 | R4 (lo asume R1) | AGT-02 a AGT-10, salvo AGT-01 (omitida) | — | — |
@@ -88,13 +88,13 @@ entrenamiento final y reporte de val (#33) y test (#34).
    DOC-09.
 2. **Slides:** hechas (DOC-10). Mathew dejó 8 slides, el guion y el reparto de la exposición; R1
    agregó `generar_pdf.sh` y `presentacion.pdf`.
-3. **Falta:** grabar el video y poner su enlace (DOC-11, Josué; guion en #47), el ensayo con
-   `REPARTO_EXPOSICION.md` (DOC-13) y subir a Canvas `Informe_final.pdf` y
-   `presentacion.pdf` (DOC-14).
-4. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
+3. **Video:** hecho (DOC-11): <https://youtu.be/MVmoD3iCPr4>.
+4. **Falta:** el ensayo con `REPARTO_EXPOSICION.md` (DOC-13) y subir a Canvas
+   `Informe_final.pdf` y `presentacion.pdf`, con el enlace del video en el comentario (DOC-14).
+5. **Cierre técnico (R1):** hecho. El Release `v1.0` tiene los reportes, los modelos finales y las
    trayectorias (09/11/2026). `proyecto` no se lleva a `main` (decisión del 09/11/2026; el PR #38
    queda abierto).
-5. **Mathew (R2):** la reproducción de INF-10 con la guía del README. La demo ya está publicada en
+6. **Mathew (R2):** la reproducción de INF-10 con la guía del README. La demo ya está publicada en
    Cloud Run (EVA-09, ADR-018).
 
 ### Decisiones del 02/11/2026
@@ -237,7 +237,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-07 | **Hecha el 02/11/2026 (#24).** Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
 | EVA-08 | **Hecha el 09/11/2026 (#28 y #36).** La demo abre test con el mejor agente del protocolo (PPO, con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó. Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
 | EVA-09 | **Hecha el 09/11/2026 (#36 y #44):** publicada en Cloud Run (ADR-018) en <https://polyrl-demo-248394644314.us-east1.run.app>, con `make deploy-gcp` desde `proyecto`. Revisada en la nube: las cuatro páginas abren sin errores y la reproducción responde. (CD) Desplegar la demo pública desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
-| EVA-10 | **En curso:** informe y slides listos; faltan video, ensayo y Canvas. Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
+| EVA-10 | **En curso:** informe, slides y video listos; faltan ensayo y Canvas. Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |
 | EVA-13 | **Hecha el 09/11/2026 (#40 y #41, R1).** Diseño de la demo con la identidad de `entregas/final/presentacion/DESIGN.md`: inicio, simulación minuto a minuto con BTC, precio YES, narración y botones de reproducción, comparación con el veredicto del protocolo y una guía del mercado, el entorno, las políticas y los datos | F4 | P1 | EVA-08 | La demo abre sin errores en local y con la muestra de Cloud, y sus tests cubren la reproducción, el cierre y la elección del protocolo |
@@ -259,8 +259,8 @@ documento vive en `entregas/final/informe/`.
 | DOC-08 | **Hecha el 09/11/2026 (Mathew).** Conclusión | R5 (con todos) | F4 | DOC-07 |
 | DOC-09 | **Hecha el 09/11/2026 (Mathew).** Bibliografía verificada y con un solo formato | R4 + R5 | F4 | DOC-02 a DOC-08 |
 | DOC-10 | **Hecha el 09/11/2026:** base y slides 1 a 3 (#42 y #43, R1); 8 slides en estilo Laboratorio nocturno, guion y reparto (Mathew); `generar_pdf.sh` y `presentacion.pdf` (#46 y #47). Slides en HTML (máximo 10, flechas, `p` pantalla completa, `o` vista general y transiciones) y `generar_pdf.sh`. Se diseña al final, con un `DESIGN.md` | R5 + R1 | F4 | DOC-07 |
-| DOC-11 | **Guion listo el 09/11/2026 (#47); falta grabar y subir el enlace.** Video: funcionamiento, implementación y hallazgos | R1 (Josué) | F4 | EVA-08 |
-| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P26).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
+| DOC-11 | **Hecha el 09/11/2026:** guion (#47) y video de 4:04 en <https://youtu.be/MVmoD3iCPr4>. Video: funcionamiento, implementación y hallazgos | R1 (Josué) | F4 | EVA-08 |
+| DOC-12 | **En curso; al día al 09/11/2026 (P1 a P27).** Historial de prompts con su evaluación, **durante todo el proyecto** (`docs/ia/`) | Todos; R1 consolida | F1–F4 | — |
 | DOC-13 | Reparto listo en `entregas/final/presentacion/REPARTO_EXPOSICION.md`. Ensayo de la presentación en clase | Todos | F4 | DOC-10 |
 | DOC-14 | Subir a Canvas el PDF del documento, con el enlace al repositorio, y el PDF de las slides | R1 | F4 | DOC-09, DOC-10 |
 

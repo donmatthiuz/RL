@@ -1,7 +1,9 @@
 # Guion del video final
 
 Video de la entrega final de PolyRL (DOC-11). Muestra la solución funcionando, cómo está
-implementada y los hallazgos principales, en 3 a 4 minutos. El enlace se completa al final.
+implementada y los hallazgos principales, en 3 a 4 minutos.
+
+**Video:** <https://youtu.be/MVmoD3iCPr4> (4:04, publicado como no listado).
 
 ## 1. Requisitos y duración objetivo
 
@@ -86,4 +88,10 @@ Pausas: 2 segundos después de «casi en cero», después de «−27,23 USDC» y
 
 ## 6. Enlace al video
 
-- **Enlace:** pendiente.
+- **Enlace:** <https://youtu.be/MVmoD3iCPr4>
+- **Cómo quedó:** 4:04. La voz sigue este guion con los ajustes del 09/11/2026: todo se muestra
+  en la demo (Inicio, Simulación, Cómo funciona y Comparación) y no en las slides, y se agregó
+  un tramo de 31 s sobre los agentes (Stable-Baselines3 y d3rlpy), la recompensa y los tests,
+  para cubrir la implementación. Los clips salen de la demo local a 1920 x 1080 y se montaron con
+  ffmpeg, con fundidos entre escenas y una etiqueta por parte: funcionamiento, implementación,
+  hallazgos y conclusión. El audio y los clips no se versionan.

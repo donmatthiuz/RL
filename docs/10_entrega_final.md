@@ -12,7 +12,7 @@ repositorio y revisa si el proyecto cumple. Las tareas que salen de aquí son la
 | Aprobación del tema | Propuesta y correo de aprobación | [propuesta](../entregas/propuesta/), [evidencias](images/evidencias/) | 3 | Hecho |
 | Documento | PDF con las secciones de la sección 2 y el enlace al repositorio | [entregas/final/informe/](../entregas/final/informe/) | 5 | Hecho: `Informe_final.pdf`, 20 páginas (09/11/2026) |
 | Repositorio | Público, con todo el código y el documento | `github.com/donmatthiuz/RL`, rama `proyecto` | 1 | Público (verificado el 31/10/2026) |
-| Video | Funcionamiento, implementación y hallazgos principales | [entregas/final/video/](../entregas/final/video/) | 1 | En curso: guion. La demo está publicada en Cloud Run (EVA-09) |
+| Video | Funcionamiento, implementación y hallazgos principales | [entregas/final/video/](../entregas/final/video/) | 1 | Hecho: <https://youtu.be/MVmoD3iCPr4> (4:04) |
 | Slides | Máximo 10, en HTML, con su versión PDF | [entregas/final/presentacion/](../entregas/final/presentacion/) | 5 | Hecho: 8 slides en `index.html` y `presentacion.pdf` con `generar_pdf.sh` |
 | Presentación | Exposición en clase y respuestas a las preguntas | En clase | 10 | Pendiente |
 | Calidad de la solución | Implementación funcional y verificada | `src/`, `tests/`, CI | 5 | Cumple: 369 tests, CI en verde y evaluación en test hecha |
