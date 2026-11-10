@@ -29,7 +29,7 @@ y el estado de cada tarea se marca en su fila (por ejemplo, **En PR** o **Hecha 
 ### Avance por rol
 
 Al 09/11/2026, de 68 tareas: 49 hechas, 4 en curso, 1 omitida y 14 sin empezar, casi todas del
-documento. Todos los PR (#1 a #41, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
+documento. Todos los PR (#1 a #43, salvo #38, que queda abierto) están mezclados en `proyecto`, y test ya se evaluó.
 
 | Rol | Hechas | En curso | Faltan |
 | --- | --- | --- | --- |
@@ -93,7 +93,7 @@ entrenamiento final y reporte de val (#33) y test (#34).
    trayectorias (09/11/2026). `proyecto` no se lleva a `main` (decisión del 09/11/2026; el PR #38
    queda abierto).
 4. **Mathew (R2):** la reproducción de INF-10 con la guía del README, cuando exista el Release, y
-   el despliegue de la demo (EVA-09) con los pasos del README.
+   el despliegue de la demo (EVA-09) en Cloud Run con los pasos del README (ADR-018).
 
 ### Decisiones del 02/11/2026
 
@@ -234,7 +234,7 @@ La CI/CD volvió al alcance con el ADR-014, que reemplaza al ADR-010.
 | EVA-06 | **Hecha el 02/11/2026 (#34), una sola vez:** [reports/test/](../reports/test/comparison.md). **Evaluación final en test** (una sola vez, con los modelos congelados de AGT-10) | F4 | P0 | AGT-10 | `reports/test/` con la tabla final e IC 95 % |
 | EVA-07 | **Hecha el 02/11/2026 (#24).** Demo Streamlit v1: elegir mercado y agente, reproductor paso a paso, gráfico del precio con marcas y panel de estado | F3 | P0 | EVA-02 | La demo funciona con las trayectorias del mini-dataset |
 | EVA-08 | **Hecha el 09/11/2026 (#28 y #36).** La demo abre test con el mejor agente del protocolo (PPO, con su semilla mediana) frente a `NoTrade`, en el primer mercado donde operó. Demo v2: comparar varios agentes en el mismo mercado y mostrar la curva de capital acumulada | F4 | P1 | EVA-07, EVA-06 | Muestra el mejor agente frente al mejor baseline en un mercado de test |
-| EVA-09 | **Preparada el 09/11/2026 (#36); la despliega Mathew** con los pasos del README: `app/requirements.txt` sin torch y la muestra de test de `app/trayectorias/`. (CD) Desplegar la demo en Streamlit Community Cloud desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
+| EVA-09 | **Preparada el 09/11/2026 (#36); pasa a Cloud Run (ADR-018).** `Dockerfile`, listas blancas y `make deploy-gcp`, con los pasos del README; imagen probada en local con `make demo-imagen`. (CD) Desplegar la demo pública desde `proyecto` | F4 | P2 | EVA-08 | URL pública funcionando, enlazada desde el README |
 | EVA-10 | Coordinar el informe final y la presentación (ver DOC-*) | F4 | P0 | EVA-06 | Entregados en la fecha |
 | EVA-11 | **Hecha el 02/11/2026 (#14, #33 y #34):** los reportes de val y test traen el porcentaje de ejecuciones verificadas y la clasificación en los dos modos. **Validación de ejecuciones (S4a, ADR-017):** clasificar cada ejecución simulada como verificable o no con los trades de DAT-11 y repetir la evaluación en modo estricto | F2 | P0 | EVA-02, DAT-11 | El reporte de val y de test incluye el porcentaje de ejecuciones verificables y la clasificación de EVA-01 en los dos modos |
 | EVA-12 | **Hecha el 02/11/2026 (#35); exploratoria, fuera del protocolo (R1).** Análisis del comportamiento de los agentes (XAI): mapa de decisiones, precisión contra rentabilidad, calibración del precio e importancia de features por permutación, en val; en test, solo la descripción de las trayectorias de EVA-06 | F4 | P1 | EVA-06 | `make behavior` genera `reports/val/behavior.md` y `reports/test/inspection.md` sin volver a evaluar test |

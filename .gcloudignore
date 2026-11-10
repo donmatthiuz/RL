@@ -1,0 +1,13 @@
+# Lo que gcloud run deploy --source sube a Cloud Build. Misma lista blanca que .dockerignore:
+# nunca suben keys/, .env, data/, models/ ni las trayectorias completas.
+/*
+!/Dockerfile
+!/.dockerignore
+!/.streamlit/
+!/app/
+!/configs/
+!/reports/
+!/src/
+/reports/trajectories/
+**/__pycache__/
+**/*.py[cod]

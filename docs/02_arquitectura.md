@@ -387,9 +387,9 @@ cómo funciona) y la identidad de `entregas/final/presentacion/DESIGN.md`:
   de las tarjetas de una fila. La barra lateral (carpeta de trayectorias) está en todas las páginas.
 
 **Publicada (EVA-09):** sin trayectorias en `reports/trajectories/`, la demo usa la muestra de test
-de `app/trayectorias/` (PPO s0, `NoTrade` y `fair_value`, unos 3 MB). En Streamlit Community Cloud
-las dependencias salen de `app/requirements.txt`, que deja afuera torch y las librerías de RL, y el
-paquete se importa desde `src/` sin instalarlo.
+de `app/trayectorias/` (PPO s0, `NoTrade` y `fair_value`, unos 3 MB). Corre en Cloud Run (ADR-018)
+con la imagen del `Dockerfile`: las dependencias salen de `app/requirements.txt`, que deja afuera
+torch y las librerías de RL, y el paquete se importa desde `src/` sin instalarlo.
 
 ### 2.8 `utils/` y CLI (Rol 1)
 
@@ -412,6 +412,8 @@ RL/
 ├── pyproject.toml              # dependencias, ruff, pytest, coverage, mypy
 ├── uv.lock
 ├── .pre-commit-config.yaml
+├── Dockerfile                  # imagen de la demo en Cloud Run (EVA-09, ADR-018)
+├── .dockerignore  .gcloudignore  # listas blancas de lo que entra a la imagen
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml              # lint, mypy, tests con cobertura y smoke-train en cada push y PR
@@ -432,7 +434,7 @@ RL/
 │   ├── app_pages/              # inicio, simulación, comparación y cómo funciona
 │   ├── core.py  charts.py  selection.py  muestra.py
 │   ├── static/                 # monograma de PolyRL
-│   ├── requirements.txt        # dependencias de la demo publicada, sin torch (EVA-09)
+│   ├── requirements.txt        # dependencias de la imagen de Cloud Run, sin torch (EVA-09)
 │   └── trayectorias/           # muestra de test para la demo publicada
 ├── notebooks/                  # EDA y exploración (no es código de producción)
 ├── tests/

@@ -101,15 +101,33 @@ Lee las trayectorias de `reports/trajectories/` y, si no hay, la muestra de test
 mercado, que se regenera con `make demo-muestra`. Reproduce trayectorias grabadas: no vuelve a
 correr ningún agente ni a evaluar test.
 
-**Versión publicada:** pendiente (EVA-09). Para publicarla en Streamlit Community Cloud:
+**Versión publicada:** pendiente (EVA-09). Se publica en Google Cloud Run (ADR-018) con la imagen
+del [`Dockerfile`](Dockerfile): la app, el paquete, `configs/`, el tema de `.streamlit/` y los
+reportes versionados, con las dependencias de [`app/requirements.txt`](app/requirements.txt), que
+deja afuera torch y las librerías de RL. `.gcloudignore` y `.dockerignore` son listas blancas: nunca
+suben `keys/`, `.env`, `data/`, `models/` ni las trayectorias completas.
 
-1. Entrar a Community Cloud con la cuenta de GitHub dueña del repositorio y crear una app
-   desde un repositorio existente.
-2. Repositorio `donmatthiuz/RL`, rama `proyecto` y archivo principal `app/demo.py`.
-3. En las opciones avanzadas, Python 3.12. Las dependencias salen de
-   [`app/requirements.txt`](app/requirements.txt), que deja afuera torch y las librerías de RL.
-4. El tema sale de `.streamlit/config.toml`, en la raíz, que es donde Community Cloud lo lee.
+1. **Probar en local:** `make demo-imagen` construye la imagen y la abre en `http://localhost:8080`.
+2. **Proyecto de gcloud:** `gcloud config get project` debe mostrar el proyecto de la demo.
+3. **Una sola vez por proyecto:** activar las APIs y darle a la cuenta de Cloud Build el rol que
+   necesita para construir desde el código.
+
+   ```bash
+   gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+   PROJECT=$(gcloud config get project)
+   NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
+   gcloud projects add-iam-policy-binding "$PROJECT" \
+       --member="serviceAccount:$NUMBER-compute@developer.gserviceaccount.com" --role=roles/run.builder
+   ```
+
+4. **Desplegar:** `make deploy-gcp`, desde `proyecto` actualizado. La primera vez pregunta si crea
+   el repositorio `cloud-run-source-deploy` de Artifact Registry: responder que sí. Al final imprime
+   la URL. Cada despliegue nuevo es el mismo comando.
 5. Poner la URL en este apartado y marcar EVA-09 en el tablero.
+
+El servicio escala a cero (`--min-instances 0`), así que sin visitas no cobra y la primera visita
+tarda unos segundos en arrancar; `--max-instances 2` pone tope al costo. Streamlit usa websockets,
+por eso el timeout de una hora y la afinidad de sesión.
 
 ## Reproducir un resultado
 
