@@ -24,6 +24,8 @@ from polym4v.utils.paths import get_paths  # noqa: E402
 
 SPLITS = ("train", "val", "test")
 SAMPLE = Path(__file__).resolve().parent / "trayectorias"
+# `mercados_<split>.parquet` es la tabla de mercados de la muestra, no trayectorias de una política.
+MARKETS = "mercados"
 # Las corridas entrenadas son `<fecha>_<agente>_<recompensa>_s<semilla>`; lo demás, baselines.
 AGENT_LABEL = re.compile(r"^\d{8}-\d{6}_")
 RUN_LABEL = re.compile(r"^\d{8}-\d{6}_(?P<algo>[a-z]+)_.*_s(?P<seed>\d+)$")
@@ -124,7 +126,7 @@ def list_files(folder: Path) -> dict[str, Path]:
     for path in sorted(folder.glob("*.parquet")):
         for split in SPLITS:
             parsed = parse_name(path, split)
-            if parsed is not None:
+            if parsed is not None and parsed[0] != MARKETS:
                 label, strict = parsed
                 files[file_name(label, split, strict)] = path
     return files
@@ -158,7 +160,7 @@ def markets(split: str) -> pd.DataFrame | None:
     Lee el dataset si está en la máquina y, si no, la muestra de `app/trayectorias/`.
     """
     paths = get_paths()
-    sample = SAMPLE / f"mercados_{split}.parquet"
+    sample = SAMPLE / f"{MARKETS}_{split}.parquet"
     config = load_config(paths.configs / "data.yaml", DataConfig)
     dataset = paths.processed / config.dataset_id
     if (dataset / "steps.parquet").exists():
