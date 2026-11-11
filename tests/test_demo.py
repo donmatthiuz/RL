@@ -122,6 +122,17 @@ def test_without_trajectories_it_opens_the_test_sample(env):
     assert at.sidebar.selectbox[0].value.endswith(" · test")
 
 
+def test_the_market_table_is_not_offered_as_a_policy(env, frames):
+    folder = env / "reports" / "trajectories"
+    frames["favorite"].to_parquet(folder / "favorite_test.parquet")
+    pd.DataFrame({"market_id": ["m"]}).to_parquet(folder / "mercados_test.parquet")
+    at = AppTest.from_file(APP, default_timeout=60)
+    at.run()
+    at.switch_page(SIMULATION).run()
+    assert not at.exception
+    assert at.sidebar.selectbox[0].options == ["Favorito · test"]
+
+
 def test_an_empty_folder_explains_how_to_create_trajectories(app, env):
     app.session_state.folder = str(env)
     app.run()
